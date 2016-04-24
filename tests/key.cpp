@@ -1,8 +1,8 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
-#include "utils.h"
-#include "key.h"
+#include "erpiko/utils.h"
+#include "erpiko/key.h"
 
 namespace Erpiko {
 SCENARIO("Keys can be created") {
