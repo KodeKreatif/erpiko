@@ -38,6 +38,13 @@ BigInt* BigInt::fromString(const std::string string) {
   return b;
 }
 
+const std::string BigInt::toHexString() const {
+  std::string retval;
+
+  retval = BN_bn2hex(impl->bn);
+  return retval;
+}
+
 BigInt::~BigInt() = default;
 
 bool BigInt::operator==(const BigInt& other) {

@@ -70,6 +70,18 @@ SCENARIO("BigInt can be created from string") {
 
   }
 
+  GIVEN("A new BigInt") {
+    BigInt* b = BigInt::fromString("0x120deadbeef");
+    THEN("It is not null") {
+      REQUIRE_FALSE(&b == nullptr);
+      auto str = b->toHexString();
+      THEN("And the hex string should be correct") {
+        REQUIRE(str == "0120DEADBEEF");
+      }
+    }
+  }
+
+
 }
 
 

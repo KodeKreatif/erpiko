@@ -30,6 +30,12 @@ class BigInt {
     virtual ~BigInt();
 
     /**
+     * Creates hex string representation of the BigInt
+     * @return string containing hex string
+     */
+    const std::string toHexString() const;
+
+    /**
      * Operator ==
      **/
     bool operator== (const BigInt& other);
