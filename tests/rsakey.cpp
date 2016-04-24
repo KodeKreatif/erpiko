@@ -2,7 +2,7 @@
 #include "catch.hpp"
 
 #include "erpiko/utils.h"
-#include "erpiko/key.h"
+#include "erpiko/rsakey.h"
 
 namespace Erpiko {
 SCENARIO("Keys can be created") {

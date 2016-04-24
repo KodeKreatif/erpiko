@@ -1,4 +1,4 @@
-#include "erpiko/key.h"
+#include "erpiko/rsakey.h"
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bio.h>
