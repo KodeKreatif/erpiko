@@ -1,6 +1,7 @@
 #ifndef _BIGINT_H_
 #define _BIGINT_H_
 
+#include <string>
 #include <memory>
 
 namespace Erpiko {
