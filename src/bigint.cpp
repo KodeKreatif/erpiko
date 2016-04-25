@@ -74,7 +74,7 @@ void BigInt::operator=(const std::string string) {
 
 }
 
-bool BigInt::operator==(const BigInt& other) {
+bool BigInt::operator==(const BigInt& other) const {
   return (BN_ucmp(impl->bn, other.impl->bn) == 0);
 }
 

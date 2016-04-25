@@ -38,7 +38,7 @@ class BigInt {
     /**
      * Operator ==
      **/
-    bool operator== (const BigInt& other);
+    bool operator== (const BigInt& other) const;
 
     /**
      * Operator =
