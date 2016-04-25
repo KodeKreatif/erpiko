@@ -1,5 +1,5 @@
-#ifndef _KEY_H_
-#define _KEY_H_
+#ifndef _RSA_KEY_H_
+#define _RSA_KEY_H_
 
 #include "erpiko/rsakey-public.h"
 #include <memory>
@@ -72,4 +72,4 @@ class RsaKey {
 };
 
 } // namespace Erpiko
-#endif // _KEY_H_
+#endif // _RSA_KEY_H_
