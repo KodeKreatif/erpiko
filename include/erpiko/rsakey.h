@@ -1,6 +1,7 @@
 #ifndef _KEY_H_
 #define _KEY_H_
 
+#include "erpiko/rsakey-public.h"
 #include <memory>
 #include <vector>
 
@@ -37,7 +38,6 @@ class RsaKey {
      */
     static RsaKey* fromDer(const std::vector<unsigned char> der, const std::string passphrase = "");
 
-
     /**
      * Gets the number of bits of this key
      * @return number of bits
@@ -59,6 +59,12 @@ class RsaKey {
      * @return string containing PEM. Empty if something is broken.
      */
     const std::vector<unsigned char> toDer(const std::string passphrase = "") const;
+
+    /**
+     * Gets public key out of the private key
+     * @return public key reference
+     */
+    const RsaPublicKey& publicKey() const;
 
   private:
     class Impl;
