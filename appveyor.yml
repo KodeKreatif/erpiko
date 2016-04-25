@@ -1,0 +1,51 @@
+version: 0.1.{build}
+clone_folder: C:\erpiko
+init:
+- ps: iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
+install:
+- cmd: >-
+    choco install cmake
+
+    choco install wget
+
+    cd deps
+
+    wget http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.3.3-windows.zip
+
+    unzip libressl-2.3.3-windows.zip
+
+    xcopy libressl-2.3.3-windows libressl /e/i
+
+    mkdir catch
+
+    cd catch
+
+    wget -O catch.hpp https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp
+
+    cd C:\erpiko
+build_script:
+- cmd: >-
+    call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" %vs_toolset%
+
+    mkdir build
+
+    cd build
+
+    cmake -G "NMake Makefiles" ..
+
+    nmake
+
+    cd C:\erpiko
+test_script:
+- cmd: >-
+    call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" %vs_toolset%
+
+    cd build
+
+    xcopy ..\deps\libressl\x86\*.dll . /y
+
+    xcopy ..\deps\libressl\x86\*.dll tests /y
+
+    nmake test
+
+    cd C:\erpiko
