@@ -13,16 +13,23 @@ if (NOT CONFIGURED_ONCE)
     CACHE STRING "Flags used by the compiler during all build types." FORCE)
 endif()
 
-
 include_directories(include)
+include_directories(deps/libressl/include)
 
 add_library(libressl STATIC IMPORTED)
-set_property(TARGET libressl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/crypto/.libs/libcrypto.a)
+if (NOT MSVC)
+    set_property(TARGET libressl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/crypto/.libs/libcrypto.a)
+else()
+    if (MSVC_C_ARCHITECTURE_ID MATCHES 64 OR MSVC_CXX_ARCHITECTURE_ID MATCHES 64)
+        set_property(TARGET libressl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x64/libcrypto-37.lib)
+    else()
+        set_property(TARGET libressl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x86/libcrypto-37.lib)
+    endif()
+endif()
 
 enable_testing()
 add_subdirectory(src)
 add_subdirectory(tests)
-
 
 set(CONFIGURED_ONCE TRUE CACHE INTERNAL
   "A flag showing that CMake has configured at least once.")
