@@ -47,6 +47,33 @@ const std::string BigInt::toHexString() const {
 
 BigInt::~BigInt() = default;
 
+void BigInt::operator=(const BigInt& other) {
+  BN_copy(impl->bn, other.impl->bn);
+}
+
+
+void BigInt::operator=(const unsigned long value) {
+  BN_set_word(impl->bn, value);
+}
+
+void BigInt::operator=(const std::string string) {
+  BIGNUM* other;
+  other = BN_new();
+
+  int ret;
+  if (string.substr(0, 2) == "0x") {
+    ret = BN_hex2bn(&other, string.c_str() + 2); // 2 bytes offset
+  } else {
+    ret = BN_dec2bn(&other, string.c_str());
+  }
+
+  if (ret) {
+    BN_copy(impl->bn, other);
+  }
+  BN_free(other);
+
+}
+
 bool BigInt::operator==(const BigInt& other) {
   return (BN_ucmp(impl->bn, other.impl->bn) == 0);
 }

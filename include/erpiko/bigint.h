@@ -40,6 +40,23 @@ class BigInt {
      **/
     bool operator== (const BigInt& other);
 
+    /**
+     * Operator =
+     **/
+    void operator= (const BigInt& other);
+
+    /**
+     * Operator =
+     **/
+    void operator= (const unsigned long value);
+
+    /**
+     * Operator =.
+     * @param string the new value specified as string. String must be valid or the value will not change.
+     **/
+    void operator= (const std::string string);
+
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

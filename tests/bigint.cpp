@@ -81,6 +81,32 @@ SCENARIO("BigInt can be created from string") {
     }
   }
 
+  GIVEN("A new BigInt") {
+    BigInt* b = BigInt::fromString("0x120");
+    THEN("It has an initial value") {
+      REQUIRE_FALSE(&b == nullptr);
+      BigInt b1(0x120);
+      BigInt b2(0x260);
+      REQUIRE(*b == b1);
+      THEN("The value should change after an assignment") {
+        *b = "0x260";
+        REQUIRE(*b == b2);
+      }
+      THEN("The value should change again after an assignment with literal integer") {
+        *b = 0x360;
+        BigInt b3(0x360);
+        REQUIRE(*b == b3);
+      }
+      THEN("The value should change again after an assignment with another BigInt") {
+        BigInt b4a(0x460);
+        *b = b4a;
+        BigInt b4b(0x460);
+        REQUIRE(*b == b4b);
+      }
+    }
+  }
+
+
 
 }
 
