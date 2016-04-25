@@ -1,4 +1,6 @@
-#include "erpiko/key.h"
+#include "erpiko/rsakey.h"
+#include "erpiko/rsakey-public.h"
+#include "erpiko/utils.h"
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bio.h>
@@ -16,6 +18,7 @@ class RsaKey::Impl {
     RSA* rsa;
     EVP_PKEY* evp;
     bool evpPopulated = false;
+    std::unique_ptr<RsaPublicKey> publicKey;
 
     Impl() {
       rsa = RSA_new();
@@ -26,6 +29,27 @@ class RsaKey::Impl {
     virtual ~Impl() {
       RSA_free(rsa);
       EVP_PKEY_free(evp);
+    }
+
+    void resetPublicKey() {
+      RSA *r = rsa;
+      if (evpPopulated) {
+        r = evp->pkey.rsa;
+      }
+      int length = i2d_RSA_PUBKEY(r, 0);
+      if (length) {
+        unsigned char *der = (unsigned char*)malloc(length);
+        // openssl will advances this pointer after populating
+        unsigned char *start = der;
+        i2d_RSA_PUBKEY(r, &der);
+        std::vector<unsigned char> v;
+        for (int i = 0; i < length; i ++) {
+          v.push_back(start[i]);
+        }
+        free(start);
+        publicKey.reset(RsaPublicKey::fromDer(v));
+      }
+
     }
 
     void createKey(const unsigned int bits) {
@@ -42,6 +66,7 @@ class RsaKey::Impl {
       }
       BN_free(bne);
       this->bits = bits;
+      resetPublicKey();
     }
 
     void fromPem(const std::string pem, const std::string passphrase) {
@@ -55,6 +80,7 @@ class RsaKey::Impl {
       if (ret) {
         evpPopulated = true;
         bits = BN_num_bits(evp->pkey.rsa->n);
+        resetPublicKey();
       }
     }
 
@@ -77,6 +103,7 @@ class RsaKey::Impl {
         if (ret) {
           evpPopulated = true;
           bits = BN_num_bits(evp->pkey.rsa->n);
+          resetPublicKey();
         }
       }
     }
@@ -139,7 +166,7 @@ const std::string RsaKey::toPem(const std::string passphrase) const {
   }
 
   while (ret) {
-    unsigned char buff[1024];
+    unsigned char buff[1025];
     int ret = BIO_read(mem, buff, 1024);
     if (ret > 0) {
       buff[ret] = 0;
@@ -184,6 +211,8 @@ const std::vector<unsigned char> RsaKey::toDer(const std::string passphrase) con
   return retval;
 }
 
-
+const RsaPublicKey& RsaKey::publicKey() const {
+  return *impl->publicKey.get();
+}
 
 } // namespace Erpiko

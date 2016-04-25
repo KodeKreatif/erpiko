@@ -2,7 +2,9 @@
 #include "catch.hpp"
 
 #include "erpiko/utils.h"
-#include "erpiko/key.h"
+#include "erpiko/bigint.h"
+#include "erpiko/rsakey.h"
+#include "erpiko/rsakey-public.h"
 
 namespace Erpiko {
 SCENARIO("Keys can be created") {
@@ -81,6 +83,26 @@ SCENARIO("Keys can be created") {
         THEN("Key is not importable with wrong password") {
           RsaKey* import = RsaKey::fromDer(der, "wrong");
           REQUIRE(import == nullptr);
+        }
+      }
+    }
+  }
+
+  GIVEN("A newly created key pair") {
+    RsaKey* pair = RsaKey::create(1024);
+    THEN("Key is correctly initialized") {
+      REQUIRE(pair->bits() == 1024);
+      THEN("Gets the exposed public key ") {
+        const RsaPublicKey& pub = pair->publicKey();
+        auto pem = pub.toPem();
+        auto pub2 = RsaPublicKey::fromPem(pem);
+        THEN("The internal data must be the same") {
+          const BigInt& exp1 = pub.exponent();
+          const BigInt& exp2 = pub2->exponent();
+          REQUIRE(exp1 == exp2);
+          const BigInt& mod1 = pub.modulus();
+          const BigInt& mod2 = pub2->modulus();
+          REQUIRE(mod1 == mod2);
         }
       }
     }
