@@ -3,6 +3,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace Erpiko {
 
@@ -15,15 +16,30 @@ class Identity {
     Identity();
     virtual ~Identity();
 
-    std::string commonName;
-    std::string localityName;
-    std::string stateOrProvinceName;
-    std::string organizationName;
-    std::string organizationalUnitName;
-    std::string countryName;
-    std::string streetAddress;
-    std::string domainComponent ;
-    std::string userId;
+    /**
+     * Operator ==
+     **/
+    bool operator== (const Identity& other) const;
+
+    /**
+     * Gets DER representation of the Identity
+     * @return vector containing the DER data
+     */
+    const std::vector<unsigned char> toDer() const;
+
+    /**
+     * Gets a value under the specified key name
+     * @param name the key name
+     * @return string value of the key
+     */
+    const std::string get(const std::string name) const;
+
+    /**
+     * Sets the value of the key as specified.
+     * @param name the key name
+     * @param value the value of the key
+     */
+    void set(const std::string name, const std::string value);
 
   private:
     class Impl;
