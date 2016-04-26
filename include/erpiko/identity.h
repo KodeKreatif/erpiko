@@ -17,6 +17,12 @@ class Identity {
     virtual ~Identity();
 
     /**
+     * Creates a new instance of Identity from DER
+     * @param der the data in DER format
+     */
+    static Identity* fromDer(const std::vector<unsigned char> der);
+
+    /**
      * Operator ==
      **/
     bool operator== (const Identity& other) const;

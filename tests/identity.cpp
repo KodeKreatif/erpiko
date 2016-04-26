@@ -53,6 +53,22 @@ SCENARIO("Further identity test") {
     }
   }
 
+  GIVEN("A new Identity") {
+    Identity* id = new Identity();
+    id->set("commonName", "abc");
+    auto v = id->toDer();
+    auto s = Utils::hexString(v);
+    REQUIRE(s == "300e310c300a06035504030c03616263");
+    THEN("Create another Identity using the DER data") {
+      Identity* id2 = Identity::fromDer(v);
+      THEN("Both identities must match") {
+        REQUIRE(*id == *id2);
+      }
+    }
+  }
+
+
+
 }
 
 

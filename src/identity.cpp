@@ -94,8 +94,14 @@ const std::vector<unsigned char> Identity::toDer() const {
     free(start);
   }
   return retval;
+}
 
+Identity* Identity::fromDer(const std::vector<unsigned char> der) {
+  auto i = new Identity();
 
+  const unsigned char *data = der.data();
+  d2i_X509_NAME(&i->impl->name, &data, der.size());
+  return i;
 }
 
 } // namespace Erpiko
