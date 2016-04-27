@@ -1,4 +1,5 @@
 #include "erpiko/identity.h"
+#include "converters.h"
 #include <string.h>
 #include <openssl/x509.h>
 #include <iostream>
@@ -81,19 +82,7 @@ void Identity::set(const std::string name, const std::string value) {
 }
 
 const std::vector<unsigned char> Identity::toDer() const {
-  std::vector<unsigned char> retval;
-
-  auto length = i2d_X509_NAME(impl->name, 0);
-  if (length) {
-    unsigned char *der = (unsigned char*)malloc(length);
-    unsigned char *start = der;
-    i2d_X509_NAME(impl->name, &der);
-    for (int i = 0; i < length; i ++) {
-      retval.push_back(start[i]);
-    }
-    free(start);
-  }
-  return retval;
+  return Converters::nameToIdentityDer(impl->name);
 }
 
 Identity* Identity::fromDer(const std::vector<unsigned char> der) {
