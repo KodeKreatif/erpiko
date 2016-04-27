@@ -1,6 +1,7 @@
 #include "erpiko/rsakey.h"
 #include "erpiko/rsakey-public.h"
 #include "erpiko/utils.h"
+#include "converters.h"
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/bio.h>
@@ -36,20 +37,8 @@ class RsaKey::Impl {
       if (evpPopulated) {
         r = evp->pkey.rsa;
       }
-      int length = i2d_RSA_PUBKEY(r, 0);
-      if (length) {
-        unsigned char *der = (unsigned char*)malloc(length);
-        // openssl will advances this pointer after populating
-        unsigned char *start = der;
-        i2d_RSA_PUBKEY(r, &der);
-        std::vector<unsigned char> v;
-        for (int i = 0; i < length; i ++) {
-          v.push_back(start[i]);
-        }
-        free(start);
-        publicKey.reset(RsaPublicKey::fromDer(v));
-      }
-
+      auto der = Converters::rsaToPublicKeyDer(r);
+      publicKey.reset(RsaPublicKey::fromDer(der));
     }
 
     void createKey(const unsigned int bits) {
