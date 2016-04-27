@@ -197,4 +197,21 @@ bool Time::inRange(const Time& notBefore, const Time& notAfter) const {
   return (now >= eBefore && now < eAfter);
 }
 
+void Time::operator=(const Time& other) {
+  impl->timeData.tm_year = other.impl->timeData.tm_year;
+  impl->timeData.tm_mon = other.impl->timeData.tm_mon;
+  impl->timeData.tm_mday = other.impl->timeData.tm_mday;
+  impl->timeData.tm_hour = other.impl->timeData.tm_hour;
+  impl->timeData.tm_min = other.impl->timeData.tm_min;
+  impl->timeData.tm_sec = other.impl->timeData.tm_sec;
+}
+
+bool Time::operator==(const Time& other) const {
+  auto eOther = mktime(&other.impl->timeData);
+  auto now = mktime(&impl->timeData);
+
+  return (now == eOther);
+}
+
+
 } // namespace Erpiko

@@ -98,6 +98,16 @@ class Time {
      */
     bool inRange(const Time& notBefore, const Time& notAfter) const;
 
+    /**
+     * Operator =
+     */
+    void operator=(const Time &other);
+
+    /**
+     * Operator ==
+     */
+    bool operator==(const Time &other) const;
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

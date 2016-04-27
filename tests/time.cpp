@@ -248,4 +248,21 @@ SCENARIO("In range") {
 
 }
 
+SCENARIO("Assignment") {
+  GIVEN("Two different Times") {
+    Time t1("800212345621Z");
+    Time t2("800212345620Z");
+    THEN("They are different") {
+      REQUIRE_FALSE(t1 == t2);
+      GIVEN("One is assigned to another") {
+        t1 = t2;
+        THEN("They are now the same") {
+          REQUIRE(t1 == t2);
+        }
+      }
+    }
+  }
+}
+
+
 } //namespace Erpiko
