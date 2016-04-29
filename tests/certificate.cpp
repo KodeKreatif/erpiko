@@ -68,7 +68,7 @@ SCENARIO("Import certificate from DER test") {
 
         const std::vector<unsigned char>& ski = cert->subjectKeyIdentifier();
         auto s = Utils::hexString(ski);
-//        REQUIRE(s == "1");
+        REQUIRE(s == "47da867838ffc5bd44428fb0e18ad051051b27c30000");
 
       }
     }

@@ -3,6 +3,7 @@
 #include <openssl/x509.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
+#include <openssl/objects.h>
 #include <iostream>
 
 namespace Erpiko {
@@ -112,18 +113,20 @@ class Certificate::Impl {
     }
 
     void resetSKI() {
-      if (!x509->skid) {
-        return;
-      }
+      auto pos = X509_get_ext_by_NID(x509, NID_subject_key_identifier, 0);
+      if (pos < 0) return;
 
-      ASN1_STRING* skid = (ASN1_STRING*) x509->skid;
-      auto ski = (char*) ASN1_STRING_data(skid);
-      if (!ski) {
-        return;
-      }
+      auto ext = X509_get_ext(x509, pos);
+      auto length = ASN1_STRING_length((ASN1_STRING*) ext->value);
+
+      const unsigned char* skid = ext->value->data;
+      long xlen;
+      int tag, xclass;
+      ASN1_get_object(&skid, &xlen, &tag, &xclass, length);
+
       subjectKeyIdentifier.clear();
-      for (int i = 0; i < ASN1_STRING_length(skid); i ++) {
-        subjectKeyIdentifier.push_back(ski[i]);
+      for (int i = 0; i < length; i ++) {
+        subjectKeyIdentifier.push_back(skid[i]);
       }
 
     }
