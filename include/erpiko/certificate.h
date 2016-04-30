@@ -105,6 +105,10 @@ class Certificate {
      */
     const Time& notAfter() const;
 
+    /**
+     * Gets the certificate extensions
+     * @return the vector containing the list of extension's pointers
+     */
     const std::vector<const CertificateExtension*>& extensions() const;
 
   private:

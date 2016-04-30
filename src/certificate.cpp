@@ -207,8 +207,9 @@ class CertificateSubjectKeyIdentifierExtension::Impl {
   public:
     std::vector<unsigned char> subjectKeyIdentifier;
     std::unique_ptr<ObjectId> oid;
+    bool critical;
 
-    Impl(const std::vector<unsigned char> der) : oid{std::make_unique<ObjectId>("2.5.29.14")} {
+    Impl(const bool critical, const std::vector<unsigned char> der) : critical(critical), oid{std::make_unique<ObjectId>("2.5.29.14")} {
       long xlen;
       int tag, xclass;
       const unsigned char* skid = (const unsigned char*) der.data();
@@ -236,5 +237,10 @@ const std::vector<unsigned char> CertificateSubjectKeyIdentifierExtension::value
 const ObjectId& CertificateSubjectKeyIdentifierExtension::objectId() const {
   return *impl->oid.get();
 }
+
+const ObjectId& CertificateSubjectKeyIdentifierExtension::objectId() const {
+  return *impl->oid.get();
+}
+
 
 } // namespace Erpiko
