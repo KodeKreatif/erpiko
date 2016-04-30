@@ -8,7 +8,8 @@ SCENARIO("Basic oid test") {
   GIVEN("A new oid") {
     ObjectId* oid = new ObjectId("2.5.4.3");
     THEN("It must be representable with a string") {
-      REQUIRE(oid->toString() == "commonName");
+      REQUIRE(oid->humanize() == "commonName");
+      REQUIRE(oid->toString() == "2.5.4.3");
     }
   }
 
@@ -23,11 +24,11 @@ SCENARIO("Basic oid test") {
 
   GIVEN("A new oid") {
     ObjectId* oid = new ObjectId("2.5.4.3");
-    REQUIRE(oid->toString() == "commonName");
+    REQUIRE(oid->humanize() == "commonName");
     THEN("It must be assignable from another oid") {
       ObjectId* oid2 = new ObjectId("2.5.4.7");
       *oid = *oid2;
-      REQUIRE(oid->toString() == "localityName");
+      REQUIRE(oid->humanize() == "localityName");
     }
   }
 }

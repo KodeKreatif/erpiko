@@ -7,7 +7,8 @@ class ObjectId::Impl {
 
   public:
     ASN1_OBJECT *obj = nullptr;
-    Impl(const std::string fromString) {
+    std::string string;
+    Impl(const std::string fromString) : string(fromString) {
       obj = OBJ_txt2obj(fromString.c_str(), 0);
     }
 
@@ -24,7 +25,11 @@ ObjectId::ObjectId(const std::string fromString) : impl{std::make_unique<Impl>(f
 
 ObjectId::~ObjectId() = default;
 
-const std::string ObjectId::toString() {
+const std::string ObjectId::toString() const {
+  return impl->string;
+}
+
+const std::string ObjectId::humanize() const {
   unsigned char buffer[1024];
   int ret = OBJ_obj2txt((char*) buffer, 1024, impl->obj, 0);
   if (ret) {

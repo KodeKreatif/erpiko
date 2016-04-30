@@ -19,9 +19,16 @@ class ObjectId {
     virtual ~ObjectId();
 
     /**
-     * Get string representation of the object
+     * Gets string representation of the object
+     * @return string representation
      */
-    const std::string toString();
+    const std::string toString() const;
+
+    /**
+     * Gets string representation of the object which we human is familiar with
+     * @return string representation
+     */
+    const std::string humanize() const;
 
     /**
      * Operator ==
