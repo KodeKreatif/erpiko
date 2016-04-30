@@ -46,5 +46,35 @@ class CertificateSubjectKeyIdentifierExtension : public CertificateExtension {
 
 };
 
+/**
+ * Basic Constraints certificate extension
+ */
+class CertificateBasicConstraintsExtension : public CertificateExtension {
+  friend class Certificate;
+  public:
+    /**
+     * Gets the information whether the subject certificate is a CA certificate or not
+     * @return whether the subject certificate is CA
+     */
+    bool isCa() const;
+
+    /**
+     * Gets the maximum validation path
+     * @return the maximum validation path
+     */
+    unsigned int pathLengthConstraints() const;
+
+    virtual const ObjectId& objectId() const;
+    virtual bool critical() const;
+  private:
+    CertificateBasicConstraintsExtension(const bool critical, std::vector<unsigned char> der);
+    class Impl;
+    std::unique_ptr<Impl> impl;
+
+};
+
+
+
+
 } // namespace Erpiko
 #endif // _CERTIFICATE_EXTENSION_H_

@@ -242,5 +242,49 @@ bool CertificateSubjectKeyIdentifierExtension::critical() const {
   return impl->critical;
 }
 
+//-------------------
+class CertificateBasicConstraintsExtension::Impl {
+  public:
+    bool critical;
+    std::unique_ptr<ObjectId> oid;
+    bool isCa;
+    unsigned int pathLengthConstraints;
+
+    Impl(const bool critical, const std::vector<unsigned char> der) : critical(critical), oid{std::make_unique<ObjectId>("2.5.29.14")} {
+      const unsigned char* raw = der.data();
+      auto b = d2i_BASIC_CONSTRAINTS(0, &raw, der.size());
+      isCa = b->ca;
+      pathLengthConstraints = ASN1_INTEGER_get(b->pathlen);
+
+    }
+
+    virtual ~Impl() {
+
+    }
+};
+
+
+CertificateBasicConstraintsExtension::CertificateBasicConstraintsExtension(const bool critical, const std::vector<unsigned char> der) : impl{std::make_unique<Impl>(critical, der)} {
+}
+
+const ObjectId& CertificateBasicConstraintsExtension::objectId() const {
+  return *impl->oid.get();
+}
+
+bool CertificateBasicConstraintsExtension::critical() const {
+  return impl->critical;
+}
+
+bool CertificateBasicConstraintsExtension::isCa() const {
+  return impl->isCa;
+}
+
+unsigned int CertificateBasicConstraintsExtension::pathLengthConstraints() const {
+  return impl->pathLengthConstraints;
+}
+
+
+
+
 
 } // namespace Erpiko

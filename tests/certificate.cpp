@@ -79,6 +79,13 @@ SCENARIO("Import certificate from DER test") {
             REQUIRE(skid.critical() == false);
             allExtsInspected++;
           }
+          else if (ext->objectId().toString() == "2.5.29.19") {
+            const CertificateBasicConstraintsExtension& skid = dynamic_cast<const CertificateBasicConstraintsExtension&>(*ext);
+            REQUIRE(skid.isCa() == false);
+            REQUIRE(skid.pathLengthConstraints() == 0);
+            allExtsInspected++;
+          }
+
         }
         REQUIRE(allExtsInspected == 1);
 
