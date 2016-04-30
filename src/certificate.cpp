@@ -137,7 +137,7 @@ class Certificate::Impl {
           });
 
       std::unique_ptr<CertificateExtension> c;
-      c.reset(new CertificateSubjectKeyIdentifierExtension(skid));
+      c.reset(new CertificateSubjectKeyIdentifierExtension((ext->critical != -1), skid));
       extensions.push_back(std::move(c));
     }
 
@@ -206,8 +206,8 @@ const std::vector<const CertificateExtension*>& Certificate::extensions() const 
 class CertificateSubjectKeyIdentifierExtension::Impl {
   public:
     std::vector<unsigned char> subjectKeyIdentifier;
-    std::unique_ptr<ObjectId> oid;
     bool critical;
+    std::unique_ptr<ObjectId> oid;
 
     Impl(const bool critical, const std::vector<unsigned char> der) : critical(critical), oid{std::make_unique<ObjectId>("2.5.29.14")} {
       long xlen;
@@ -227,7 +227,7 @@ class CertificateSubjectKeyIdentifierExtension::Impl {
 };
 
 
-CertificateSubjectKeyIdentifierExtension::CertificateSubjectKeyIdentifierExtension(const std::vector<unsigned char> der) : impl{std::make_unique<Impl>(der)} {
+CertificateSubjectKeyIdentifierExtension::CertificateSubjectKeyIdentifierExtension(const bool critical, const std::vector<unsigned char> der) : impl{std::make_unique<Impl>(critical, der)} {
 }
 
 const std::vector<unsigned char> CertificateSubjectKeyIdentifierExtension::value() const {
@@ -238,8 +238,8 @@ const ObjectId& CertificateSubjectKeyIdentifierExtension::objectId() const {
   return *impl->oid.get();
 }
 
-const ObjectId& CertificateSubjectKeyIdentifierExtension::objectId() const {
-  return *impl->oid.get();
+bool CertificateSubjectKeyIdentifierExtension::critical() const {
+  return impl->critical;
 }
 
 

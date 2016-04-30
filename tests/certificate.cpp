@@ -76,6 +76,7 @@ SCENARIO("Import certificate from DER test") {
             const CertificateSubjectKeyIdentifierExtension& skid = dynamic_cast<const CertificateSubjectKeyIdentifierExtension&>(*ext);
             auto s = Utils::hexString(skid.value());
             REQUIRE(s == "47da867838ffc5bd44428fb0e18ad051051b27c3");
+            REQUIRE(skid.critical() == false);
             allExtsInspected++;
           }
         }
