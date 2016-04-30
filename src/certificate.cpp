@@ -1,10 +1,14 @@
+#include "erpiko/utils.h"
 #include "erpiko/certificate.h"
+#include "erpiko/certificate-extension.h"
 #include "converters.h"
 #include <openssl/x509.h>
 #include <openssl/err.h>
 #include <openssl/x509v3.h>
 #include <openssl/objects.h>
+#include <string.h>
 #include <iostream>
+#include <algorithm>
 
 namespace Erpiko {
 
@@ -15,7 +19,9 @@ class Certificate::Impl {
     std::unique_ptr<Identity> subjectIdentity;
     std::unique_ptr<Identity> issuerIdentity;
     std::unique_ptr<RsaPublicKey> publicKey;
-    std::vector<unsigned char> subjectKeyIdentifier;
+    std::vector<std::unique_ptr<CertificateExtension>> extensions;
+    std::vector<const CertificateExtension*> extensionPointers;
+
     BigInt serialNumber;
     Time notBefore;
     Time notAfter;
@@ -46,7 +52,7 @@ class Certificate::Impl {
       resetPublicKey();
       resetValidity();
       resetSerialNumber();
-      resetSKI();
+      resetExtensions();
     }
 
     void resetSubjectIdentity() {
@@ -112,23 +118,27 @@ class Certificate::Impl {
 
     }
 
-    void resetSKI() {
+    void resetExtensions() {
+      extensions.clear();
+      resetSKID();
+    }
+
+    void resetSKID() {
       auto pos = X509_get_ext_by_NID(x509, NID_subject_key_identifier, 0);
       if (pos < 0) return;
 
       auto ext = X509_get_ext(x509, pos);
       auto length = ASN1_STRING_length((ASN1_STRING*) ext->value);
+      std::vector<unsigned char> skid(length);
+      std::transform(ext->value->data, ext->value->data + length, skid.begin(),
+          [](char c)
+          {
+          return static_cast<unsigned char>(c);
+          });
 
-      const unsigned char* skid = ext->value->data;
-      long xlen;
-      int tag, xclass;
-      ASN1_get_object(&skid, &xlen, &tag, &xclass, length);
-
-      subjectKeyIdentifier.clear();
-      for (int i = 0; i < length; i ++) {
-        subjectKeyIdentifier.push_back(skid[i]);
-      }
-
+      std::unique_ptr<CertificateExtension> c;
+      c.reset(new CertificateSubjectKeyIdentifierExtension(skid));
+      extensions.push_back(std::move(c));
     }
 
 };
@@ -183,8 +193,48 @@ Certificate* Certificate::fromDer(const std::vector<unsigned char> der) {
   return cert;
 }
 
+const std::vector<const CertificateExtension*>& Certificate::extensions() const {
+  impl->extensionPointers.clear();
+  for (unsigned int i = 0; i < impl->extensions.size(); i ++) {
+    impl->extensionPointers.push_back(impl->extensions.at(i).get());
+  }
+  return impl->extensionPointers;
+}
 
-const std::vector<unsigned char>& Certificate::subjectKeyIdentifier() {
+// CertificateExtensions -----------------------------------------------------
+
+class CertificateSubjectKeyIdentifierExtension::Impl {
+  public:
+    std::vector<unsigned char> subjectKeyIdentifier;
+    std::unique_ptr<ObjectId> oid;
+
+    Impl(const std::vector<unsigned char> der) : oid{std::make_unique<ObjectId>("2.5.29.14")} {
+      long xlen;
+      int tag, xclass;
+      const unsigned char* skid = (const unsigned char*) der.data();
+      ASN1_get_object(&skid, &xlen, &tag, &xclass, der.size());
+
+      subjectKeyIdentifier.clear();
+      for (int i = 0; i < xlen; i ++) {
+        subjectKeyIdentifier.push_back(skid[i]);
+      }
+    }
+
+    virtual ~Impl() {
+
+    }
+};
+
+
+CertificateSubjectKeyIdentifierExtension::CertificateSubjectKeyIdentifierExtension(const std::vector<unsigned char> der) : impl{std::make_unique<Impl>(der)} {
+}
+
+const std::vector<unsigned char> CertificateSubjectKeyIdentifierExtension::value() const {
   return impl->subjectKeyIdentifier;
 }
+
+const ObjectId& CertificateSubjectKeyIdentifierExtension::objectId() const {
+  return *impl->oid.get();
+}
+
 } // namespace Erpiko

@@ -2,6 +2,7 @@
 #include "catch.hpp"
 
 #include "erpiko/certificate.h"
+#include "erpiko/certificate-extension.h"
 #include "erpiko/data-source.h"
 #include "erpiko/utils.h"
 #include <iostream>
@@ -66,9 +67,19 @@ SCENARIO("Import certificate from DER test") {
         REQUIRE(issuerIdentity.get("localityName") == "Jakarta Pusat");
         REQUIRE(issuerIdentity.get("emailAddress") == "cert@sertifikat.id");
 
-        const std::vector<unsigned char>& ski = cert->subjectKeyIdentifier();
-        auto s = Utils::hexString(ski);
-        REQUIRE(s == "47da867838ffc5bd44428fb0e18ad051051b27c30000");
+        int numExts = cert->extensions().size();
+        REQUIRE(numExts > 0);
+        int allExtsInspected = 0;
+        for (int i = 0; i < numExts; i ++) {
+          const CertificateExtension* ext = cert->extensions().at(i);
+          if (ext->objectId().toString() == "2.5.29.14") {
+            const CertificateSubjectKeyIdentifierExtension& skid = dynamic_cast<const CertificateSubjectKeyIdentifierExtension&>(*ext);
+            auto s = Utils::hexString(skid.value());
+            REQUIRE(s == "47da867838ffc5bd44428fb0e18ad051051b27c3");
+            allExtsInspected++;
+          }
+        }
+        REQUIRE(allExtsInspected == 1);
 
       }
     }

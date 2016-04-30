@@ -43,6 +43,7 @@ namespace Erpiko {
  * X509 certificate
  */
 
+class CertificateExtension;
 class Certificate {
   public:
     Certificate();
@@ -104,11 +105,7 @@ class Certificate {
      */
     const Time& notAfter() const;
 
-    /**
-     * Gets the subject key identifier
-     * @return Reference to the subject key identifier
-     */
-    const std::vector<unsigned char>& subjectKeyIdentifier();
+    const std::vector<const CertificateExtension*>& extensions() const;
 
   private:
     class Impl;
