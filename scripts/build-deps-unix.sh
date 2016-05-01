@@ -5,11 +5,10 @@ if [ ! -d deps ];then
 fi
 TOP=`pwd`
 
-
 # LibreSSL
 cd deps
 rm -rf portable-master
-wget https://github.com/libressl-portable/portable/archive/master.zip
+wget -O master.zip https://github.com/libressl-portable/portable/archive/master.zip
 unzip master.zip
 cd portable-master
 ./autogen.sh
