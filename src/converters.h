@@ -4,6 +4,9 @@
 #include "erpiko/identity.h"
 #include "erpiko/bigint.h"
 
+#include <openssl/pem.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
@@ -51,6 +54,35 @@ namespace Converters {
 
     return v;
   }
+
+  inline const std::vector<unsigned char> rsaKeyToDer(EVP_PKEY *pkey, const std::string passphrase) {
+    std::vector<unsigned char> retval;
+    int ret;
+    BIO* mem = BIO_new(BIO_s_mem());
+
+    if (passphrase == "") {
+      ret = i2d_PKCS8PrivateKey_bio(mem, pkey, NULL, NULL, 0, 0, NULL);
+    } else {
+      ret = i2d_PKCS8PrivateKey_bio(mem, pkey, EVP_aes_256_cbc(), const_cast<char*>(passphrase.c_str()), passphrase.length(), 0, NULL);
+    }
+
+    while (ret) {
+      unsigned char buff[1024];
+      int ret = BIO_read(mem, buff, 1024);
+      if (ret > 0) {
+        for (int i = 0; i < ret; i ++) {
+          retval.push_back(buff[i]);
+        }
+      } else {
+        break;
+      }
+    }
+    BIO_free(mem);
+
+    return retval;
+  }
+
+
 
 } // namespace Converters
 } // namespace Erpiko

@@ -171,33 +171,13 @@ const std::string RsaKey::toPem(const std::string passphrase) const {
 }
 
 const std::vector<unsigned char> RsaKey::toDer(const std::string passphrase) const {
-  std::vector<unsigned char> retval;
-  int ret;
-  BIO* mem = BIO_new(BIO_s_mem());
 
   if (impl->evpPopulated == false) {
     EVP_PKEY_set1_RSA(impl->evp, impl->rsa);
   }
-  if (passphrase == "") {
-     ret = i2d_PKCS8PrivateKey_bio(mem, impl->evp, NULL, NULL, 0, 0, NULL);
-  } else {
-     ret = i2d_PKCS8PrivateKey_bio(mem, impl->evp, EVP_aes_256_cbc(), const_cast<char*>(passphrase.c_str()), passphrase.length(), 0, NULL);
-  }
 
-  while (ret) {
-    unsigned char buff[1024];
-    int ret = BIO_read(mem, buff, 1024);
-    if (ret > 0) {
-      for (int i = 0; i < ret; i ++) {
-        retval.push_back(buff[i]);
-      }
-    } else {
-      break;
-    }
-  }
-  BIO_free(mem);
+  return Converters::rsaKeyToDer(impl->evp, passphrase);
 
-  return retval;
 }
 
 const RsaPublicKey& RsaKey::publicKey() const {
