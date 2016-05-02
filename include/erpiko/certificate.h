@@ -57,6 +57,12 @@ class Certificate {
     static Certificate* fromDer(const std::vector<unsigned char> der);
 
     /**
+     * Exports the certificate to DER format
+     * @return vector containing DER
+     */
+    const std::vector<unsigned char> toDer() const;
+
+    /**
      * Gets the identity of the subject
      * @return identity of the subject
      */

@@ -95,8 +95,28 @@ SCENARIO("Import certificate from DER test") {
 
 }
 
-
-
+SCENARIO("Export certificate test") {
+  GIVEN("A DER certificate") {
+    DataSource* src = DataSource::fromFile("assets/crt1.der");
+    THEN("The file is opened") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      Certificate* cert = Certificate::fromDer(v);
+      delete(src);
+      THEN("Export it again to DER") {
+        auto der = cert->toDer();
+        REQUIRE(der.size() > 0);
+        THEN("Import again") {
+          auto cert2 = Certificate::fromDer(der);
+          REQUIRE_FALSE(cert2 == nullptr);
+          THEN("Both certs must be the same") {
+            REQUIRE(cert2->serialNumber() == cert->serialNumber());
+          }
+        }
+      }
+    }
+  }
+}
 
 
 } //namespace Erpiko
