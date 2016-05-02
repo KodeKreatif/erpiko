@@ -1,0 +1,4 @@
+openssl genrsa -out private.key 4096
+openssl req -new -key private.key -sha256 -nodes  -subj '/C=US/ST=New York/L=New York/O=End Point/OU=Hosting Team/CN=www.endpoint.com/emailAddress=administrative-not-existent-address@our-awesome-domain.com/subjectAltName=DNS.1=endpoint.com,DNS.2=usually-not-convered-domain.endpoint.com,DNS.3=multiple-domains-crt.endpoint.com' > csr1.pem
+openssl x509 -req -days 365 -in csr1.pem -signkey private.key -out cert.pem
+
