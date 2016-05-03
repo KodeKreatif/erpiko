@@ -7,7 +7,7 @@ job_build:
     - cat /etc/debian_version
     - apt-get update
     - apt-get install -y unzip cmake
-    - ./scripts/build-deps-linux.sh
+    - ./scripts/build-deps-unix.sh
     - ./scripts/build.sh
     - cd build
     - make test
