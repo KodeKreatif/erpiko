@@ -107,6 +107,5 @@ SCENARIO("Keys can be created") {
       }
     }
   }
-
 }
 } // namespace Erpiko
