@@ -92,7 +92,47 @@ SCENARIO("Import certificate from DER test") {
       }
     }
   }
+}
 
+SCENARIO("Import certificate from PEM test") {
+  GIVEN("A PEM certificate") {
+    DataSource* src = DataSource::fromFile("assets/cert.pem");
+    THEN("The file is opened") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      std::string pem(v.begin(),v.end());
+      Certificate* cert = Certificate::fromPem(pem);
+      delete(src);
+      THEN("There is nothing wrong") {
+        REQUIRE_FALSE(cert == nullptr);
+        delete(cert);
+        cert = nullptr;
+        REQUIRE(cert == nullptr);
+      }
+    }
+  }
+
+  GIVEN("A PEM certificate") {
+    DataSource* src = DataSource::fromFile("assets/cert.pem");
+    THEN("The file is opened") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      std::string pem(v.begin(),v.end());
+      Certificate* cert = Certificate::fromPem(pem);
+      delete(src);
+      THEN("There cert can be queried") {
+        REQUIRE("170501012102Z" == cert->notAfter().toString());
+        REQUIRE("160501012102Z" == cert->notBefore().toString());
+        REQUIRE("F1B40E1F1590B6A4" == cert->serialNumber().toHexString());
+        const Identity& subjectIdentity = cert->subjectIdentity();
+        const Identity& issuerIdentity = cert->issuerIdentity();
+
+        REQUIRE(subjectIdentity.get("commonName") == "www.endpoint.com");
+
+        REQUIRE(issuerIdentity.get("commonName") == "www.endpoint.com");
+      }
+    }
+  }
 }
 
 SCENARIO("Export certificate test") {

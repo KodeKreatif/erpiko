@@ -41,6 +41,15 @@ class Certificate::Impl {
       }
     }
 
+    void fromPem(const std::string pem) {
+      BIO* mem = BIO_new_mem_buf((void*) pem.c_str(), pem.length());
+      auto ret = PEM_read_bio_X509(mem, &x509, NULL, NULL);
+      if (ret) {
+        success = true;
+        resetValues();
+      }
+    }
+
     virtual ~Impl() {
       X509_free(x509);
       x509 = nullptr;
@@ -192,6 +201,20 @@ Certificate* Certificate::fromDer(const std::vector<unsigned char> der) {
 
   return cert;
 }
+
+Certificate* Certificate::fromPem(const std::string pem) {
+  Certificate* cert = new Certificate();
+  cert->impl->fromPem(pem);
+
+  if (cert->impl->success == false) {
+    delete(cert);
+    return nullptr;
+  }
+
+  return cert;
+}
+
+
 
 const std::vector<unsigned char> Certificate::toDer() const {
   return Converters::certificateToDer(impl->x509);

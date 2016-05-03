@@ -57,6 +57,13 @@ class Certificate {
     static Certificate* fromDer(const std::vector<unsigned char> der);
 
     /**
+     * Creates a new Certificate from PEM data
+     * @param pem PEM data
+     * @return Certificate
+     */
+    static Certificate* fromPem(const std::string pem);
+
+    /**
      * Exports the certificate to DER format
      * @return vector containing DER
      */
