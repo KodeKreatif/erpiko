@@ -3,6 +3,9 @@ stages:
 
 job_build:
   stage: build
+  artifacts:
+    path:
+      build/liberpiko.linux.tar.xz
   script:
     - cat /etc/debian_version
     - apt-get update
@@ -10,5 +13,17 @@ job_build:
     - ./scripts/build-deps-unix.sh
     - ./scripts/build.sh
     - cd build
-    - make test
+    - make
+    - cd tests
+    - ./testbase
+    - ./testcertificate
+    - ./testkey
+    - ./testdata
+    - cd ..
+    - cp -a ../include .
+    - cp src/liberpiko.a .
+    - tar cJf liberpiko.linux.tar.xz include liberpiko.a
+    - eval $(ssh-agent -s)
+    - ssh-add <(echo "$SSH_PRIVATE_KEY")
+    - scp -o StrictHostKeyChecking=no -P2102 liberpiko.linux.tar.xz deploy@202.154.58.131:repo
 
