@@ -12,12 +12,14 @@ wget -O master.zip https://github.com/libressl-portable/portable/archive/master.
 unzip master.zip
 cd portable-master
 ./autogen.sh
+patch -p0 < $TOP/patch/cmp.patch
 mkdir ../libressl
 cd ../libressl
 ../portable-master/configure --enable-static
 make -j$NUMJOBS
 cp -a ../portable-master/include .
 cd $TOP
+
 
 # Catch
 cd deps
