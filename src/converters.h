@@ -3,6 +3,7 @@
 #include "erpiko/certificate.h"
 #include "erpiko/identity.h"
 #include "erpiko/bigint.h"
+#include "erpiko/rsakey.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -128,8 +129,19 @@ namespace Converters {
     return retval;
   }
 
+  inline EVP_PKEY* rsaKeyToPkey(const RsaKey& key) {
+    EVP_PKEY* pkey = nullptr;
+    auto der = key.toDer();
+    BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
+    PKCS8_PRIV_KEY_INFO *p8inf;
+    p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
 
-
+    if (p8inf) {
+      pkey = EVP_PKCS82PKEY(p8inf);
+      PKCS8_PRIV_KEY_INFO_free(p8inf);
+    }
+    return pkey;
+  }
 
 } // namespace Converters
 } // namespace Erpiko
