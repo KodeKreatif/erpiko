@@ -14690,7 +14690,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_ENCKEYWITHID_IDENTIFIER_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = V_ASN1_SEQUENCE,
++	.utype = offsetof(CRMF_ENCKEYWITHID_IDENTIFIER, type),
 +	.templates = CRMF_ENCKEYWITHID_IDENTIFIER_ch_tt,
 +	.tcount = sizeof(CRMF_ENCKEYWITHID_IDENTIFIER_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
@@ -14931,7 +14931,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_ENCRYPTEDKEY_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = V_ASN1_SEQUENCE,
++	.utype = offsetof(CRMF_ENCRYPTEDKEY, type),
 +	.templates = CRMF_ENCRYPTEDKEY_ch_tt,
 +	.tcount = sizeof(CRMF_ENCRYPTEDKEY_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
@@ -14991,7 +14991,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_PKIARCHIVEOPTIONS_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = V_ASN1_SEQUENCE,
++	.utype = offsetof(CRMF_PKIARCHIVEOPTIONS, type),
 +	.templates = CRMF_PKIARCHIVEOPTIONS_ch_tt,
 +	.tcount = sizeof(CRMF_PKIARCHIVEOPTIONS_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
@@ -15235,7 +15235,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_POPOPRIVKEY_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = V_ASN1_SEQUENCE,
++	.utype = offsetof(CRMF_POPOPRIVKEY, type),
 +	.templates = CRMF_POPOPRIVKEY_ch_tt,
 +	.tcount = sizeof(CRMF_POPOPRIVKEY_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
@@ -15352,7 +15352,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_POPOSIGNINGKEYINPUT_AUTHINFO_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = V_ASN1_SEQUENCE,
++	.utype = offsetof(CRMF_POPOPSIGNINGKEYINPUT_AUTHINFO, type),
 +	.templates = CRMF_POPOSIGNINGKEYINPUT_AUTHINFO_ch_tt,
 +	.tcount = sizeof(CRMF_POPOSIGNINGKEYINPUT_AUTHINFO_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
@@ -15532,7 +15532,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_PROOFOFPOSSESION_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = V_ASN1_SEQUENCE,
++	.utype = offsetof(CRMF_PROOFOFPOSSESION, type),
 +	.templates = CRMF_PROOFOFPOSSESION_ch_tt,
 +	.tcount = sizeof(CRMF_PROOFOFPOSSESION_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
@@ -16021,20 +16021,20 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +	ASN1_item_free((ASN1_VALUE *)a, &CRMF_CERTREQMSG_it);
 +}
 +
-+static const ASN1_TEMPLATE CRMF_CERTREQMESSAGES_item_tt[] = {
-+		{
++static const ASN1_TEMPLATE CRMF_CERTREQMESSAGES_item_tt = {
++
 +		.flags = ASN1_TFLG_SEQUENCE_OF,
 +		.tag = 0,
 +		.offset = 0,
 +		.field_name = "CRMF_CERTREQMESSAGES",
 +		.item = &CRMF_CERTREQMSG_it,
-+		}
++
 +};
 +
 +const ASN1_ITEM CRMF_CERTREQMESSAGES_it = {
 +	.itype = ASN1_ITYPE_PRIMITIVE,
 +	.utype = -1,
-+	.templates = CRMF_CERTREQMESSAGES_item_tt,
++	.templates = &CRMF_CERTREQMESSAGES_item_tt,
 +	.tcount = 0,
 +	.funcs = NULL,
 +	.size = 0,
