@@ -986,7 +986,7 @@ diff -Naur crypto-old/cmp/cmp_asn.c crypto/cmp/cmp_asn.c
 +
 +static const ASN1_TEMPLATE CMP_PKISTATUS_item_tt =
 +{
-+	.flags = ASN1_TFLG_SEQUENCE_OF,
++	.flags = ASN1_TFLG_UNIVERSAL,
 +	.tag = 0,
 +	.offset = 0,
 +	.field_name = "status",
