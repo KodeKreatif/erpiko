@@ -143,6 +143,21 @@ namespace Converters {
     return pkey;
   }
 
+  inline X509_NAME* identityToName(const Identity& identity) {
+    auto der = identity.toDer();
+    const unsigned char* raw = der.data();
+    auto name = d2i_X509_NAME(0, &raw, der.size());
+    return name;
+  }
+
+  inline X509* certificateToX509(const Certificate& cert) {
+    auto der = cert.toDer();
+    const unsigned char* raw = der.data();
+    auto x509 = d2i_X509(0, &raw, der.size());
+    return x509;
+  }
+
+
 } // namespace Converters
 } // namespace Erpiko
 #endif
