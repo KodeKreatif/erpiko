@@ -15352,7 +15352,7 @@ diff -Naur crypto-old/crmf/crmf_asn.c crypto/crmf/crmf_asn.c
 +
 +const ASN1_ITEM CRMF_POPOSIGNINGKEYINPUT_AUTHINFO_it = {
 +	.itype = ASN1_ITYPE_CHOICE,
-+	.utype = offsetof(CRMF_POPOPSIGNINGKEYINPUT_AUTHINFO, type),
++	.utype = offsetof(CRMF_POPOSIGNINGKEYINPUT_AUTHINFO, type),
 +	.templates = CRMF_POPOSIGNINGKEYINPUT_AUTHINFO_ch_tt,
 +	.tcount = sizeof(CRMF_POPOSIGNINGKEYINPUT_AUTHINFO_ch_tt) / sizeof(ASN1_TEMPLATE),
 +	.funcs = NULL,
