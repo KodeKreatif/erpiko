@@ -47,6 +47,12 @@ class Identity {
      */
     void set(const std::string name, const std::string value);
 
+    /**
+     * Gets a string representation of this identity
+     * @return string containing the identity in one line
+     */
+    const std::string toString(const std::string delimiter = "/") const;
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

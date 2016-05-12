@@ -2,6 +2,7 @@
 #include "converters.h"
 #include <string.h>
 #include <openssl/x509.h>
+#include <algorithm>
 #include <iostream>
 
 namespace Erpiko {
@@ -91,6 +92,19 @@ Identity* Identity::fromDer(const std::vector<unsigned char> der) {
   const unsigned char *data = der.data();
   d2i_X509_NAME(&i->impl->name, &data, der.size());
   return i;
+}
+
+const std::string Identity::toString(const std::string delimiter) const {
+  auto oneLine = X509_NAME_oneline(impl->name, nullptr, 0);
+
+  std::string ret = oneLine;
+  free(oneLine);
+
+  if (delimiter != "/") {
+    std::replace(ret.begin(), ret.end(), '/', ',');
+    ret.erase(0, 1);
+  }
+  return ret;
 }
 
 } // namespace Erpiko
