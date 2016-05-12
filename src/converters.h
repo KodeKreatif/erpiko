@@ -3,6 +3,7 @@
 #include "erpiko/certificate.h"
 #include "erpiko/identity.h"
 #include "erpiko/bigint.h"
+#include "erpiko/rsakey.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -128,7 +129,33 @@ namespace Converters {
     return retval;
   }
 
+  inline EVP_PKEY* rsaKeyToPkey(const RsaKey& key) {
+    EVP_PKEY* pkey = nullptr;
+    auto der = key.toDer();
+    BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
+    PKCS8_PRIV_KEY_INFO *p8inf;
+    p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
 
+    if (p8inf) {
+      pkey = EVP_PKCS82PKEY(p8inf);
+      PKCS8_PRIV_KEY_INFO_free(p8inf);
+    }
+    return pkey;
+  }
+
+  inline X509_NAME* identityToName(const Identity& identity) {
+    auto der = identity.toDer();
+    const unsigned char* raw = der.data();
+    auto name = d2i_X509_NAME(0, &raw, der.size());
+    return name;
+  }
+
+  inline X509* certificateToX509(const Certificate& cert) {
+    auto der = cert.toDer();
+    const unsigned char* raw = der.data();
+    auto x509 = d2i_X509(0, &raw, der.size());
+    return x509;
+  }
 
 
 } // namespace Converters

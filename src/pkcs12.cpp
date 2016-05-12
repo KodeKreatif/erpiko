@@ -112,18 +112,10 @@ const RsaKey& Pkcs12::privateKey() const {
 }
 
 void Pkcs12::privateKey(const RsaKey& key) {
-  auto der = key.toDer();
-  BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
-  PKCS8_PRIV_KEY_INFO *p8inf;
-  p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
-
-  if (p8inf) {
-    if (impl->pkey) {
-      EVP_PKEY_free(impl->pkey);
-    }
-    impl->pkey = EVP_PKCS82PKEY(p8inf);
-    PKCS8_PRIV_KEY_INFO_free(p8inf);
+  if (impl->pkey) {
+    EVP_PKEY_free(impl->pkey);
   }
+  impl->pkey = Converters::rsaKeyToPkey(key);
 }
 
 const Certificate& Pkcs12::certificate() const {
