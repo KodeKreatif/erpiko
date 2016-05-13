@@ -70,5 +70,27 @@ SCENARIO("Further identity test") {
 
 }
 
+SCENARIO("Export test") {
+  GIVEN("A new Identity") {
+    Identity* id = new Identity();
+    id->set("commonName", "abc");
+    id->set("UID", "abc");
+    THEN("One line DN is produced") {
+      REQUIRE(id->toString() == "/CN=abc/UID=abc");
+    }
+  }
+
+  GIVEN("A new Identity") {
+    Identity* id = new Identity();
+    id->set("commonName", "abc");
+    id->set("UID", "abc");
+    THEN("One line DN is produced") {
+      REQUIRE(id->toString(",") == "CN=abc,UID=abc");
+    }
+  }
+
+}
+
+
 
 } //namespace Erpiko
