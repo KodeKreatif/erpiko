@@ -99,6 +99,21 @@ SCENARIO("Exporting pkcs12") {
       }
     }
   }
+
+  GIVEN("A DER PKCS12") {
+    DataSource* src = DataSource::fromFile("assets/p12.der");
+    THEN("The file is opened with wrong password") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      Pkcs12* p12 = Pkcs12::fromDer(v, "wrong");
+      delete(src);
+      THEN("There is nothing wrong") {
+        REQUIRE(p12 == nullptr);
+      }
+    }
+  }
+
+
 }
 
 
