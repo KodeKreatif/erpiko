@@ -1,5 +1,5 @@
-#ifndef _PKCS12_H_
-#define _PKCS12_H_
+#ifndef _SIGNED_DATA_H_
+#define _SIGNED_DATA_H_
 
 #include "erpiko/oid.h"
 #include "erpiko/certificate.h"
@@ -95,4 +95,4 @@ class SignedData {
 };
 
 } // namespace Erpiko
-#endif // _PKCS12_H_
+#endif // _SIGNED_DATA_H_
