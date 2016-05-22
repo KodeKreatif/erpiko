@@ -1,0 +1,82 @@
+#ifndef _PKCS12_H_
+#define _PKCS12_H_
+
+#include "erpiko/oid.h"
+#include "erpiko/certificate.h"
+#include "erpiko/rsakey.h"
+#include <string>
+#include <memory>
+
+namespace Erpiko {
+
+/**
+ * Handles SignedData CMS data structure
+ */
+class SignedData {
+  public:
+    /**
+     * Creates a SignedData object
+     * @param certificate the certificate of the signer
+     * @param privateKey the private key of the signer
+     * @param digestAlgorithmIdentifier the OID of the algorithm used to construct the digest
+     */
+    SignedData(const Certificate& certificate, const RsaKey& privateKey);
+
+    /**
+     * Parses DER data and returns an instance of SignedData
+     * @param der DER data
+     * @param certificate the certificate of the signer
+     * @return pointer to SignedData
+     */
+    static SignedData* fromDer(const std::vector<unsigned char> der, const Certificate& certificate);
+
+    /**
+     * Exports SignedData data to DER
+     * @return vector containing DER
+     */
+    const std::vector<unsigned char> toDer() const;
+
+    /**
+     * Signs the SignedData and prepare a detached SignedData structure.
+     * After the data is signed, no more update() and signDetached() or sign() functions can be called
+     */
+    void signDetached();
+
+    /**
+     * Signs the SignedData and prepare a detached SignedData structure.
+     * After the data is signed, no more update() and signDetached() or sign() functions can be called
+     */
+    void sign();
+
+    /**
+     * Updates data to be signed or to be verified
+     */
+    void update(const unsigned char* data, const size_t length);
+
+    /**
+     * Updates data to be signed or to be verified
+     */
+    void update(const std::vector<unsigned char> data);
+
+    /**
+     * Verifies a SignedData
+     */
+    bool verify() const;
+
+
+    /**
+     * Whether the SignedData is detached or not
+     * @return whether the SignedData is detached
+     */
+    bool isDetached() const;
+
+    virtual ~SignedData();
+
+  private:
+    SignedData();
+    class Impl;
+    std::unique_ptr<Impl> impl;
+};
+
+} // namespace Erpiko
+#endif // _PKCS12_H_

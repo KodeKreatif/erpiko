@@ -109,9 +109,6 @@ namespace Converters {
     BIO* mem = BIO_new(BIO_s_mem());
 
     ret = i2d_PKCS12_bio(mem, r);
-    std::cout << ret << "\n";
-
-        ERR_print_errors_fp (stderr);
 
     while (ret) {
       unsigned char buff[1024];
