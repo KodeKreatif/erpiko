@@ -82,12 +82,12 @@ SCENARIO("Construct SignedData") {
       DataSource* data = DataSource::fromFile("assets/data.txt");
       auto dataVector = data->readAll();
       p7->update(dataVector);
-      p7->sign();
+      p7->signDetached();
       auto der = p7->toDer();
       THEN("And can be verified") {
         SignedData* p7v = SignedData::fromDer(der, *cert);
         p7v->update(dataVector);
-        REQUIRE(p7v->isDetached() == false);
+        REQUIRE(p7v->isDetached() == true);
         REQUIRE(p7v->verify() == true);
       }
     }
@@ -128,6 +128,39 @@ SCENARIO("Construct SignedData") {
   }
 }
 
+
+SCENARIO("Export SignedData to PEM") {
+  GIVEN("Certificate and private key and data") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/data.txt");
+
+    THEN("Create the Signed Data") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      SignedData* p7 = new SignedData(*cert, *key);
+      DataSource* data = DataSource::fromFile("assets/data.txt");
+      auto dataVector = data->readAll();
+      p7->update(dataVector);
+      p7->signDetached();
+      auto pem = p7->toPem();
+      THEN("And can be verified") {
+        SignedData* p7v = SignedData::fromPem(pem, *cert);
+        p7v->update(dataVector);
+        REQUIRE(p7v->isDetached() == true);
+        REQUIRE(p7v->verify() == true);
+      }
+    }
+  }
+}
 
 
 

@@ -8,7 +8,7 @@
 namespace Erpiko {
 class SignedData::Impl {
   public:
-    EVP_PKEY *pkey;
+    EVP_PKEY *pkey = nullptr;
     X509 *cert;
     PKCS7 *pkcs7 = nullptr;
     BIO* bio = BIO_new(BIO_s_mem());
@@ -29,7 +29,7 @@ class SignedData::Impl {
     }
 
     virtual ~Impl() {
-      if (pkey) {
+      if (pkey && imported == false) {
         EVP_PKEY_free(pkey);
       }
       X509_free(cert);
@@ -56,6 +56,21 @@ class SignedData::Impl {
         return;
       }
     }
+
+    void fromPem(const std::string pem, const Certificate& certificate) {
+      imported = true;
+      BIO* mem = BIO_new_mem_buf((void*) pem.c_str(), pem.length());
+      pkcs7 = PEM_read_bio_PKCS7(mem, NULL, NULL, NULL);
+
+      auto ret = (pkcs7 != nullptr) && setSignerInfo(certificate);
+
+      cert = Converters::certificateToX509(certificate);
+      if (ret) {
+        success = true;
+        return;
+      }
+    }
+
 
     bool setSignerInfo(const Certificate& certificate) {
       if (!pkcs7) return false;
@@ -101,6 +116,19 @@ SignedData* SignedData::fromDer(const std::vector<unsigned char> der, const Cert
   return p;
 }
 
+SignedData* SignedData::fromPem(const std::string pem, const Certificate& cert) {
+  auto p = new SignedData();
+
+  p->impl->fromPem(pem, cert);
+
+  if (!p->impl->success) {
+    return nullptr;
+  }
+  return p;
+}
+
+
+
 const std::vector<unsigned char> SignedData::toDer() const {
   std::vector<unsigned char> retval;
   int ret;
@@ -144,6 +172,9 @@ bool SignedData::verify() const {
    auto store = X509_STORE_new();
    sk_X509_push(certs, impl->cert);
    auto ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, PKCS7_NOVERIFY) == 1;
+   if (ret == 0) {
+     ERR_print_errors_fp(stderr);
+   }
    sk_X509_free(certs);
    X509_STORE_free(store);
    return ret == 1;
@@ -151,13 +182,38 @@ bool SignedData::verify() const {
 
 void SignedData::signDetached() {
   if (impl->pkcs7) return;
-  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, PKCS7_DETACHED);
+  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
 }
 
 void SignedData::sign() {
   if (impl->pkcs7) return;
-  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, 0);
+  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio,  PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
 }
+
+const std::string SignedData::toPem() const {
+  std::string retval;
+  int ret;
+  BIO* mem = BIO_new(BIO_s_mem());
+
+  ret = PEM_write_bio_PKCS7_stream(mem, impl->pkcs7, NULL, 0);
+
+  while (ret) {
+    unsigned char buff[1025];
+    int ret = BIO_read(mem, buff, 1024);
+    if (ret > 0) {
+      buff[ret] = 0;
+      std::string str = (char*)buff;
+      retval += str;
+    } else {
+      break;
+    }
+  }
+  BIO_free(mem);
+
+  return retval;
+
+}
+
 
 
 } // namespace Erpiko

@@ -31,10 +31,26 @@ class SignedData {
     static SignedData* fromDer(const std::vector<unsigned char> der, const Certificate& certificate);
 
     /**
+     * Parses PEM data and returns an instance of SignedData
+     * @param pem PEM data
+     * @param certificate the certificate of the signer
+     * @return pointer to SignedData
+     */
+    static SignedData* fromPem(const std::string pem, const Certificate& certificate);
+
+
+
+    /**
      * Exports SignedData data to DER
      * @return vector containing DER
      */
     const std::vector<unsigned char> toDer() const;
+
+    /**
+     * Exports SignedData to PEM
+     * @return SignedData in PEM format
+     */
+    const std::string toPem() const;
 
     /**
      * Signs the SignedData and prepare a detached SignedData structure.
