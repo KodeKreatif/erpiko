@@ -4,12 +4,15 @@ stages:
 
 job_build:
   stage: build
+
   cache:
     paths:
     - build
+
   artifacts:
     paths:
     - build
+
   script:
     - cat /etc/debian_version
     - apt-get update
@@ -32,6 +35,7 @@ job_build:
 
 job_deploy:
   stage: deploy
+
   script:
     - eval $(ssh-agent -s)
     - ssh-add <(echo "$SSH_PRIVATE_KEY")
