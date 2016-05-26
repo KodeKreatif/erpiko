@@ -1,6 +1,7 @@
 #include "erpiko/sim.h"
 #include "erpiko/utils.h"
 #include <openssl/evp.h>
+#include <openssl/x509v3.h>
 
 #include "sim-openssl.h"
 
@@ -175,5 +176,8 @@ const std::vector<unsigned char> Sim::epepsi() const {
 }
 
 
+const ObjectId& Sim::siiType() const {
+  return *impl->siiType.get();
+}
 
 } // namespace Erpiko

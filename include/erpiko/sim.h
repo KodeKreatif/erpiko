@@ -41,6 +41,13 @@ class Sim {
      */
     const std::vector<unsigned char> epepsi() const;
 
+
+    /**
+     * Gets SIIType of the SIM
+     * @return object ID containing the SIIType
+     */
+    const ObjectId& siiType() const;
+
     bool isValid();
     virtual ~Sim();
 
