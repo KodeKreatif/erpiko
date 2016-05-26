@@ -6,10 +6,10 @@ job_build:
   stage: build
   cache:
     paths:
-    - releases-$CI_BUILD_ID
+    - build
   artifacts:
     paths:
-    - releases-$CI_BUILD_ID
+    - build
   script:
     - cat /etc/debian_version
     - apt-get update
@@ -29,11 +29,10 @@ job_build:
     - cp ../deps/libressl/crypto/.libs/libcrypto.a .
     - cp ../deps/libressl/ssl/.libs/libssl.a .
     - tar cJf liberpiko.linux.tar.xz include liberpiko.a libcrypto.a libssl.a
-    - mv liberpiko.linux.tar.xz ../releases-$CI_BUILD_ID/
 
 job_deploy:
   stage: deploy
   script:
     - eval $(ssh-agent -s)
     - ssh-add <(echo "$SSH_PRIVATE_KEY")
-    - scp -o StrictHostKeyChecking=no -P2102 releases-$CI_BUILD_ID/liberpiko.linux.tar.xz deploy@202.154.58.131:repo
+    - scp -o StrictHostKeyChecking=no -P2102 build/liberpiko.linux.tar.xz deploy@202.154.58.131:repo
