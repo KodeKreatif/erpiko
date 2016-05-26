@@ -2,6 +2,7 @@
 #include "catch.hpp"
 
 #include "erpiko/cmp.h"
+#include "erpiko/utils.h"
 #include "erpiko/data-source.h"
 #include "erpiko/rsakey.h"
 #include "erpiko/certificate.h"
@@ -22,7 +23,7 @@ SCENARIO("CMP ir request") {
     Identity* id = new Identity();
     REQUIRE_FALSE(id == nullptr);
     id->set("commonName", "testkk02");
-    id->set("UID", "osama");
+    id->set("UID", "omama");
 
     auto cmp = new Cmp();
 /*
@@ -36,8 +37,24 @@ SCENARIO("CMP ir request") {
     cmp->referenceName("testkk02");
     cmp->secret("omama");
     cmp->privateKey(*pair);
+
+    ObjectId hash("2.16.840.1.101.3.4.2.1");
+    ObjectId siiType("1.2.3.4.5");
+    std::string sii("12345");
+    std::string password("abcde12345");
+    std::vector<unsigned char> r = {
+      1, 2, 3, 4, 5, 6, 7, 8,
+      1, 2, 3, 4, 5, 6, 7, 8,
+      1, 2, 3, 4, 5, 6, 7, 8,
+      1, 2, 3, 4, 5, 6, 7, 8 };
+
+    Sim sim(hash, siiType, sii, password, r);
+    cmp->insertSim(sim);
+
+
     auto clCert = cmp->startInitRequest();
     REQUIRE_FALSE(clCert == nullptr);
+    std::cout << Utils::hexString(clCert->toDer()) << "\n";
  */
 
   }

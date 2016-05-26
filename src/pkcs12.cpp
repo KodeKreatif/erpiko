@@ -46,7 +46,9 @@ class Pkcs12::Impl {
       auto ret = PKCS12_parse(p12, passphrase.c_str(), &pkey, &cert, &caStack);
       BIO_free(mem);
       if (ret == 0) {
-        ERR_print_errors_fp (stderr);
+        if (caStack != nullptr) {
+          sk_X509_free(caStack);
+        }
         return;
       }
       auto keyDer = Converters::rsaKeyToDer(pkey, "");

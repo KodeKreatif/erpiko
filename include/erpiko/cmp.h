@@ -3,6 +3,7 @@
 
 #include "erpiko/certificate.h"
 #include "erpiko/rsakey.h"
+#include "erpiko/sim.h"
 #include <string>
 #include <memory>
 
@@ -96,6 +97,8 @@ class Cmp {
      * Starts initialization request
      */
     const Certificate* startInitRequest();
+
+    void insertSim(const Sim& sim);
 
   private:
     class Impl;

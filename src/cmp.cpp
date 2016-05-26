@@ -74,12 +74,19 @@ void Cmp::caCertificate(const Certificate& cert) {
 const Certificate* Cmp::startInitRequest() {
   CMP_CTX_set1_timeOut(impl->cmpContext, 60);
   auto cert = CMP_doInitialRequestSeq(impl->cmpContext);
+  ERR_print_errors_fp(stderr);
   if (!cert) return nullptr;
   auto der = Converters::certificateToDer(cert);
 
   impl->clCert.reset(Certificate::fromDer(der));
   return impl->clCert.get();
 
+}
+
+void Cmp::insertSim(const Sim& sim) {
+  auto name = Converters::simToGeneralName(sim);
+  CMP_CTX_subjectAltName_push1(impl->cmpContext, name);
+  GENERAL_NAME_free(name);
 }
 
 } // namespace Erpiko

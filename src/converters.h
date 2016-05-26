@@ -4,6 +4,8 @@
 #include "erpiko/identity.h"
 #include "erpiko/bigint.h"
 #include "erpiko/rsakey.h"
+#include "erpiko/sim.h"
+#include "erpiko/utils.h"
 
 #include <openssl/err.h>
 #include <openssl/pem.h>
@@ -12,6 +14,7 @@
 #include <openssl/bn.h>
 #include <openssl/rsa.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 #include <openssl/pkcs12.h>
 
 #include <memory>
@@ -109,9 +112,6 @@ namespace Converters {
     BIO* mem = BIO_new(BIO_s_mem());
 
     ret = i2d_PKCS12_bio(mem, r);
-    std::cout << ret << "\n";
-
-        ERR_print_errors_fp (stderr);
 
     while (ret) {
       unsigned char buff[1024];
@@ -157,6 +157,16 @@ namespace Converters {
     return x509;
   }
 
+  inline GENERAL_NAME* simToGeneralName(const Sim& sim) {
+    auto simValue = sim.toDer();
+    ASN1_TYPE* otherName = ASN1_TYPE_new();
+    ASN1_TYPE_set_octetstring(otherName, simValue.data(), simValue.size());
+
+    GENERAL_NAME* retval = GENERAL_NAME_new();
+    GENERAL_NAME_set0_othername(retval, OBJ_txt2obj("1.3.6.1.5.5.7.8.6", 1), otherName);
+
+    return retval;
+  }
 
 } // namespace Converters
 } // namespace Erpiko
