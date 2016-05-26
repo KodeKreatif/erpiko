@@ -29,7 +29,7 @@ job_build:
     - cp ../deps/libressl/crypto/.libs/libcrypto.a .
     - cp ../deps/libressl/ssl/.libs/libssl.a .
     - tar cJf liberpiko.linux.tar.xz include liberpiko.a libcrypto.a libssl.a
-    - mv liberpiko.linux.tar.xz ../releases-$CI_BUILD_ID/liberpiko.linux.tar.xz
+    - mv liberpiko.linux.tar.xz ../releases-$CI_BUILD_ID/
 
 job_deploy:
   stage: deploy
