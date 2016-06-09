@@ -17,7 +17,7 @@ target_link_libraries(testbase erpiko libresslcrypto)
 add_executable(testcertificate certificate.cpp)
 target_link_libraries(testcertificate erpiko libresslcrypto)
 
-add_executable(testdata pkcs12.cpp signed-data.cpp sim.cpp)
+add_executable(testdata pkcs12.cpp signed-data.cpp sim.cpp enveloped-data.cpp)
 target_link_libraries(testdata erpiko libresslcrypto)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
