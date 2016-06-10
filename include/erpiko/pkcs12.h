@@ -3,6 +3,7 @@
 
 #include "erpiko/certificate.h"
 #include "erpiko/rsakey.h"
+#include "erpiko/oid.h"
 #include <string>
 #include <memory>
 
@@ -63,6 +64,17 @@ class Pkcs12 {
      * @return vector of certificate's pointer. Don't delete the pointer.
      */
     const std::vector<const Certificate*>& certificateChain() const;
+
+    /**
+     * Adds an arbitrary octet string data into PKCS#12
+     * @param data The data to add
+     */
+    void data(const std::vector<unsigned char> data, const ObjectId& oid);
+
+    /**
+     * Gets the arbitrary data put into PKCS#12
+     */
+    const std::vector<unsigned char> data(const ObjectId& oid) const;
 
     virtual ~Pkcs12();
 
