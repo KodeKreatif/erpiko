@@ -2,6 +2,7 @@
 #include "catch.hpp"
 
 #include "erpiko/pkcs12.h"
+#include "erpiko/enveloped-data.h"
 #include "erpiko/data-source.h"
 #include "erpiko/utils.h"
 #include <iostream>
@@ -110,6 +111,43 @@ SCENARIO("Exporting pkcs12") {
       THEN("There is nothing wrong") {
         REQUIRE(p12 == nullptr);
       }
+    }
+  }
+
+
+  GIVEN("p12, cert and key") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+    REQUIRE_FALSE(key == nullptr);
+
+    auto p12 = new Pkcs12("P12", "imapassword");
+    REQUIRE_FALSE(p12 == nullptr);
+    THEN("A cert, a key, and an arbitrary data can be added") {
+      p12->certificate(*cert);
+      p12->privateKey(*key);
+
+      std::vector<unsigned char> data = {1, 2, 3, 4, 5, 6};
+
+      // 2.5.4.35 password
+      ObjectId passwd("2.5.4.35");
+      p12->data(data, passwd);
+      auto der = p12->toDer();
+
+      REQUIRE(der.size() > 0);
+      THEN("It can be extracted again") {
+        Pkcs12* p12v = Pkcs12::fromDer(der, "imapassword");
+        REQUIRE_FALSE(p12v == nullptr);
+        auto d = p12v->data(passwd);
+        REQUIRE(data == d);
+      }
+
     }
   }
 

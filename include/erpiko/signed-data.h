@@ -38,8 +38,6 @@ class SignedData {
      */
     static SignedData* fromPem(const std::string pem, const Certificate& certificate);
 
-
-
     /**
      * Exports SignedData data to DER
      * @return vector containing DER
