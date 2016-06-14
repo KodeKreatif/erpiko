@@ -34,6 +34,9 @@ job_build:
 job_deploy:
   stage: deploy
 
+   only:
+    - master
+
   script:
     - eval $(ssh-agent -s)
     - ssh-add <(echo "$SSH_PRIVATE_KEY")
