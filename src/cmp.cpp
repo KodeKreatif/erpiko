@@ -36,6 +36,10 @@ Cmp::Cmp() : impl{std::make_unique<Impl>()} {
 
 Cmp::~Cmp() = default;
 
+void Cmp::useTls(bool enabled) {
+  CMP_CTX_set_option(impl->cmpContext, CMP_CTX_USE_TLS, (enabled ? 1 : 0));
+}
+
 void Cmp::serverPath(const std::string serverPath) {
   CMP_CTX_set1_serverPath(impl->cmpContext, serverPath.c_str());
 }

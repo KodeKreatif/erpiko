@@ -98,7 +98,17 @@ class Cmp {
      */
     const Certificate* startInitRequest();
 
+    /**
+     * Inserts SIM into CMP request
+     * @param sim The SIM to be inserted
+     */
     void insertSim(const Sim& sim);
+
+    /**
+     * Set option whether to use TLS
+     * @param enabled True if TLS is used
+     */
+    void useTls(bool enabled);
 
   private:
     class Impl;
