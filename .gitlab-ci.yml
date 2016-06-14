@@ -34,7 +34,7 @@ job_build:
 job_deploy:
   stage: deploy
 
-   only:
+  only:
     - master
 
   script:
