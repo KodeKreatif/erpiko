@@ -15,8 +15,6 @@ job_build:
 
   script:
     - cat /etc/debian_version
-    - apt-get update
-    - apt-get install -y unzip cmake
     - ./scripts/build-deps-unix.sh
     - ./scripts/build.sh
     - cd build
@@ -35,6 +33,9 @@ job_build:
 
 job_deploy:
   stage: deploy
+
+  only:
+    - master
 
   script:
     - eval $(ssh-agent -s)
