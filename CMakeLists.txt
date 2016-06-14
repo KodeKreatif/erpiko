@@ -1,10 +1,10 @@
 project("erpiko")
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
-    "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+    CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(warnings "-Wall -Wextra -Werror")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(warnings "/EHsc")
 endif()
 
@@ -27,9 +27,13 @@ if (NOT MSVC)
   set_property(TARGET libressltls PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/tls/.libs/libtls.a)
 else()
   if (MSVC_C_ARCHITECTURE_ID MATCHES 64 OR MSVC_CXX_ARCHITECTURE_ID MATCHES 64)
-    set_property(TARGET libressl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x64/libcrypto-37.lib)
+    set_property(TARGET libresslcrypto PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x64/libcrypto-37.lib)
+    set_property(TARGET libresslssl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x64/libssl-37.lib)
+    set_property(TARGET libressltls PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x64/libtls-37.lib)
   else()
-    set_property(TARGET libressl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x86/libcrypto-37.lib)
+    set_property(TARGET libresslcrypto PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x86/libcrypto-37.lib)
+    set_property(TARGET libresslssl PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x86/libssl-37.lib)
+    set_property(TARGET libressltls PROPERTY IMPORTED_LOCATION ${CMAKE_SOURCE_DIR}/deps/libressl/x86/libtls-37.lib)
   endif()
 endif()
 
