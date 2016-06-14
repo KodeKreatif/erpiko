@@ -1,10 +1,10 @@
 project("erpiko")
 cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
 
-if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU" OR
-    "${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
+    CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
   set(warnings "-Wall -Wextra -Werror")
-elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "MSVC")
+elseif (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   set(warnings "/EHsc")
 endif()
 
