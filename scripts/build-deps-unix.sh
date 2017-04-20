@@ -7,17 +7,17 @@ TOP=`pwd`
 
 # LibreSSL
 cd deps
-rm -rf portable-master
-wget -O master.zip https://github.com/libressl-portable/portable/archive/master.zip
-unzip master.zip
-cd portable-master
+rm -rf libressl-portable-tip
+wget -O tip.zip https://github.com/mdamt/libressl-portable/archive/tip.zip
+unzip tip.zip
+cd libressl-portable-tip
 ./autogen.sh
 patch -p0 < $TOP/patch/cmp.patch
 mkdir ../libressl
 cd ../libressl
-../portable-master/configure --enable-static
+../libressl-portable-tip/configure --enable-static
 make -j$NUMJOBS
-cp -a ../portable-master/include .
+cp -a ../libressl-portable-tip/include .
 cd $TOP
 
 
