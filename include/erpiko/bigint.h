@@ -3,6 +3,7 @@
 
 #include <string>
 #include <memory>
+#include <vector>
 
 namespace Erpiko {
 
@@ -57,6 +58,10 @@ class BigInt {
      **/
     void operator= (const std::string string);
 
+    /**
+     * Dumps the value of the number to a vector
+     */
+    std::vector<unsigned char> dump() const;
 
   private:
     class Impl;

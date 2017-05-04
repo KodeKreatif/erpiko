@@ -78,6 +78,12 @@ bool BigInt::operator==(const BigInt& other) const {
   return (BN_ucmp(impl->bn, other.impl->bn) == 0);
 }
 
+std::vector<unsigned char> BigInt::dump() const {
+  int size = BN_num_bytes(impl->bn);
 
+  std::vector<unsigned char> result(size);
+  BN_bn2bin(impl->bn, result.data());
+  return result;
+}
 
 } // namespace Erpiko
