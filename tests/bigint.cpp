@@ -75,6 +75,17 @@ SCENARIO("BigInt can be created from string") {
   }
 
   GIVEN("A new BigInt") {
+    BigInt* b = BigInt::fromString("0x120deadbeef");
+    std::vector<unsigned char> compare = { 0x1, 0x20, 0xde, 0xad, 0xbe, 0xef};
+    auto str = b->dump();
+    THEN("And the hex string should be correct") {
+      REQUIRE(str == compare);
+    }
+  }
+
+
+
+  GIVEN("A new BigInt") {
     BigInt* b = BigInt::fromString("0x120");
     THEN("It has an initial value") {
       REQUIRE_FALSE(b == nullptr);

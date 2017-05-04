@@ -48,13 +48,15 @@ class SignedData::Impl {
       imported = true;
       BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
       pkcs7 = d2i_PKCS7_bio(mem, NULL);
-      auto ret = (pkcs7 != nullptr) && setSignerInfo(certificate);
-
+      auto ret = (pkcs7 != nullptr);
       cert = Converters::certificateToX509(certificate);
+
       if (ret) {
         success = true;
+      std::cout << "-================================\n";
         return;
       }
+      std::cout << "olala " << (pkcs7 != nullptr) << std::endl;
     }
 
     void fromPem(const std::string pem, const Certificate& certificate) {
@@ -62,38 +64,13 @@ class SignedData::Impl {
       BIO* mem = BIO_new_mem_buf((void*) pem.c_str(), pem.length());
       pkcs7 = PEM_read_bio_PKCS7(mem, NULL, NULL, NULL);
 
-      auto ret = (pkcs7 != nullptr) && setSignerInfo(certificate);
+      auto ret = (pkcs7 != nullptr);
 
       cert = Converters::certificateToX509(certificate);
       if (ret) {
         success = true;
         return;
       }
-    }
-
-
-    bool setSignerInfo(const Certificate& certificate) {
-      if (!pkcs7) return false;
-      const Identity& id = certificate.subjectIdentity();
-
-      auto signerInfos = pkcs7->d.sign->signer_info;
-      if (!signerInfos) {
-        return false;
-      }
-
-      bool found = false;
-      for (int i = 0; i < sk_PKCS7_SIGNER_INFO_num(signerInfos); i ++) {
-        auto signerInfo = sk_PKCS7_SIGNER_INFO_value(signerInfos, i);
-        auto signerDer = Converters::nameToIdentityDer(signerInfo->issuer_and_serial->issuer);
-
-        if (signerDer == id.toDer()) {
-          found = true;
-          signerInfoIndex = i;
-          break;
-        }
-      }
-
-      return found;
     }
 };
 
