@@ -63,6 +63,24 @@ class SignedData {
     void sign();
 
     /**
+     * Signs the SignedData in S/MIME mode. Data can be always updated with update API, and
+     * the final S/MIME structure and data is finalized with toSMime() call.
+     */
+    void signSMime() const;
+
+    /**
+     * Gets the S/MIME representation of the structure and data. This call only makes sense
+     * when it is preceeded by a signSMime call
+     */
+    const std::string toSMime() const;
+
+    /**
+     * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
+     * when it is preceeded by a signSMime call
+     */
+    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const;
+
+    /**
      * Updates data to be signed or to be verified
      */
     void update(const unsigned char* data, const size_t length);
