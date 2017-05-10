@@ -6,6 +6,13 @@
 #include <iostream>
 
 namespace Erpiko {
+
+enum SigningMode {
+    SIGN,
+    DETACHED,
+    SMIME
+};
+
 class SignedData::Impl {
   public:
     EVP_PKEY *pkey = nullptr;
@@ -23,6 +30,7 @@ class SignedData::Impl {
     bool imported = false;
     int nidKey = 0;
     int nidCert = 0;
+    SigningMode signingMode;
 
     Impl() {
       OpenSSL_add_all_algorithms();
@@ -159,12 +167,58 @@ bool SignedData::verify() const {
 
 void SignedData::signDetached() {
   if (impl->pkcs7) return;
+
+  impl->signingMode = DETACHED;
   impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
 }
 
 void SignedData::sign() {
   if (impl->pkcs7) return;
+
+  impl->signingMode = SIGN;
   impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio,  PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
+}
+
+void SignedData::signSMime() const {
+  if (impl->pkcs7) return;
+
+  impl->signingMode = SMIME;
+  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, PKCS7_STREAM | PKCS7_DETACHED);
+}
+
+void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
+  if (impl->signingMode != SMIME) {
+    onEnd();
+    return;
+  }
+
+  BIO* out = BIO_new(BIO_s_mem());
+  auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, PKCS7_TEXT | PKCS7_STREAM | PKCS7_DETACHED);
+
+  while (r) {
+    unsigned char buff[1025];
+    int ret = BIO_read(out, buff, 1024);
+    if (ret > 0) {
+      buff[ret] = 0;
+      std::string str = (char*)buff;
+      onData(str);
+    } else {
+      break;
+    }
+  }
+  BIO_free(out);
+
+  onEnd();
+}
+
+const std::string SignedData::toSMime() const {
+  std::string retval;
+
+  toSMime([&retval](std::string s) {
+        retval += s;
+      }, [](){});
+
+  return retval;
 }
 
 const std::string SignedData::toPem() const {
