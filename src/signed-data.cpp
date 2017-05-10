@@ -61,10 +61,8 @@ class SignedData::Impl {
 
       if (ret) {
         success = true;
-      std::cout << "-================================\n";
         return;
       }
-      std::cout << "olala " << (pkcs7 != nullptr) << std::endl;
     }
 
     void fromPem(const std::string pem, const Certificate& certificate) {
@@ -80,6 +78,22 @@ class SignedData::Impl {
         return;
       }
     }
+
+    void fromSMime(const std::string smime, const Certificate& certificate) {
+      signingMode = SMIME;
+      imported = true;
+      BIO* mem = BIO_new_mem_buf((void*) smime.c_str(), smime.length());
+      pkcs7 = SMIME_read_PKCS7(mem, &bio);
+
+      auto ret = (pkcs7 != nullptr);
+
+      cert = Converters::certificateToX509(certificate);
+      if (ret) {
+        success = true;
+        return;
+      }
+    }
+
 };
 
 SignedData::SignedData() : impl{std::make_unique<Impl>()} {
@@ -243,6 +257,17 @@ const std::string SignedData::toPem() const {
 
   return retval;
 
+}
+
+SignedData* SignedData::fromSMime(const std::string smime, const Certificate& cert) {
+  auto p = new SignedData();
+
+  p->impl->fromSMime(smime, cert);
+
+  if (!p->impl->success) {
+    return nullptr;
+  }
+  return p;
 }
 
 
