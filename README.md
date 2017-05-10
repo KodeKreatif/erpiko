@@ -12,6 +12,7 @@ Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 - SIM (RFC-4683)
 - PKCS#12
 - PKCS#7 (*partial*)
+- S/MIME sigining, verification, encryption and decryption
 
 ## Backend
 
