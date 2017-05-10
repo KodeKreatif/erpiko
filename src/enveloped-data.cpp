@@ -16,6 +16,7 @@ class EnvelopedData::Impl {
 
     bool success = false;
     bool imported = false;
+    bool isSMime = false;
 
     Impl() {
       OpenSSL_add_all_algorithms();
@@ -56,12 +57,27 @@ class EnvelopedData::Impl {
       }
     }
 
+    void fromSMime(const std::string smime) {
+      isSMime = true;
+      imported = true;
+      BIO* mem = BIO_new_mem_buf((void*) smime.c_str(), smime.length());
+      BIO* na = NULL;
+      pkcs7 = SMIME_read_PKCS7(mem, &na);
+
+      auto ret = (pkcs7 != nullptr);
+
+      if (ret) {
+        success = true;
+        return;
+      }
+    }
+
     const EVP_CIPHER* getCipher() {
       auto obj = OBJ_txt2obj(oid->toString().c_str(), 0);
       return EVP_get_cipherbyobj(obj);
     }
 
-    void encrypt(const std::vector<unsigned char> data) {
+    void encrypt(const std::vector<unsigned char> data, bool sMime) {
       if (pkcs7) {
         PKCS7_free(pkcs7);
         pkcs7 = nullptr;
@@ -72,7 +88,11 @@ class EnvelopedData::Impl {
 
       auto cipher = getCipher();
       if (cipher != nullptr) {
-        pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
+        if (sMime) {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_TEXT | PKCS7_STREAM);
+        } else {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
+        }
       }
     }
 
@@ -84,7 +104,7 @@ class EnvelopedData::Impl {
         cert = nullptr;
       }
       cert = Converters::certificateToX509(certificate);
-      auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, 0);
+      auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
       std::vector<unsigned char> retval;
       while (ret) {
@@ -163,7 +183,7 @@ const std::vector<unsigned char> EnvelopedData::toDer() const {
 EnvelopedData::~EnvelopedData() = default;
 
 void EnvelopedData::encrypt(const std::vector<unsigned char> data) {
-  impl->encrypt(data);
+  impl->encrypt(data, false);
 }
 
 
@@ -195,5 +215,53 @@ const std::string EnvelopedData::toPem() const {
 const std::vector<unsigned char> EnvelopedData::decrypt(const Certificate& certificate, const RsaKey& privateKey) const {
   return impl->decrypt(certificate, privateKey);
 }
+
+void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
+
+  BIO* out = BIO_new(BIO_s_mem());
+  auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, PKCS7_TEXT | PKCS7_STREAM);
+
+  while (r) {
+    unsigned char buff[1025];
+    int ret = BIO_read(out, buff, 1024);
+    if (ret > 0) {
+      buff[ret] = 0;
+      std::string str = (char*)buff;
+      onData(str);
+    } else {
+      break;
+    }
+  }
+  BIO_free(out);
+
+  onEnd();
+}
+
+void EnvelopedData::encryptSMime(const std::vector<unsigned char> data) {
+  impl->encrypt(data, true);
+}
+
+const std::string EnvelopedData::toSMime() const {
+  std::string retval;
+
+  toSMime([&retval](std::string s) {
+        retval += s;
+      }, [](){});
+
+  return retval;
+}
+
+EnvelopedData* EnvelopedData::fromSMime(const std::string smime) {
+  auto p = new EnvelopedData();
+
+  p->impl->fromSMime(smime);
+
+  if (!p->impl->success) {
+    return nullptr;
+  }
+  return p;
+}
+
+
 
 } // namespace Erpiko
