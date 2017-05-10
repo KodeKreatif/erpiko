@@ -37,6 +37,14 @@ class EnvelopedData {
     static EnvelopedData* fromPem(const std::string pem);
 
     /**
+     * Parses S/MIME data and returns an instance of EnvelopedData
+     * @param pem S/MIME data
+     * @return pointer to EnvelopedData
+     */
+    static EnvelopedData* fromSMime(const std::string pem);
+
+
+    /**
      * Exports EnvelopedData data to DER
      * @return vector containing DER
      */
@@ -51,7 +59,6 @@ class EnvelopedData {
     /**
      * Encrypt data
      * @param data The data to be encrypted
-     * @param password The password used to encrypt the data
      */
     void encrypt(const std::vector<unsigned char> data);
 
@@ -61,6 +68,27 @@ class EnvelopedData {
      * @param privateKey the private key of the decryptor
      */
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) const;
+
+    /**
+     * Encrypts the EnvelopedData in S/MIME mode. Data can be always updated with update API, and
+     * the final S/MIME structure and data is finalized with toSMime() call.
+     * @param data The data to be encrypted
+     */
+    void encryptSMime(const std::vector<unsigned char> data);
+
+    /**
+     * Gets the S/MIME representation of the structure and data. This call only makes sense
+     * when it is preceeded by a encryptSMime call
+     */
+    const std::string toSMime() const;
+
+    /**
+     * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
+     * when it is preceeded by a signSMime call
+     */
+    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const;
+
+
 
     virtual ~EnvelopedData();
 
