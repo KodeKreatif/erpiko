@@ -16,36 +16,36 @@ typedef struct sim_st {
 
 static const ASN1_TEMPLATE SIM_seq_tt[] = {
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM, hashAlgorithm),
-    .field_name = "hashAlgorithm",
-    .item = &X509_ALGOR_it,
+    0,
+    0,
+    offsetof(SIM, hashAlgorithm),
+    "hashAlgorithm",
+    &X509_ALGOR_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM, authorityRandom),
-    .field_name = "authorityRandom",
-    .item = &ASN1_OCTET_STRING_it,
+    0,
+    0,
+    offsetof(SIM, authorityRandom),
+    "authorityRandom",
+    &ASN1_OCTET_STRING_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM, pepsi),
-    .field_name = "pepsi",
-    .item = &ASN1_OCTET_STRING_it,
+    0,
+    0,
+    offsetof(SIM, pepsi),
+    "pepsi",
+    &ASN1_OCTET_STRING_it,
   },
 };
 
 const ASN1_ITEM SIM_it = {
-  .itype = ASN1_ITYPE_SEQUENCE,
-  .utype = V_ASN1_SEQUENCE,
-  .templates = SIM_seq_tt,
-  .tcount = sizeof(SIM_seq_tt) / sizeof(ASN1_TEMPLATE),
-  .funcs = NULL,
-  .size = sizeof(SIM),
-  .sname = "SIM",
+  ASN1_ITYPE_SEQUENCE,
+  V_ASN1_SEQUENCE,
+  SIM_seq_tt,
+  sizeof(SIM_seq_tt) / sizeof(ASN1_TEMPLATE),
+  NULL,
+  sizeof(SIM),
+  "SIM",
 };
 
 DECLARE_ASN1_FUNCTIONS(SIM)
@@ -85,43 +85,43 @@ typedef struct sim_pepsi_st {
 
 static const ASN1_TEMPLATE SIM_PEPSI_seq_tt[] = {
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_PEPSI, userPassword),
-    .field_name = "userPassword",
-    .item = &ASN1_UTF8STRING_it,
+    0,
+    0,
+    offsetof(SIM_PEPSI, userPassword),
+    "userPassword",
+    &ASN1_UTF8STRING_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_PEPSI, authorityRandom),
-    .field_name = "authorityRandom",
-    .item = &ASN1_OCTET_STRING_it,
+    0,
+    0,
+    offsetof(SIM_PEPSI, authorityRandom),
+    "authorityRandom",
+    &ASN1_OCTET_STRING_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_PEPSI, siiType),
-    .field_name = "siiType",
-    .item = &ASN1_OBJECT_it,
+    0,
+    0,
+    offsetof(SIM_PEPSI, siiType),
+    "siiType",
+    &ASN1_OBJECT_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_PEPSI, sii),
-    .field_name = "sii",
-    .item = &ASN1_UTF8STRING_it,
+    0,
+    0,
+    offsetof(SIM_PEPSI, sii),
+    "sii",
+    &ASN1_UTF8STRING_it,
   },
 };
 
 const ASN1_ITEM SIM_PEPSI_it = {
-  .itype = ASN1_ITYPE_SEQUENCE,
-  .utype = V_ASN1_SEQUENCE,
-  .templates = SIM_PEPSI_seq_tt,
-  .tcount = sizeof(SIM_PEPSI_seq_tt) / sizeof(ASN1_TEMPLATE),
-  .funcs = NULL,
-  .size = sizeof(SIM_PEPSI),
-  .sname = "SIM_PEPSI",
+  ASN1_ITYPE_SEQUENCE,
+  V_ASN1_SEQUENCE,
+  SIM_PEPSI_seq_tt,
+  sizeof(SIM_PEPSI_seq_tt) / sizeof(ASN1_TEMPLATE),
+  NULL,
+  sizeof(SIM_PEPSI),
+  "SIM_PEPSI",
 };
 
 DECLARE_ASN1_FUNCTIONS(SIM_PEPSI)
@@ -161,36 +161,36 @@ typedef struct sim_epepsi_st {
 
 static const ASN1_TEMPLATE SIM_EPEPSI_seq_tt[] = {
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_EPEPSI, siiType),
-    .field_name = "siiType",
-    .item = &ASN1_OBJECT_it,
+    0,
+    0,
+    offsetof(SIM_EPEPSI, siiType),
+    "siiType",
+    &ASN1_OBJECT_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_EPEPSI, sii),
-    .field_name = "sii",
-    .item = &ASN1_UTF8STRING_it,
+    0,
+    0,
+    offsetof(SIM_EPEPSI, sii),
+    "sii",
+    &ASN1_UTF8STRING_it,
   },
   {
-    .flags = 0,
-    .tag = 0,
-    .offset = offsetof(SIM_EPEPSI, sim),
-    .field_name = "sim",
-    .item = &SIM_it,
+    0,
+    0,
+    offsetof(SIM_EPEPSI, sim),
+    "sim",
+    &SIM_it,
   },
 };
 
 const ASN1_ITEM SIM_EPEPSI_it = {
-  .itype = ASN1_ITYPE_SEQUENCE,
-  .utype = V_ASN1_SEQUENCE,
-  .templates = SIM_EPEPSI_seq_tt,
-  .tcount = sizeof(SIM_EPEPSI_seq_tt) / sizeof(ASN1_TEMPLATE),
-  .funcs = NULL,
-  .size = sizeof(SIM_EPEPSI),
-  .sname = "SIM_EPEPSI",
+  ASN1_ITYPE_SEQUENCE,
+  V_ASN1_SEQUENCE,
+  SIM_EPEPSI_seq_tt,
+  sizeof(SIM_EPEPSI_seq_tt) / sizeof(ASN1_TEMPLATE),
+  NULL,
+  sizeof(SIM_EPEPSI),
+  "SIM_EPEPSI",
 };
 
 DECLARE_ASN1_FUNCTIONS(SIM_EPEPSI)
