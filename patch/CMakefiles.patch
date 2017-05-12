@@ -1,0 +1,58 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 94e4d0b..2a3742d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -298,8 +298,8 @@ if(SIZEOF_TIME_T STREQUAL "4")
+ endif()
+ add_definitions(-DSIZEOF_TIME_T=${SIZEOF_TIME_T})
+ 
+-add_subdirectory(crypto)
+ add_subdirectory(ssl)
++add_subdirectory(crypto)
+ add_subdirectory(apps)
+ add_subdirectory(tls)
+ add_subdirectory(include)
+diff --git a/crypto/CMakeLists.txt b/crypto/CMakeLists.txt
+index d7b65e2..fb7312f 100644
+--- a/crypto/CMakeLists.txt
++++ b/crypto/CMakeLists.txt
+@@ -7,6 +7,7 @@ include_directories(
+ 	dsa
+ 	evp
+ 	modes
++	cmp
+ )
+ 
+ if(HOST_ASM_ELF_X86_64)
+@@ -271,6 +272,21 @@ set(
+ 	cmac/cm_ameth.c
+ 	cmac/cm_pmeth.c
+ 	cmac/cmac.c
++	cmp/cmp_asn.c
++	cmp/cmp_ctx.c
++	cmp/cmp_err.c
++	cmp/cmp_http.c
++	cmp/cmp_lib.c
++	cmp/cmp_msg.c
++	cmp/cmp_ses.c
++	cmp/cmp_vfy.c
++	cmp/e_os.h
++	cmp/e_os2.h
++	crmf/crmf_asn.c
++	crmf/crmf_err.c
++	crmf/crmf_lib.c
++	crmf/crmf_msg.c
++	crmf/crmf_pbm.c
+ 	comp/c_rle.c
+ 	comp/c_zlib.c
+ 	comp/comp_err.c
+@@ -814,6 +830,8 @@ if (BUILD_SHARED)
+ 	add_library(crypto STATIC $<TARGET_OBJECTS:crypto-objects>)
+ 	add_library(crypto-shared SHARED $<TARGET_OBJECTS:crypto-objects>)
+ 	export_symbol(crypto-shared ${CMAKE_CURRENT_SOURCE_DIR}/crypto_p.sym)
++	target_link_libraries(crypto-shared ssl)
++	target_link_libraries(crypto ssl)
+ 	if (WIN32)
+ 		target_link_libraries(crypto-shared Ws2_32.lib)
+ 		set(CRYPTO_POSTFIX -${CRYPTO_MAJOR_VERSION})
+
