@@ -6,6 +6,7 @@
 #include "erpiko/rsakey.h"
 #include <string>
 #include <memory>
+#include <functional>
 
 namespace Erpiko {
 
