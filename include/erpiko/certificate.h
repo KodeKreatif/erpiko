@@ -5,8 +5,26 @@
 #include "erpiko/bigint.h"
 #include "erpiko/time.h"
 #include "erpiko/rsakey-public.h"
+#include <openssl/x509.h>
 #include <string>
 #include <memory>
+
+namespace CertificateRevocationState {
+enum State {
+  UNKNOWN,
+  REVOKED,
+  NOT_REVOKED
+};
+}
+
+namespace CertificateTrustState {
+enum State {
+  UNKNOWN,
+  TRUSTED,
+  NOT_TRUSTED
+};
+}
+
 
 namespace Erpiko {
 
@@ -117,12 +135,30 @@ class Certificate {
      * @return time of the last moment the certificate is valid
      */
     const Time& notAfter() const;
+    
+    /**
+     * Gets the CRL distribution url of the certificate
+     * @return the url string of the CRL distribution point
+     */
+    const std::string crlDistPoint() const;
 
     /**
      * Gets the certificate extensions
      * @return the vector containing the list of extension's pointers
      */
     const std::vector<const CertificateExtension*>& extensions() const;
+    
+    /**
+     * Check against CRL
+     * @return integer value 1 if the cert has been revoked. Otherwise, it hasn't.
+     */
+    CertificateRevocationState::State isRevoked(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer) const;
+    
+    /**
+     * Verify trust against cacert
+     * @return integer value 1 if the cert is trusted by the issuer and certificate chain. Otherwise, it isn't trusted.
+     */
+    CertificateTrustState::State isTrusted(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer, const std::string& cacertsPemPath) const;
 
   private:
     class Impl;

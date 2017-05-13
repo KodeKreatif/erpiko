@@ -3,18 +3,21 @@
 #include "erpiko/certificate-extension.h"
 #include "converters.h"
 #include <openssl/x509.h>
-#include <openssl/err.h>
 #include <openssl/x509v3.h>
+#include <openssl/x509_vfy.h>
 #include <openssl/objects.h>
+#include <openssl/err.h>
 #include <string.h>
 #include <iostream>
 #include <algorithm>
 
 namespace Erpiko {
 
+
 class Certificate::Impl {
   public:
     X509* x509;
+    X509_CRL* x509_CRL;
     bool success = false;
     std::unique_ptr<Identity> subjectIdentity;
     std::unique_ptr<Identity> issuerIdentity;
@@ -28,7 +31,9 @@ class Certificate::Impl {
 
     Impl() {
       x509 = X509_new();
+      x509_CRL = X509_CRL_new();
     }
+    
 
     void fromDer(const std::vector<unsigned char> der) {
       BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
@@ -41,6 +46,18 @@ class Certificate::Impl {
       }
     }
 
+    void crlFromDer(const std::vector<unsigned char> der) {
+      BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
+      auto ret = d2i_X509_CRL_bio(mem, &x509_CRL);
+      if (ret) {
+        success = true;
+        resetValues();
+      } else {
+        ERR_print_errors_fp (stderr);
+      }
+      delete(mem);
+    }
+
     void fromPem(const std::string pem) {
       BIO* mem = BIO_new_mem_buf((void*) pem.c_str(), pem.length());
       auto ret = PEM_read_bio_X509(mem, &x509, NULL, NULL);
@@ -48,11 +65,14 @@ class Certificate::Impl {
         success = true;
         resetValues();
       }
+      delete(mem);
     }
 
     virtual ~Impl() {
       X509_free(x509);
       x509 = nullptr;
+      X509_CRL_free(x509_CRL);
+      x509_CRL = nullptr;
     }
 
     void resetValues() {
@@ -188,6 +208,90 @@ const Time& Certificate::notBefore() const {
 
 const Time& Certificate::notAfter() const {
   return impl->notAfter;
+}
+
+const std::string Certificate::crlDistPoint() const {
+  std::vector<std::string> list;
+  std::string result;
+  int nid = NID_crl_distribution_points;
+  STACK_OF(DIST_POINT) * dist_points = (STACK_OF(DIST_POINT) *)X509_get_ext_d2i(impl->x509, nid, NULL, NULL);
+  if (sk_DIST_POINT_num(dist_points) < 1) {
+    sk_DIST_POINT_free(dist_points);
+    return std::string("");
+  }
+  DIST_POINT *dp = sk_DIST_POINT_value(dist_points, 0);
+  DIST_POINT_NAME *distpoint = dp->distpoint;
+  GENERAL_NAME *gen = sk_GENERAL_NAME_value(distpoint->name.fullname, 0);
+  ASN1_IA5STRING *asn1_str = gen->d.uniformResourceIdentifier;
+  sk_DIST_POINT_free(dist_points);
+  std::string uri = std::string( (char*)ASN1_STRING_data(asn1_str), ASN1_STRING_length(asn1_str));
+  return uri;
+}
+
+CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer) const {
+  CertificateRevocationState::State status = CertificateRevocationState::UNKNOWN;
+
+  Certificate* issuerCert = new Certificate();
+  issuerCert->impl->fromDer(issuerDer);
+  X509 * issuer = issuerCert->impl->x509;
+  
+  Certificate* crlCert = new Certificate();
+  crlCert->impl->crlFromDer(crlDer);
+  X509_CRL * crl = crlCert->impl->x509_CRL;
+
+  if (issuer) {
+    EVP_PKEY *issuerKey = X509_get_pubkey(issuer);
+    ASN1_INTEGER *serial = X509_get_serialNumber(impl->x509);
+
+    if (crl && issuerKey && X509_CRL_verify(crl, issuerKey)) {
+      status = CertificateRevocationState::NOT_REVOKED;
+      auto *revokedList = crl->crl->revoked;
+      int revokedNum = sk_X509_REVOKED_num(revokedList);
+      for (int j = 0; j < revokedNum && status == CertificateRevocationState::NOT_REVOKED; j++) {
+        auto *entry = sk_X509_REVOKED_value(revokedList, j);
+        if (entry->serialNumber->length == serial->length) {
+          if (memcmp(entry->serialNumber->data, serial->data, serial->length) == 0) {
+            status = CertificateRevocationState::REVOKED;
+          }
+        } 
+      }
+    }
+  }
+  return status;
+}
+
+CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer, const std::string& cacertsPemPath) const {
+  CertificateTrustState::State status = CertificateTrustState::UNKNOWN;
+  STACK_OF(X509)* chain = sk_X509_new_null();
+  
+  Certificate* issuerCert = new Certificate();
+  issuerCert->impl->fromDer(issuerDer);
+  X509 * issuer = issuerCert->impl->x509;
+  sk_X509_push(chain, issuer);
+  
+  Certificate* crlCert = new Certificate();
+  crlCert->impl->crlFromDer(crlDer);
+  X509_CRL * crl = crlCert->impl->x509_CRL;
+  
+  X509_STORE *store = X509_STORE_new();
+  X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+  X509_LOOKUP_load_file(lookup, cacertsPemPath.c_str(), X509_FILETYPE_PEM);
+
+  X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+  X509_STORE_CTX_init(ctx, store, impl->x509, chain);
+
+  X509_STORE_add_crl(store, crl);
+  X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK);
+
+  int verifyResult = X509_verify_cert(ctx);
+  X509_STORE_CTX_cleanup(ctx);
+  X509_STORE_CTX_free(ctx);
+  sk_X509_free(chain);
+  status = CertificateTrustState::TRUSTED;
+  if (verifyResult != 1) {
+    status = CertificateTrustState::NOT_TRUSTED;
+  }
+  return status;
 }
 
 Certificate* Certificate::fromDer(const std::vector<unsigned char> der) {
