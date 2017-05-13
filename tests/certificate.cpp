@@ -94,6 +94,19 @@ SCENARIO("Import certificate from DER test") {
   }
 }
 
+SCENARIO("Get the CRL uri from cert") {
+  GIVEN("A DER certificate with CRL distribution point") {
+    DataSource* src = DataSource::fromFile("assets/cert-with-crl.der");
+    THEN("The file is opened") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      Certificate* cert = Certificate::fromDer(v);
+      std::string uri = cert->crlDistPoint();
+      REQUIRE(uri == "http://ca.tnisiberlab.xyz/ejbca/publicweb/webdist/certdist?cmd=crl&issuer=CN=TNISiberLabCA,O=TNI%20Siber%20Lab,C=ID");
+    }
+  }
+}
+
 SCENARIO("Import certificate from PEM test") {
   GIVEN("A PEM certificate") {
     DataSource* src = DataSource::fromFile("assets/cert.pem");
