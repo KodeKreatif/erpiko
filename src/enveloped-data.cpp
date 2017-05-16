@@ -8,7 +8,7 @@
 namespace Erpiko {
 class EnvelopedData::Impl {
   public:
-    X509 *cert = nullptr;
+    STACK_OF(X509)* certs = nullptr;
 
     std::unique_ptr<ObjectId> oid;
     PKCS7 *pkcs7 = nullptr;
@@ -20,10 +20,12 @@ class EnvelopedData::Impl {
 
     Impl() {
       OpenSSL_add_all_algorithms();
+
+      certs = sk_X509_new_null();
     }
 
     virtual ~Impl() {
-      X509_free(cert);
+      sk_X509_free(certs);
 
       BIO_free(bio);
       if (pkcs7) {
@@ -31,6 +33,9 @@ class EnvelopedData::Impl {
       }
     }
 
+    void appendCertificate(const X509* cert) {
+      sk_X509_push(certs, cert);
+    }
 
     void fromDer(const std::vector<unsigned char> der) {
       imported = true;
@@ -82,8 +87,6 @@ class EnvelopedData::Impl {
         PKCS7_free(pkcs7);
         pkcs7 = nullptr;
       }
-      STACK_OF(X509)* certs = sk_X509_new_null();
-      sk_X509_push(certs, cert);
       BIO_write(bio, data.data(), data.size());
 
       auto cipher = getCipher();
@@ -99,11 +102,7 @@ class EnvelopedData::Impl {
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) {
       EVP_PKEY *pkey = nullptr;
       pkey = Converters::rsaKeyToPkey(privateKey);
-      if (cert) {
-        X509_free(cert);
-        cert = nullptr;
-      }
-      cert = Converters::certificateToX509(certificate);
+      auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
       std::vector<unsigned char> retval;
@@ -129,7 +128,8 @@ EnvelopedData::EnvelopedData() : impl{std::make_unique<Impl>()} {
 
 EnvelopedData::EnvelopedData(const Certificate& certificate, const ObjectId& oid) : impl{std::make_unique<Impl>()} {
   impl->oid.reset(new ObjectId(oid.toString()));
-  impl->cert = Converters::certificateToX509(certificate);
+  auto cert = Converters::certificateToX509(certificate);
+  sk_X509_push(impl->certs, cert);
 }
 
 EnvelopedData* EnvelopedData::fromDer(const std::vector<unsigned char> der) {
@@ -141,6 +141,11 @@ EnvelopedData* EnvelopedData::fromDer(const std::vector<unsigned char> der) {
     return nullptr;
   }
   return p;
+}
+
+void EnvelopedData::addRecipient(const Certificate& certificate) {
+  auto cert = Converters::certificateToX509(certificate);
+  impl->appendCertificate(cert);
 }
 
 EnvelopedData* EnvelopedData::fromPem(const std::string pem) {

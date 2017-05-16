@@ -90,6 +90,12 @@ class EnvelopedData {
     void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const;
 
 
+    /**
+     * Appends certificate to recipient list of the encrypted data
+     *
+     * @param certificate the certificate of the recipient
+     */
+    void addRecipient(const Certificate& certificate);
 
     virtual ~EnvelopedData();
 
