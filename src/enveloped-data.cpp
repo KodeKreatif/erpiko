@@ -76,6 +76,22 @@ class EnvelopedData::Impl {
         return;
       }
     }
+    
+    void fromSMimeFile(const std::string path) {
+      isSMime = true;
+      imported = true;
+      const char *inmode = "r";
+      auto f = BIO_new_file(path.c_str(), inmode);
+      BIO* na = NULL;
+      pkcs7 = SMIME_read_PKCS7(f, &na);
+
+      auto ret = (pkcs7 != nullptr);
+
+      if (ret) {
+        success = true;
+        return;
+      }
+    }
 
     const EVP_CIPHER* getCipher() {
       auto obj = OBJ_txt2obj(oid->toString().c_str(), 0);
@@ -104,6 +120,10 @@ class EnvelopedData::Impl {
       pkey = Converters::rsaKeyToPkey(privateKey);
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
+	
+      if (ret == 0) {
+        ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
+      }
 
       std::vector<unsigned char> retval;
       while (ret) {
@@ -260,6 +280,17 @@ EnvelopedData* EnvelopedData::fromSMime(const std::string smime) {
   auto p = new EnvelopedData();
 
   p->impl->fromSMime(smime);
+
+  if (!p->impl->success) {
+    return nullptr;
+  }
+  return p;
+}
+
+EnvelopedData* EnvelopedData::fromSMimeFile(const std::string path) {
+  auto p = new EnvelopedData();
+
+  p->impl->fromSMimeFile(path);
 
   if (!p->impl->success) {
     return nullptr;
