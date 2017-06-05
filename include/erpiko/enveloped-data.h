@@ -43,6 +43,13 @@ class EnvelopedData {
      * @return pointer to EnvelopedData
      */
     static EnvelopedData* fromSMime(const std::string pem);
+    
+    /**
+     * Parses S/MIME plain text file and returns an instance of EnvelopedData
+     * @param pem S/MIME data
+     * @return pointer to EnvelopedData
+     */
+    static EnvelopedData* fromSMimeFile(const std::string path);
 
 
     /**
