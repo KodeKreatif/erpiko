@@ -67,6 +67,51 @@ SCENARIO("Verifying") {
         REQUIRE(p7->verify() == true);
     }
   }
+  GIVEN("SMIME") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/smime-signed.txt");
+    auto s = src->readAll();
+    std::string smimeStr(s.begin(),s.end());
+    SignedData* p7 = SignedData::fromSMime(smimeStr, *cert);
+
+    THEN("Can verify S/MIME multipart signed message") {
+        REQUIRE_FALSE(p7 == nullptr);
+        REQUIRE(p7->isDetached() == true);
+        REQUIRE(p7->verify() == true);
+    }
+  }
+  
+  GIVEN("SMIME multipart/mixed with attachment") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/smime-signed-with-attachment.txt");
+    auto s = src->readAll();
+    std::string smimeStr(s.begin(),s.end());
+    SignedData* p7 = SignedData::fromSMime(smimeStr, *cert);
+
+    THEN("Can verify S/MIME multipart signed message") {
+        REQUIRE_FALSE(p7 == nullptr);
+        REQUIRE(p7->isDetached() == true);
+        REQUIRE(p7->verify() == true);
+    }
+  }
 }
 
 SCENARIO("Encrypting") {
