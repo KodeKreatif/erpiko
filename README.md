@@ -13,6 +13,7 @@ Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 - PKCS#12
 - PKCS#7 (*partial*)
 - S/MIME sigining, verification, encryption and decryption
+- TSA (request, response, and verification)
 
 ## Backend
 

@@ -19,7 +19,6 @@ class SignedData {
      * Creates a SignedData object
      * @param certificate the certificate of the signer
      * @param privateKey the private key of the signer
-     * @param digestAlgorithmIdentifier the OID of the algorithm used to construct the digest
      */
     SignedData(const Certificate& certificate, const RsaKey& privateKey);
 
