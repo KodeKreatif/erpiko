@@ -225,12 +225,43 @@ void SignedData::toSMime(std::function<void(std::string)> onData, std::function<
   onEnd();
 }
 
+void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, std::string type) const {
+  if (impl->signingMode != SMIME) {
+    onEnd();
+    return;
+  }
+  int flags = PKCS7_TEXT | PKCS7_STREAM | PKCS7_DETACHED; // Default type is text
+  if (type == "nodetach") {
+    flags = PKCS7_STREAM;
+  } else if (type != "text") {
+    flags = PKCS7_STREAM | PKCS7_DETACHED;
+  }
+
+  BIO* out = BIO_new(BIO_s_mem());
+  auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, flags);
+
+  while (r) {
+    unsigned char buff[1025];
+    int ret = BIO_read(out, buff, 1024);
+    if (ret > 0) {
+      buff[ret] = 0;
+      std::string str = (char*)buff;
+      onData(str);
+    } else {
+      break;
+    }
+  }
+  BIO_free(out);
+
+  onEnd();
+}
+
 const std::string SignedData::toSMime() const {
   std::string retval;
 
   toSMime([&retval](std::string s) {
         retval += s;
-      }, [](){});
+      }, [](){}, 0);
 
   return retval;
 }
