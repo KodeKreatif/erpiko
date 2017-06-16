@@ -201,40 +201,20 @@ void SignedData::signSMime() const {
 }
 
 void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
-  if (impl->signingMode != SMIME) {
-    onEnd();
-    return;
-  }
-
-  BIO* out = BIO_new(BIO_s_mem());
-  auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, PKCS7_TEXT | PKCS7_STREAM | PKCS7_DETACHED);
-
-  while (r) {
-    unsigned char buff[1025];
-    int ret = BIO_read(out, buff, 1024);
-    if (ret > 0) {
-      buff[ret] = 0;
-      std::string str = (char*)buff;
-      onData(str);
-    } else {
-      break;
-    }
-  }
-  BIO_free(out);
-
-  onEnd();
+  SignedData::toSMime(onData, onEnd, SigningType::DEFAULT);
 }
 
-void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, std::string type) const {
+void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType type) const {
   if (impl->signingMode != SMIME) {
     onEnd();
     return;
   }
-  int flags = PKCS7_TEXT | PKCS7_STREAM | PKCS7_DETACHED; // Default type is text
-  if (type == "nodetach") {
+  int flags = PKCS7_STREAM | PKCS7_DETACHED;
+  if (type == SigningType::TEXT) {
+    flags = PKCS7_TEXT | PKCS7_STREAM | PKCS7_DETACHED;
+  } else if (type == SigningType::NODETACH) {
     flags = PKCS7_STREAM;
-  } else if (type != "text") {
-    flags = PKCS7_STREAM | PKCS7_DETACHED;
+    flags = PKCS7_STREAM;
   }
 
   BIO* out = BIO_new(BIO_s_mem());
@@ -261,7 +241,7 @@ const std::string SignedData::toSMime() const {
 
   toSMime([&retval](std::string s) {
         retval += s;
-      }, [](){}, 0);
+      }, [](){}, SigningType::DEFAULT);
 
   return retval;
 }

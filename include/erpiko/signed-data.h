@@ -8,6 +8,12 @@
 #include <memory>
 #include <functional>
 
+enum SigningType {
+    DEFAULT,
+    TEXT,
+    NODETACH,
+};
+
 namespace Erpiko {
 
 /**
@@ -90,9 +96,10 @@ class SignedData {
     
     /**
      * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
-     * when it is preceeded by a signSMime call. This is overloading function with type parameter added.
+     * when it is preceeded by a signSMime call. This is overloading function with type parameter added. 
+     * The types are : SigningType::DEFAULT, SigningType::TEXT, and SigningType::DETACH.
      */
-    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, std::string type) const;
+    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType type) const;
 
     /**
      * Updates data to be signed or to be verified
