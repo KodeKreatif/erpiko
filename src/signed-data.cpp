@@ -201,10 +201,11 @@ void SignedData::signSMime() const {
 }
 
 void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
-  SignedData::toSMime(onData, onEnd, SigningType::DEFAULT);
+  SigningType::Value type = SigningType::DEFAULT;
+  toSMime(onData, onEnd, type);
 }
 
-void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType type) const {
+void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType::Value type) const {
   if (impl->signingMode != SMIME) {
     onEnd();
     return;

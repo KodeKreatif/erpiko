@@ -110,7 +110,8 @@ class EnvelopedData::Impl {
         if (sMime) {
           pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_TEXT | PKCS7_STREAM);
         } else {
-          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_TEXT | PKCS7_STREAM);
+          //pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
         }
       }
     }
