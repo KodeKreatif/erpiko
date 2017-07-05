@@ -8,6 +8,14 @@
 #include <memory>
 #include <functional>
 
+namespace EncryptingType {
+enum Value {
+    DEFAULT,
+    TEXT,
+    BINARY
+};
+}
+
 namespace Erpiko {
 
 /**
@@ -81,20 +89,32 @@ class EnvelopedData {
      * Encrypts the EnvelopedData in S/MIME mode. Data can be always updated with update API, and
      * the final S/MIME structure and data is finalized with toSMime() call.
      * @param data The data to be encrypted
+     * @param type Type of the data that will be encrypted. See EncryptingType namespace for enum values.
      */
-    void encryptSMime(const std::vector<unsigned char> data);
+    void encryptSMime(const std::vector<unsigned char> data, EncryptingType::Value type);
 
     /**
      * Gets the S/MIME representation of the structure and data. This call only makes sense
      * when it is preceeded by a encryptSMime call
+     * The additional parameter is EncryptingType. See EncryptingType namespace for
+     * enumeratin values.
      */
     const std::string toSMime() const;
-
+    
+    const std::string toSMime(EncryptingType::Value type) const;
+    
     /**
      * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
      * when it is preceeded by a signSMime call
      */
     void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const;
+
+    /**
+     * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
+     * when it is preceeded by a signSMime call
+     * @param type See EncryptingType namespace for enumeration values.
+     */
+    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type) const;
 
 
     /**

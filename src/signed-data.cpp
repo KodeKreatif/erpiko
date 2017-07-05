@@ -201,11 +201,10 @@ void SignedData::signSMime() const {
 }
 
 void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
-  SigningType::Value type = SigningType::DEFAULT;
-  toSMime(onData, onEnd, type);
+  toSMime(onData, onEnd);
 }
 
-void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType::Value type) const {
+void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType::Value type = SigningType::DEFAULT) const {
   if (impl->signingMode != SMIME) {
     onEnd();
     return;
@@ -214,7 +213,6 @@ void SignedData::toSMime(std::function<void(std::string)> onData, std::function<
   if (type == SigningType::TEXT) {
     flags = PKCS7_TEXT | PKCS7_STREAM | PKCS7_DETACHED;
   } else if (type == SigningType::NODETACH) {
-    flags = PKCS7_STREAM;
     flags = PKCS7_STREAM;
   }
 
@@ -239,10 +237,10 @@ void SignedData::toSMime(std::function<void(std::string)> onData, std::function<
 
 const std::string SignedData::toSMime() const {
   std::string retval;
-
+  SigningType::Value type = SigningType::DEFAULT;
   toSMime([&retval](std::string s) {
         retval += s;
-      }, [](){}, SigningType::DEFAULT);
+      }, [](){}, type);
 
   return retval;
 }
