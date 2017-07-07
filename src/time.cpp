@@ -1,5 +1,6 @@
 #include "erpiko/time.h"
 #include <ctime>
+#include <cstdlib>
 
 namespace Erpiko {
 
