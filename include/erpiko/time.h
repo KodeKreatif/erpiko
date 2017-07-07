@@ -1,5 +1,5 @@
-#ifndef _TIME_H_
-#define _TIME_H_
+#ifndef _ETIME_H_
+#define _ETIME_H_
 
 #include <string>
 #include <memory>
@@ -114,4 +114,4 @@ class Time {
 };
 
 } // namespace Erpiko
-#endif // _TIME_H_
+#endif // _ETIME_H_
