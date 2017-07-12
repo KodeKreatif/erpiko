@@ -132,7 +132,8 @@ SCENARIO("Encrypting") {
     EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
     DataSource* data = DataSource::fromFile("assets/msg.txt");
     auto dataVector = data->readAll();
-    p7->encryptSMime(dataVector);
+    EncryptingType::Value type = EncryptingType::TEXT;
+    p7->encryptSMime(dataVector, type);
     THEN("Can produce S/MIME multipart signed message") {
       auto smime = p7->toSMime();
       r2 = smime;

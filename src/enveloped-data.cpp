@@ -98,7 +98,7 @@ class EnvelopedData::Impl {
       return EVP_get_cipherbyobj(obj);
     }
 
-    void encrypt(const std::vector<unsigned char> data, bool sMime) {
+    void encrypt(const std::vector<unsigned char> data, EncryptingType::Value type) {
       if (pkcs7) {
         PKCS7_free(pkcs7);
         pkcs7 = nullptr;
@@ -107,10 +107,12 @@ class EnvelopedData::Impl {
 
       auto cipher = getCipher();
       if (cipher != nullptr) {
-        if (sMime) {
+        if (type == EncryptingType::TEXT) {
           pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_TEXT | PKCS7_STREAM);
-        } else {
+        } else if (type == EncryptingType::BINARY) {
           pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
+        } else {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_STREAM | PKCS7_DETACHED);
         }
       }
     }
@@ -208,7 +210,7 @@ const std::vector<unsigned char> EnvelopedData::toDer() const {
 EnvelopedData::~EnvelopedData() = default;
 
 void EnvelopedData::encrypt(const std::vector<unsigned char> data) {
-  impl->encrypt(data, false);
+  impl->encrypt(data, EncryptingType::BINARY);
 }
 
 
@@ -242,9 +244,16 @@ const std::vector<unsigned char> EnvelopedData::decrypt(const Certificate& certi
 }
 
 void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
+  toSMime(onData, onEnd);
+}
+void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type = EncryptingType::DEFAULT) const {
 
   BIO* out = BIO_new(BIO_s_mem());
-  auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, PKCS7_TEXT | PKCS7_STREAM);
+  int flags = PKCS7_STREAM;
+  if (type == EncryptingType::TEXT) {
+    flags = PKCS7_TEXT | PKCS7_STREAM;
+  }
+  auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, flags);
 
   while (r) {
     unsigned char buff[1025];
@@ -262,16 +271,26 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
   onEnd();
 }
 
-void EnvelopedData::encryptSMime(const std::vector<unsigned char> data) {
-  impl->encrypt(data, true);
+void EnvelopedData::encryptSMime(const std::vector<unsigned char> data, EncryptingType::Value type) {
+  impl->encrypt(data, type);
 }
 
 const std::string EnvelopedData::toSMime() const {
   std::string retval;
+  EncryptingType::Value type = EncryptingType::DEFAULT;
+  toSMime([&retval](std::string s) {
+        retval += s;
+      }, [](){}, type);
+
+  return retval;
+}
+
+const std::string EnvelopedData::toSMime(EncryptingType::Value type) const {
+  std::string retval;
 
   toSMime([&retval](std::string s) {
         retval += s;
-      }, [](){});
+      }, [](){}, type);
 
   return retval;
 }
