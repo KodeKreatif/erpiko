@@ -148,7 +148,7 @@ SCENARIO("Import certificate from PEM test") {
   }
 }
 
-SCENARIO("Export certificate test") {
+SCENARIO("Export certificate to DER test") {
   GIVEN("A DER certificate") {
     DataSource* src = DataSource::fromFile("assets/crt1.der");
     THEN("The file is opened") {
@@ -166,6 +166,20 @@ SCENARIO("Export certificate test") {
             REQUIRE(cert2->serialNumber() == cert->serialNumber());
           }
         }
+      }
+    }
+  }
+}
+
+SCENARIO("Export certificate to PEM test") {
+  GIVEN("A new certificate") {
+    Certificate* cert = new Certificate();
+    THEN("Export to PEM") {
+      REQUIRE_FALSE(cert == nullptr);
+      auto pem = cert->toPem();
+      THEN("Import again") {
+        Certificate* cert = Certificate::fromPem(pem);
+        REQUIRE_FALSE(cert == nullptr);
       }
     }
   }

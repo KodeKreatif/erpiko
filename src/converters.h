@@ -105,6 +105,17 @@ namespace Converters {
 
     return v;
   }
+  
+  inline std::string certificateToPem(X509* r) {
+    BIO* bio = BIO_new(BIO_s_mem());
+    PEM_write_bio_X509(bio, r);
+    BUF_MEM *mem = NULL;
+    BIO_get_mem_ptr(bio, &mem);
+    std::string pem(mem->data, mem->length);
+    BIO_free(bio);
+
+    return pem;
+  }
 
   inline std::vector<unsigned char> pkcs12ToDer(PKCS12* r) {
     std::vector<unsigned char> retval;
