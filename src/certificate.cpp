@@ -324,6 +324,10 @@ const std::vector<unsigned char> Certificate::toDer() const {
   return Converters::certificateToDer(impl->x509);
 }
 
+const std::string Certificate::toPem() const {
+  return Converters::certificateToPem(impl->x509);
+}
+
 const std::vector<const CertificateExtension*>& Certificate::extensions() const {
   impl->extensionPointers.clear();
   for (unsigned int i = 0; i < impl->extensions.size(); i ++) {

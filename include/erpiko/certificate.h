@@ -86,6 +86,12 @@ class Certificate {
      * @return vector containing DER
      */
     const std::vector<unsigned char> toDer() const;
+    
+    /**
+     * Exports the certificate to PEM format
+     * @return PEM string
+     */
+    const std::string toPem() const;
 
     /**
      * Gets the identity of the subject
