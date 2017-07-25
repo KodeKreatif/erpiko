@@ -200,10 +200,6 @@ void SignedData::signSMime() const {
   impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, PKCS7_STREAM | PKCS7_DETACHED);
 }
 
-void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
-  toSMime(onData, onEnd);
-}
-
 void SignedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType::Value type = SigningType::DEFAULT) const {
   if (impl->signingMode != SMIME) {
     onEnd();
