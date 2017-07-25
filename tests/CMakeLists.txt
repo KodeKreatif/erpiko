@@ -26,6 +26,6 @@ add_executable(testsmime smime.cpp)
 target_link_libraries(testsmime erpiko libresslcrypto)
 
 add_executable(testtsa tsa.cpp)
-target_link_libraries(testtsa erpiko libresslcrypto libresslcryptocompat)
+target_link_libraries(testtsa erpiko libresslcrypto)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")

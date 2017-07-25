@@ -243,9 +243,6 @@ const std::vector<unsigned char> EnvelopedData::decrypt(const Certificate& certi
   return impl->decrypt(certificate, privateKey);
 }
 
-void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const {
-  toSMime(onData, onEnd);
-}
 void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type = EncryptingType::DEFAULT) const {
 
   BIO* out = BIO_new(BIO_s_mem());

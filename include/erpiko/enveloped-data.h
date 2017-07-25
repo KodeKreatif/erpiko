@@ -106,12 +106,6 @@ class EnvelopedData {
     /**
      * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
      * when it is preceeded by a signSMime call
-     */
-    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd) const;
-
-    /**
-     * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
-     * when it is preceeded by a signSMime call
      * @param type See EncryptingType namespace for enumeration values.
      */
     void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type) const;
