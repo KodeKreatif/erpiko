@@ -1,4 +1,6 @@
 NUMJOBS=5
+rm -rf deps
+mkdir deps
 if [ ! -d deps ];then
   echo "Run this from top directory"
   exit
