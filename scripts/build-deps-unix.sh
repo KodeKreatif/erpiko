@@ -6,6 +6,8 @@ fi
 TOP=`pwd`
 
 # LibreSSL
+rm -rf deps
+mkdir deps
 cd deps
 rm -rf libressl-portable-tip
 wget -O tip.zip https://github.com/mdamt/libressl-portable/archive/tip.zip
