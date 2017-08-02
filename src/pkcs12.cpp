@@ -189,6 +189,7 @@ void Pkcs12::privateKey(const RsaKey& key) {
     EVP_PKEY_free(impl->pkey);
   }
   impl->pkey = Converters::rsaKeyToPkey(key);
+  impl->privateKey.reset(const_cast<RsaKey*>(&key));
 }
 
 const Certificate& Pkcs12::certificate() const {
@@ -199,6 +200,8 @@ void Pkcs12::certificate(const Certificate& cert) {
   auto der = cert.toDer();
   BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
   d2i_X509_bio(mem, &impl->cert);
+  impl->certificate.reset(Certificate::fromDer(der));
+  BIO_free(mem);
 }
 
 const std::vector<const Certificate*>& Pkcs12::certificateChain() const {
