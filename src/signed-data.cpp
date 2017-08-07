@@ -23,6 +23,7 @@ class SignedData::Impl {
     std::unique_ptr<RsaKey> privateKey;
     std::vector<std::unique_ptr<Certificate>> ca;
     std::vector<const Certificate*> caPointer;
+    std::vector<const Certificate*> certList;
 
     int signerInfoIndex = -1;
 
@@ -44,6 +45,12 @@ class SignedData::Impl {
       BIO_free(bio);
       if (pkcs7) {
         PKCS7_free(pkcs7);
+      }
+      while (!certList.empty())
+      {
+        const Certificate* cert = certList.back();
+        certList.pop_back();
+        delete cert;
       }
     }
 
@@ -94,6 +101,15 @@ class SignedData::Impl {
       }
     }
 
+    std::vector<const Certificate*> getCertificates() {
+      certList.clear();
+      for (auto i = 0; i < sk_X509_num(pkcs7->d.sign->cert); i++) {
+        X509* cert = sk_X509_value(pkcs7->d.sign->cert, i);
+        auto pem = Converters::certificateToPem(cert);
+        certList.push_back(Certificate::fromPem(pem));
+      }
+      return certList;
+    }
 };
 
 SignedData::SignedData() : impl{std::make_unique<Impl>()} {
@@ -276,6 +292,8 @@ SignedData* SignedData::fromSMime(const std::string smime, const Certificate& ce
   return p;
 }
 
-
+std::vector<const Certificate*> SignedData::certificates() const {
+  return impl->getCertificates();
+}
 
 } // namespace Erpiko

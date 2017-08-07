@@ -128,7 +128,6 @@ SCENARIO("Construct SignedData") {
   }
 }
 
-
 SCENARIO("Export SignedData to PEM") {
   GIVEN("Certificate and private key and data") {
     auto srcCert = DataSource::fromFile("assets/cert.pem");
@@ -154,14 +153,12 @@ SCENARIO("Export SignedData to PEM") {
       auto pem = p7->toPem();
       THEN("And can be verified") {
         SignedData* p7v = SignedData::fromPem(pem, *cert);
-        p7v->update(dataVector);
         REQUIRE(p7v->isDetached() == true);
+        p7v->update(dataVector);
         REQUIRE(p7v->verify() == true);
       }
     }
   }
 }
-
-
 
 } //namespace Erpiko
