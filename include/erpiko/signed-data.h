@@ -92,7 +92,7 @@ class SignedData {
 
     /**
      * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
-     * when it is preceeded by a signSMime call. This is overloading function with type parameter added. 
+     * when it is preceeded by a signSMime call. This is overloading function with type parameter added.
      */
     void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, SigningType::Value type) const;
 
@@ -117,6 +117,12 @@ class SignedData {
      * @return whether the SignedData is detached
      */
     bool isDetached() const;
+
+    /**
+     * Returns a vector of certificates enclosed in the signed data
+     * @return vector of Certificates
+     */
+    std::vector<const Certificate*> certificates() const;
 
     virtual ~SignedData();
 
