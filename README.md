@@ -14,10 +14,18 @@ Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 - PKCS#7 (*partial*)
 - S/MIME sigining, verification, encryption and decryption
 - TSA (request, response, and verification)
+- Random number generator
+- Crypto functions with CUDA when available and enabled
 
 ## Backend
 
 Erpiko uses LibreSSL as it's backend
+
+## Building
+
+CUDA support is automatically enabled by default if available. To disable CUDA, pass `DISABLE_CUDA` when
+initializing CMAKE, eg: `cmake -DDISABLE_CUDA=1 ..`. If CUDA is not found in your system then it is not
+needed to disable CUDA.
 
 ## License
 
