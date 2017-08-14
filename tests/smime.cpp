@@ -369,7 +369,7 @@ SCENARIO("Import SMime without the cert") {
     auto v = srcData->readAll();
     std::string pemData(v.begin(),v.end());
 
-    SignedData* p7 = SignedData::fromSMimeWithoutCert(pemData);
+    SignedData* p7 = SignedData::fromSMime(pemData);
 
     THEN("Check the certificate") {
       auto list = p7->certificates();

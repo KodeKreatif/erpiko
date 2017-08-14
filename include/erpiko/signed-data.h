@@ -53,7 +53,13 @@ class SignedData {
      * @return pointer to SignedData
      */
     static SignedData* fromSMime(const std::string pem, const Certificate& certificate);
-    static SignedData* fromSMimeWithoutCert(const std::string pem);
+
+    /**
+     * Parses S/MIME data and returns an instance of SignedData
+     * @param pem S/MIME data
+     * @return pointer to SignedData
+     */
+    static SignedData* fromSMime(const std::string pem);
 
     /**
      * Exports SignedData data to DER

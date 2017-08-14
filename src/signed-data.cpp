@@ -101,7 +101,7 @@ class SignedData::Impl {
       }
     }
     
-    void fromSMimeWithoutCert(const std::string smime) {
+    void fromSMime(const std::string smime) {
       signingMode = SMIME;
       imported = true;
       BIO* mem = BIO_new_mem_buf((void*) smime.c_str(), smime.length());
@@ -310,10 +310,10 @@ SignedData* SignedData::fromSMime(const std::string smime, const Certificate& ce
   return p;
 }
 
-SignedData* SignedData::fromSMimeWithoutCert(const std::string smime) {
+SignedData* SignedData::fromSMime(const std::string smime) {
   auto p = new SignedData();
 
-  p->impl->fromSMimeWithoutCert(smime);
+  p->impl->fromSMime(smime);
 
   if (!p->impl->success) {
     return nullptr;
