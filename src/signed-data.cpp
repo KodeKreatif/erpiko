@@ -100,6 +100,24 @@ class SignedData::Impl {
         return;
       }
     }
+    
+    void fromSMime(const std::string smime) {
+      signingMode = SMIME;
+      imported = true;
+      BIO* mem = BIO_new_mem_buf((void*) smime.c_str(), smime.length());
+      pkcs7 = SMIME_read_PKCS7(mem, &bio);
+
+      auto ret = (pkcs7 != nullptr);
+
+      STACK_OF(X509) *stack = sk_X509_new_null();
+      auto signers = PKCS7_get0_signers(pkcs7, stack, 0);
+      cert = sk_X509_value(signers, 0);
+
+      if (ret) {
+        success = true;
+        return;
+      }
+    }
 
     std::vector<const Certificate*> getCertificates() {
       certList.clear();
@@ -285,6 +303,17 @@ SignedData* SignedData::fromSMime(const std::string smime, const Certificate& ce
   auto p = new SignedData();
 
   p->impl->fromSMime(smime, cert);
+
+  if (!p->impl->success) {
+    return nullptr;
+  }
+  return p;
+}
+
+SignedData* SignedData::fromSMime(const std::string smime) {
+  auto p = new SignedData();
+
+  p->impl->fromSMime(smime);
 
   if (!p->impl->success) {
     return nullptr;

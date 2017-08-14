@@ -334,7 +334,8 @@ SCENARIO("Decrypting long SMIME signed string") {
     }
   }
 }
-
+/*
+  */
 SCENARIO("List enclosed certificates") {
   GIVEN("Certificate in pem") {
     auto srcCert = DataSource::fromFile("assets/cert.pem");
@@ -347,6 +348,28 @@ SCENARIO("List enclosed certificates") {
     std::string pemData(v.begin(),v.end());
 
     SignedData* p7 = SignedData::fromSMime(pemData, *cert);
+
+    THEN("Check the certificate") {
+      auto list = p7->certificates();
+      REQUIRE(list.size() == 1);
+      for (auto i : list) {
+        auto t = i->subjectIdentity().toString();
+        REQUIRE(t == "/emailAddress=herpiko.email.testing@gmail.com/CN=herpikotesting1");
+      }
+      delete p7;
+      // test SignedData's destructor
+      REQUIRE(std::string("here-not-crashed") == std::string("here-not-crashed"));
+    }
+  }
+}
+
+SCENARIO("Import SMime without the cert") {
+  GIVEN("SMime in pem") {
+    auto srcData = DataSource::fromFile("assets/smime-signed-with-cert.pem");
+    auto v = srcData->readAll();
+    std::string pemData(v.begin(),v.end());
+
+    SignedData* p7 = SignedData::fromSMime(pemData);
 
     THEN("Check the certificate") {
       auto list = p7->certificates();
