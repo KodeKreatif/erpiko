@@ -1,7 +1,7 @@
-project("erpiko")
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+project("erpiko" LANGUAGES CXX)
 
 if (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" OR
     CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
@@ -12,7 +12,7 @@ endif()
 
 if (NOT CONFIGURED_ONCE)
   if (NOT MSVC)
-    set(CMAKE_CXX_FLAGS "-std=c++14 ${warnings}"
+    set(CMAKE_CXX_FLAGS " ${warnings}"
         CACHE STRING "Flags used by the compiler during all build types." FORCE)
   endif()
 endif()
@@ -20,8 +20,11 @@ endif()
 find_package(CUDA)
 if (${CUDA_VERSION}) 
   if (NOT DISABLE_CUDA)
+    include(FindCUDA)
     add_definitions(-DENABLE_CUDA)
     message(STATUS "Cuda is found and enabled")
+    set(ENABLE_CUDA 1)
+    include_directories(${CUDA_INCLUDE_DIRS})
   else()
     message(STATUS "Cuda is found but disabled")
   endif()
