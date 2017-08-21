@@ -13,10 +13,12 @@ class EnvelopedData::Impl {
     std::unique_ptr<ObjectId> oid;
     PKCS7 *pkcs7 = nullptr;
     BIO* bio = BIO_new(BIO_s_mem());
+    std::string smimePartial = "";
 
     bool success = false;
     bool imported = false;
     bool isSMime = false;
+    bool fromSMimePartial = false;
     bool finalized = false;
 
     Impl() {
@@ -73,6 +75,47 @@ class EnvelopedData::Impl {
       auto ret = (pkcs7 != nullptr);
 
       if (ret) {
+        success = true;
+        return;
+      }
+    }
+
+    void fromSMimeInit(const std::string smime) {
+      fromSMimePartial = true;
+      finalized = false;
+      isSMime = true;
+      imported = true;
+      smimePartial = smime;
+      return;
+    }
+
+    void fromSMimeUpdate(const std::string smime) {
+      if (!fromSMimePartial) {
+        return;
+      }
+      if (finalized) {
+        return;
+      }
+      smimePartial += smime;
+      return;
+    }
+
+    void fromSMimeFinalize() {
+      if (!fromSMimePartial) {
+        return;
+      }
+      if (finalized) {
+        return;
+      }
+      isSMime = true;
+      imported = true;
+      BIO* mem = BIO_new_mem_buf((void*) smimePartial.c_str(), smimePartial.length());
+      BIO* na = NULL;
+      pkcs7 = SMIME_read_PKCS7(mem, &na);
+
+      auto ret = (pkcs7 != nullptr);
+      if (ret) {
+        smimePartial = "";
         success = true;
         return;
       }
@@ -194,6 +237,32 @@ class EnvelopedData::Impl {
       EVP_PKEY_free(pkey);
       return retval;
     }
+    
+    void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey) {
+      EVP_PKEY *pkey = nullptr;
+      pkey = Converters::rsaKeyToPkey(privateKey);
+      auto cert = Converters::certificateToX509(certificate);
+      auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
+	
+      if (ret == 0) {
+        ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
+      }
+
+      while (ret) {
+        unsigned char buff[1024];
+        int ret = BIO_read(bio, buff, 1024);
+        if (ret > 0) {
+          buff[ret] = 0;
+          std::string str = (char*)buff;
+          onData(str);
+        } else {
+          break;
+        }
+      }
+
+      EVP_PKEY_free(pkey);
+      onEnd();
+    }
 };
 
 EnvelopedData::EnvelopedData() : impl{std::make_unique<Impl>()} {
@@ -293,6 +362,10 @@ const std::vector<unsigned char> EnvelopedData::decrypt(const Certificate& certi
   return impl->decrypt(certificate, privateKey);
 }
 
+void EnvelopedData::decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey) const {
+  impl->decrypt(onData, onEnd, certificate, privateKey);
+}
+
 void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type = EncryptingType::DEFAULT) const {
 
   if (!impl->finalized) {
@@ -369,6 +442,20 @@ EnvelopedData* EnvelopedData::fromSMime(const std::string smime) {
     return nullptr;
   }
   return p;
+}
+
+EnvelopedData* EnvelopedData::fromSMimeInit(const std::string smime) {
+  auto p = new EnvelopedData();
+  p->impl->fromSMimeInit(smime);
+  return p;
+}
+
+void EnvelopedData::fromSMimeUpdate(const std::string smime) {
+  impl->fromSMimeUpdate(smime);
+}
+
+void EnvelopedData::fromSMimeFinalize() {
+  impl->fromSMimeFinalize();
 }
 
 EnvelopedData* EnvelopedData::fromSMimeFile(const std::string path) {

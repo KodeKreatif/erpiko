@@ -19,6 +19,7 @@ class SignedData::Impl {
     X509 *cert;
     PKCS7 *pkcs7 = nullptr;
     BIO* bio = BIO_new(BIO_s_mem());
+    std::string smimePartial = "";
 
     std::unique_ptr<RsaKey> privateKey;
     std::vector<std::unique_ptr<Certificate>> ca;
@@ -28,7 +29,9 @@ class SignedData::Impl {
     int signerInfoIndex = -1;
 
     bool success = false;
+    bool finalized = false;
     bool imported = false;
+    bool fromSMimePartial = false;
     int nidKey = 0;
     int nidCert = 0;
     SigningMode signingMode;
@@ -114,6 +117,50 @@ class SignedData::Impl {
       cert = sk_X509_value(signers, 0);
 
       if (ret) {
+        success = true;
+        return;
+      }
+    }
+
+    void fromSMimeInit(const std::string smime) {
+      fromSMimePartial = true;
+      finalized = false;
+      imported = true;
+      smimePartial = smime;
+      return;
+    }
+
+    void fromSMimeUpdate(const std::string smime) {
+      if (!fromSMimePartial) {
+        return;
+      }
+      if (finalized) {
+        return;
+      }
+      smimePartial += smime;
+      return;
+    }
+
+    void fromSMimeFinalize() {
+      if (!fromSMimePartial) {
+        return;
+      }
+      if (finalized) {
+        return;
+      }
+      signingMode = SMIME;
+      imported = true;
+      BIO* mem = BIO_new_mem_buf((void*) smimePartial.c_str(), smimePartial.length());
+      pkcs7 = SMIME_read_PKCS7(mem, &bio);
+
+      auto ret = (pkcs7 != nullptr);
+
+      STACK_OF(X509) *stack = sk_X509_new_null();
+      auto signers = PKCS7_get0_signers(pkcs7, stack, 0);
+      cert = sk_X509_value(signers, 0);
+
+      if (ret) {
+        smimePartial = "";
         success = true;
         return;
       }
@@ -319,6 +366,20 @@ SignedData* SignedData::fromSMime(const std::string smime) {
     return nullptr;
   }
   return p;
+}
+
+SignedData* SignedData::fromSMimeInit(const std::string smime) {
+  auto p = new SignedData();
+  p->impl->fromSMimeInit(smime);
+  return p;
+}
+
+void SignedData::fromSMimeUpdate(const std::string smime) {
+  impl->fromSMimeUpdate(smime);
+}
+
+void SignedData::fromSMimeFinalize() {
+  impl->fromSMimeFinalize();
 }
 
 std::vector<const Certificate*> SignedData::certificates() const {

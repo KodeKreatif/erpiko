@@ -60,6 +60,29 @@ class SignedData {
      * @return pointer to SignedData
      */
     static SignedData* fromSMime(const std::string pem);
+    
+    /**
+     * Initiate empty SignedData. This should be updated and finalized later.
+     * Any chunk of data that throwed into this instance will be collected in memory
+     * and the real operation will done by fromSMimeFinalize()
+     * @param smimePartial  chunk of S/MIME data
+     * @return pointer to SignedData
+     */
+    static SignedData* fromSMimeInit(const std::string smimePartial);
+    
+    /**
+     * Update existing SignedData instance. This should be finalized later.
+     * Any chunk of data that throwed into this instance will be collected in memory
+     * If all the chunk of data has been imported, this should be finished with fromSMimeFinalize()
+     * @param smimePartial  chunk of S/MIME data
+     * @return pointer to SignedData
+     */
+    void fromSMimeUpdate(const std::string smimePartial);
+
+    /**
+     * Finalize the SignedData that came from fromSMimeInit.
+     */
+    void fromSMimeFinalize();
 
     /**
      * Exports SignedData data to DER

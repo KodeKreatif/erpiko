@@ -221,27 +221,6 @@ SCENARIO("Encrypting with incremental data update with the last chunk of data in
   }
 }
 
-SCENARIO("Decrypting") {
-  GIVEN("Certificate and private key and data") {
-    auto srcCert = DataSource::fromFile("assets/cert.pem");
-    auto v = srcCert->readAll();
-    std::string pemCert(v.begin(),v.end());
-    auto cert = Certificate::fromPem(pemCert);
-
-    auto srcKey = DataSource::fromFile("assets/private.key");
-    v = srcKey->readAll();
-    std::string pemKey(v.begin(),v.end());
-    auto key = RsaKey::fromPem(pemKey);
-
-    DataSource* data = DataSource::fromFile("assets/msg.txt");
-    auto dataVector = data->readAll();
-    EnvelopedData* p7 = EnvelopedData::fromSMime(r2);
-    auto decrypted = p7->decrypt(*cert, *key);
-    THEN("Can be decrypted back") {
-      REQUIRE(dataVector == decrypted);
-    }
-  }
-}
 SCENARIO("Decrypting short SMIME string") {
   GIVEN("Certificate and private key and data") {
     auto srcCert = DataSource::fromFile("assets/certx4.pem");
@@ -466,6 +445,64 @@ SCENARIO("Import SMime without the cert") {
       // delete p7;
       // test SignedData's destructor
       // REQUIRE(std::string("here-not-crashed") == std::string("here-not-crashed"));
+    }
+  }
+}
+
+SCENARIO("Import SMime to EnvelopedData partially") {
+  GIVEN("SMime in pem") {
+    auto srcCert = DataSource::fromFile("assets/certx4.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/keyx4.pem");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    auto srcData = DataSource::fromFile("assets/smime-short.txt");
+    v = srcData->readAll();
+    std::string pemData(v.begin(),v.end());
+
+    auto partOne = pemData.substr(0, 100);
+    auto partTwo = pemData.substr(100);
+    auto p7 = EnvelopedData::fromSMimeInit(partOne);
+    p7->fromSMimeUpdate(partTwo);
+    p7->fromSMimeFinalize();
+    auto decrypted = p7->decrypt(*cert, *key);
+    std::string s((const char*)decrypted.data(), decrypted.size());
+    THEN("Can be decrypted") {
+      REQUIRE("MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglg\r\n\r\n\r\n" == s);
+    }
+  }
+}
+
+SCENARIO("Import SMime to SignData partially") {
+  GIVEN("SMime in pem") {
+    auto srcData = DataSource::fromFile("assets/smime-signed.txt");
+    auto v = srcData->readAll();
+    std::string pemData(v.begin(),v.end());
+
+    auto partOne = pemData.substr(0, 100);
+    auto partTwo = pemData.substr(100);
+    auto p7 = SignedData::fromSMimeInit(partOne);
+    p7->fromSMimeUpdate(partTwo);
+    p7->fromSMimeFinalize();
+
+    THEN("Check the certificate") {
+      auto list = p7->certificates();
+      REQUIRE(list.size() == 2);
+      bool first = true;
+      for (auto i : list) {
+        auto t = i->subjectIdentity().toString();
+        if (first) {
+          REQUIRE(t == "/CN=TNISiberLabCA/O=TNI Siber Lab/C=ID");
+          first = false;;
+        } else {
+          REQUIRE(t == "/emailAddress=herpiko.aguno@tnisiber.id/CN=Herpiko Dwi Aguno");
+        }
+      }
     }
   }
 }
