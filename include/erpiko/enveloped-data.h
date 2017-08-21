@@ -94,6 +94,25 @@ class EnvelopedData {
     void encryptSMime(const std::vector<unsigned char> data, EncryptingType::Value type);
 
     /**
+     * Update the data in EnvelopedData S/MIME mode. Operation is finalized with finalizeEncryptSMime() call.
+     * @param data The data to be encrypted
+     */
+    void updateSMime(const std::vector<unsigned char> data);
+
+    /**
+     * Finalize and encrypt the EnvelopedData in S/MIME mode.
+     * @param data The data to be encrypted
+     * @param type Type of the data that will be encrypted. See EncryptingType namespace for enum values.
+     */
+    void finalizeEncryptSMime(const std::vector<unsigned char> data, EncryptingType::Value type);
+
+    /**
+     * Finalize and encrypt the EnvelopedData in S/MIME mode.
+     * @param type Type of the data that will be encrypted. See EncryptingType namespace for enum values.
+     */
+    void finalizeEncryptSMime(EncryptingType::Value type);
+
+    /**
      * Gets the S/MIME representation of the structure and data. This call only makes sense
      * when it is preceeded by a encryptSMime call
      * The additional parameter is EncryptingType. See EncryptingType namespace for

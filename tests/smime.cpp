@@ -144,6 +144,83 @@ SCENARIO("Encrypting") {
     }
   }
 }
+
+SCENARIO("Encrypting with incremental data update") {
+  GIVEN("Certificate and private key and data") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/msg.txt");
+
+    v = src->readAll();
+    EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
+    DataSource* data = DataSource::fromFile("assets/msg.txt");
+    auto dataVector = data->readAll();
+    EncryptingType::Value type = EncryptingType::TEXT;
+
+    p7->updateSMime(dataVector);
+    p7->updateSMime(dataVector);
+    p7->finalizeEncryptSMime(type);
+    THEN("Can produce S/MIME multipart signed message") {
+      auto smime = p7->toSMime();
+      REQUIRE_FALSE(smime.empty());
+      REQUIRE(smime.find("application/pkcs7-signature") > 0);
+      REQUIRE(smime.find("smime.p7m") > 0);
+      REQUIRE(smime.find("smime.p7s") == std::string::npos);
+      p7->updateSMime(dataVector);
+      p7->updateSMime(dataVector);
+      auto smimeA = p7->toSMime();
+      p7->updateSMime(dataVector);
+      p7->updateSMime(dataVector);
+      p7->updateSMime(dataVector);
+      auto smimeB = p7->toSMime();
+      REQUIRE(smime.length() == smimeA.length());
+      REQUIRE(smime.length() == smimeB.length());
+      REQUIRE(smimeA.length() == smimeB.length());
+    }
+  }
+}
+
+SCENARIO("Encrypting with incremental data update with the last chunk of data in finalize function") {
+  GIVEN("Certificate and private key and data") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/msg.txt");
+
+    v = src->readAll();
+    EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
+    DataSource* data = DataSource::fromFile("assets/msg.txt");
+    auto dataVector = data->readAll();
+    EncryptingType::Value type = EncryptingType::TEXT;
+
+    p7->updateSMime(dataVector);
+    p7->updateSMime(dataVector);
+    p7->finalizeEncryptSMime(dataVector, type);
+    THEN("Can produce S/MIME multipart signed message") {
+      auto smime = p7->toSMime();
+      REQUIRE_FALSE(smime.empty());
+      REQUIRE(smime.find("application/pkcs7-signature") > 0);
+      REQUIRE(smime.find("smime.p7m") > 0);
+      REQUIRE(smime.find("smime.p7s") == std::string::npos);
+    }
+  }
+}
+
 SCENARIO("Decrypting") {
   GIVEN("Certificate and private key and data") {
     auto srcCert = DataSource::fromFile("assets/cert.pem");
@@ -158,13 +235,10 @@ SCENARIO("Decrypting") {
 
     DataSource* data = DataSource::fromFile("assets/msg.txt");
     auto dataVector = data->readAll();
-
     EnvelopedData* p7 = EnvelopedData::fromSMime(r2);
     auto decrypted = p7->decrypt(*cert, *key);
-    std::string s((const char*)decrypted.data(), decrypted.size());
     THEN("Can be decrypted back") {
-      //https://gitlab.com/KodeKreatif/erpiko/issues/4
-      //REQUIRE(dataVector == decrypted);
+      REQUIRE(dataVector == decrypted);
     }
   }
 }
@@ -334,8 +408,7 @@ SCENARIO("Decrypting long SMIME signed string") {
     }
   }
 }
-/*
-  */
+
 SCENARIO("List enclosed certificates") {
   GIVEN("Certificate in pem") {
     auto srcCert = DataSource::fromFile("assets/cert.pem");
@@ -343,18 +416,24 @@ SCENARIO("List enclosed certificates") {
     std::string pemCert(v.begin(),v.end());
     auto cert = Certificate::fromPem(pemCert);
 
-    auto srcData = DataSource::fromFile("assets/smime-signed-with-cert.pem");
-    v = srcData->readAll();
-    std::string pemData(v.begin(),v.end());
+    auto srcData = DataSource::fromFile("assets/smime-signed.txt");
+    auto vData = srcData->readAll();
+    std::string pemData(vData.begin(),vData.end());
 
     SignedData* p7 = SignedData::fromSMime(pemData, *cert);
 
     THEN("Check the certificate") {
       auto list = p7->certificates();
-      REQUIRE(list.size() == 1);
+      REQUIRE(list.size() == 2);
+      bool first = true;
       for (auto i : list) {
         auto t = i->subjectIdentity().toString();
-        REQUIRE(t == "/emailAddress=herpiko.email.testing@gmail.com/CN=herpikotesting1");
+        if (first) {
+          REQUIRE(t == "/CN=TNISiberLabCA/O=TNI Siber Lab/C=ID");
+          first = false;;
+        } else {
+          REQUIRE(t == "/emailAddress=herpiko.aguno@tnisiber.id/CN=Herpiko Dwi Aguno");
+        }
       }
       delete p7;
       // test SignedData's destructor
@@ -365,7 +444,7 @@ SCENARIO("List enclosed certificates") {
 
 SCENARIO("Import SMime without the cert") {
   GIVEN("SMime in pem") {
-    auto srcData = DataSource::fromFile("assets/smime-signed-with-cert.pem");
+    auto srcData = DataSource::fromFile("assets/smime-signed.txt");
     auto v = srcData->readAll();
     std::string pemData(v.begin(),v.end());
 
@@ -373,18 +452,23 @@ SCENARIO("Import SMime without the cert") {
 
     THEN("Check the certificate") {
       auto list = p7->certificates();
-      REQUIRE(list.size() == 1);
+      REQUIRE(list.size() == 2);
+      bool first = true;
       for (auto i : list) {
         auto t = i->subjectIdentity().toString();
-        REQUIRE(t == "/emailAddress=herpiko.email.testing@gmail.com/CN=herpikotesting1");
+        if (first) {
+          REQUIRE(t == "/CN=TNISiberLabCA/O=TNI Siber Lab/C=ID");
+          first = false;;
+        } else {
+          REQUIRE(t == "/emailAddress=herpiko.aguno@tnisiber.id/CN=Herpiko Dwi Aguno");
+        }
       }
-      delete p7;
+      // delete p7;
       // test SignedData's destructor
-      REQUIRE(std::string("here-not-crashed") == std::string("here-not-crashed"));
+      // REQUIRE(std::string("here-not-crashed") == std::string("here-not-crashed"));
     }
   }
 }
-
 
 
 

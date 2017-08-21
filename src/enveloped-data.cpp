@@ -17,6 +17,7 @@ class EnvelopedData::Impl {
     bool success = false;
     bool imported = false;
     bool isSMime = false;
+    bool finalized = false;
 
     Impl() {
       OpenSSL_add_all_algorithms();
@@ -114,7 +115,57 @@ class EnvelopedData::Impl {
         } else {
           pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_STREAM | PKCS7_DETACHED);
         }
+        finalized = true;
       }
+    }
+
+    void finalize(const std::vector<unsigned char> data, EncryptingType::Value type) {
+      if (pkcs7) {
+        PKCS7_free(pkcs7);
+        pkcs7 = nullptr;
+      }
+      BIO_write(bio, data.data(), data.size());
+
+      auto cipher = getCipher();
+      if (cipher != nullptr) {
+        if (type == EncryptingType::TEXT) {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_TEXT | PKCS7_STREAM);
+        } else if (type == EncryptingType::BINARY) {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
+        } else {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_STREAM | PKCS7_DETACHED);
+        }
+        finalized = true;
+      }
+    }
+
+    void finalize(EncryptingType::Value type) {
+      if (pkcs7) {
+        PKCS7_free(pkcs7);
+        pkcs7 = nullptr;
+      }
+
+      auto cipher = getCipher();
+      if (cipher != nullptr) {
+        if (type == EncryptingType::TEXT) {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_TEXT | PKCS7_STREAM);
+        } else if (type == EncryptingType::BINARY) {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_BINARY);
+        } else {
+          pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_STREAM | PKCS7_DETACHED);
+        }
+        finalized = true;
+      }
+    }
+
+    void update(const std::vector<unsigned char> data) {
+      if (!pkcs7) {
+        return;
+      }
+      if (finalized) {
+        return;
+      }
+      BIO_write(bio, data.data(), data.size());
     }
 
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) {
@@ -213,7 +264,6 @@ void EnvelopedData::encrypt(const std::vector<unsigned char> data) {
   impl->encrypt(data, EncryptingType::BINARY);
 }
 
-
 const std::string EnvelopedData::toPem() const {
   std::string retval;
   int ret;
@@ -245,6 +295,9 @@ const std::vector<unsigned char> EnvelopedData::decrypt(const Certificate& certi
 
 void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type = EncryptingType::DEFAULT) const {
 
+  if (!impl->finalized) {
+    impl->finalize(type);
+  }
   BIO* out = BIO_new(BIO_s_mem());
   int flags = PKCS7_STREAM;
   if (type == EncryptingType::TEXT) {
@@ -270,6 +323,21 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
 
 void EnvelopedData::encryptSMime(const std::vector<unsigned char> data, EncryptingType::Value type) {
   impl->encrypt(data, type);
+}
+
+void EnvelopedData::updateSMime(const std::vector<unsigned char> data) {
+  if (impl->finalized) {
+    return;
+  }
+  impl->update(data);
+}
+
+void EnvelopedData::finalizeEncryptSMime(EncryptingType::Value type) {
+  impl->finalize(type);
+}
+
+void EnvelopedData::finalizeEncryptSMime(const std::vector<unsigned char> data, EncryptingType::Value type) {
+  impl->finalize(data, type);
 }
 
 const std::string EnvelopedData::toSMime() const {

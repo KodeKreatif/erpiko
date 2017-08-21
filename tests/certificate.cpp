@@ -173,7 +173,11 @@ SCENARIO("Export certificate to DER test") {
 
 SCENARIO("Export certificate to PEM test") {
   GIVEN("A new certificate") {
-    Certificate* cert = new Certificate();
+    DataSource* src = DataSource::fromFile("assets/crt1.der");
+    REQUIRE_FALSE(src == nullptr);
+    auto v = src->readAll();
+    Certificate* cert = Certificate::fromDer(v);
+    delete(src);
     THEN("Export to PEM") {
       REQUIRE_FALSE(cert == nullptr);
       auto pem = cert->toPem();
