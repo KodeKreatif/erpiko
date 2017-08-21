@@ -1,7 +1,10 @@
+set (SOURCES rsakey.cpp rsakey-public.cpp bigint.cpp certificate.cpp identity.cpp oid.cpp time.cpp data-source.cpp pkcs12.cpp cmp.cpp signed-data.cpp sim.cpp enveloped-data.cpp tsa-request.cpp tsa-response.cpp rng.cpp digest.cpp sha1.cpp sha224.cpp sha256.cpp sha384.cpp sha512.cpp)
+set (CUDA_SOURCES rng.cu)
+
 if (ENABLE_CUDA)
-  cuda_add_library(erpiko rsakey.cpp rsakey-public.cpp bigint.cpp certificate.cpp identity.cpp oid.cpp time.cpp data-source.cpp pkcs12.cpp cmp.cpp signed-data.cpp sim.cpp enveloped-data.cpp tsa-request.cpp tsa-response.cpp rng.cpp rng.cu)
+  cuda_add_library(erpiko ${SOURCES} ${CUDA_SOURCES})
 else()
-  add_library(erpiko rsakey.cpp rsakey-public.cpp bigint.cpp certificate.cpp identity.cpp oid.cpp time.cpp data-source.cpp pkcs12.cpp cmp.cpp signed-data.cpp sim.cpp enveloped-data.cpp tsa-request.cpp tsa-response.cpp rng.cpp)
+  add_library(erpiko ${SOURCES})
 endif()
 if(WIN32)
   target_link_libraries(erpiko libresslssl libresslcrypto ws2_32)
