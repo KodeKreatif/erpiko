@@ -53,6 +53,29 @@ class EnvelopedData {
     static EnvelopedData* fromSMime(const std::string pem);
     
     /**
+     * Initiate empty EnvelopedData. This should be updated and finalized later.
+     * Any chunk of data that throwed into this instance will be collected in memory
+     * and the real operation will done by fromSMimeFinalize()
+     * @param smimePartial  chunk of S/MIME data
+     * @return pointer to EnvelopedData
+     */
+    static EnvelopedData* fromSMimeInit(const std::string smimePartial);
+    
+    /**
+     * Update existing EnvelopedData instance. This should be finalized later.
+     * Any chunk of data that throwed into this instance will be collected in memory
+     * If all the chunk of data has been imported, this should be finished with fromSMimeFinalize()
+     * @param smimePartial  chunk of S/MIME data
+     * @return pointer to EnvelopedData
+     */
+    void fromSMimeUpdate(const std::string smimePartial);
+
+    /**
+     * Finalize the EnvelopedData that came from fromSMimeInit.
+     */
+    void fromSMimeFinalize();
+    
+    /**
      * Parses S/MIME plain text file and returns an instance of EnvelopedData
      * @param pem S/MIME data
      * @return pointer to EnvelopedData
@@ -84,6 +107,15 @@ class EnvelopedData {
      * @param privateKey the private key of the decryptor
      */
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) const;
+
+    /**
+     * Decyrpt an EnvelopedData
+     * @param onData function that called when there is a chunk of data that still streamed 
+     * @param onEnd function that called when the stream is ended
+     * @param certificate the certificate of the decryptor
+     * @param privateKey the private key of the decryptor
+     */
+    void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey) const;
 
     /**
      * Encrypts the EnvelopedData in S/MIME mode. Data can be always updated with update API, and
