@@ -254,6 +254,8 @@ SCENARIO("Encrypting big file") {
 
 
     EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
+    // The file taken from : https://commons.wikimedia.org/wiki/File:Puncakjaya.jpg
+    // Credit to : Alfindra Primaldhi
     DataSource* data = DataSource::fromFile("assets/puncakjaya.jpg");
     auto dataVector = data->readAll();
     EncryptingType::Value type = EncryptingType::BINARY;
