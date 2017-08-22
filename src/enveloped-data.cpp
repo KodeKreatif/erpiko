@@ -13,7 +13,7 @@ class EnvelopedData::Impl {
     std::unique_ptr<ObjectId> oid;
     PKCS7 *pkcs7 = nullptr;
     BIO* bio = BIO_new(BIO_s_mem());
-    std::string smimePartial = "";
+    std::string smimePartial;
 
     bool success = false;
     bool imported = false;
@@ -83,9 +83,9 @@ class EnvelopedData::Impl {
     void fromSMimeInit(const std::string smime) {
       fromSMimePartial = true;
       finalized = false;
-      isSMime = true;
-      imported = true;
-      smimePartial = smime;
+      if (smime.length() > 0) {
+        smimePartial = smime;
+      }
       return;
     }
 
@@ -94,6 +94,7 @@ class EnvelopedData::Impl {
         return;
       }
       if (finalized) {
+        smimePartial = "";
         return;
       }
       smimePartial += smime;
@@ -107,6 +108,10 @@ class EnvelopedData::Impl {
       if (finalized) {
         return;
       }
+      if (pkcs7) {
+        PKCS7_free(pkcs7);
+        pkcs7 = nullptr;
+      }
       isSMime = true;
       imported = true;
       BIO* mem = BIO_new_mem_buf((void*) smimePartial.c_str(), smimePartial.length());
@@ -117,6 +122,7 @@ class EnvelopedData::Impl {
       if (ret) {
         smimePartial = "";
         success = true;
+        finalized = true;
         return;
       }
     }
@@ -161,6 +167,13 @@ class EnvelopedData::Impl {
         finalized = true;
       }
     }
+    
+    void update(const std::vector<unsigned char> data) {
+      if (finalized) {
+        return;
+      }
+      BIO_write(bio, data.data(), data.size());
+    }
 
     void finalize(const std::vector<unsigned char> data, EncryptingType::Value type) {
       if (pkcs7) {
@@ -201,16 +214,6 @@ class EnvelopedData::Impl {
       }
     }
 
-    void update(const std::vector<unsigned char> data) {
-      if (!pkcs7) {
-        return;
-      }
-      if (finalized) {
-        return;
-      }
-      BIO_write(bio, data.data(), data.size());
-    }
-
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) {
       EVP_PKEY *pkey = nullptr;
       pkey = Converters::rsaKeyToPkey(privateKey);
@@ -219,6 +222,10 @@ class EnvelopedData::Impl {
 	
       if (ret == 0) {
         ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
+      }
+      
+      if (ret == 0) {
+        std::cerr << "Failed to decrypt\n";
       }
 
       std::vector<unsigned char> retval;
@@ -238,28 +245,34 @@ class EnvelopedData::Impl {
       return retval;
     }
     
-    void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey) {
+    void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey, int chunkSize = 0) {
       EVP_PKEY *pkey = nullptr;
       pkey = Converters::rsaKeyToPkey(privateKey);
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
-	
+	    
       if (ret == 0) {
         ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
       }
-
+      if (ret == 0) {
+        std::cerr << "Failed to decrypt\n" << std::endl;
+      }
+      if (chunkSize == 0) {
+        chunkSize = 1024;
+      } 
+      std::vector<unsigned char> retval;
       while (ret) {
-        unsigned char buff[1024];
-        int ret = BIO_read(bio, buff, 1024);
-        if (ret > 0) {
-          buff[ret] = 0;
+        unsigned char buff[chunkSize + 1];
+        int r = BIO_read(bio, buff, chunkSize);
+        if (r > 0) {
+          buff[r] = 0;
           std::string str = (char*)buff;
           onData(str);
         } else {
           break;
         }
       }
-
+    
       EVP_PKEY_free(pkey);
       onEnd();
     }
@@ -362,11 +375,11 @@ const std::vector<unsigned char> EnvelopedData::decrypt(const Certificate& certi
   return impl->decrypt(certificate, privateKey);
 }
 
-void EnvelopedData::decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey) const {
-  impl->decrypt(onData, onEnd, certificate, privateKey);
+void EnvelopedData::decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey, int chunkSize = 0) const {
+  impl->decrypt(onData, onEnd, certificate, privateKey, chunkSize);
 }
 
-void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type = EncryptingType::DEFAULT) const {
+void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type = EncryptingType::DEFAULT, int chunkSize = 0) const {
 
   if (!impl->finalized) {
     impl->finalize(type);
@@ -378,9 +391,12 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
   }
   auto r = SMIME_write_PKCS7(out, impl->pkcs7, impl->bio, flags);
 
+  if (chunkSize == 0) {
+    chunkSize = 1024;
+  } 
   while (r) {
-    unsigned char buff[1025];
-    int ret = BIO_read(out, buff, 1024);
+    unsigned char buff[chunkSize + 1];
+    int ret = BIO_read(out, buff, chunkSize);
     if (ret > 0) {
       buff[ret] = 0;
       std::string str = (char*)buff;
