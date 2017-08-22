@@ -147,12 +147,12 @@ SCENARIO("Encrypting") {
 
 SCENARIO("Encrypting with incremental data update") {
   GIVEN("Certificate and private key and data") {
-    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto srcCert = DataSource::fromFile("assets/certx4.pem");
     auto v = srcCert->readAll();
     std::string pemCert(v.begin(),v.end());
     auto cert = Certificate::fromPem(pemCert);
 
-    auto srcKey = DataSource::fromFile("assets/private.key");
+    auto srcKey = DataSource::fromFile("assets/keyx4.pem");
     v = srcKey->readAll();
     std::string pemKey(v.begin(),v.end());
     auto key = RsaKey::fromPem(pemKey);
@@ -163,12 +163,17 @@ SCENARIO("Encrypting with incremental data update") {
     EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
     DataSource* data = DataSource::fromFile("assets/msg.txt");
     auto dataVector = data->readAll();
-    EncryptingType::Value type = EncryptingType::TEXT;
-
+    EncryptingType::Value type = EncryptingType::BINARY;
     p7->updateSMime(dataVector);
     p7->updateSMime(dataVector);
     p7->finalizeEncryptSMime(type);
-    THEN("Can produce S/MIME multipart signed message") {
+    THEN("Can be decrypted") {
+      auto decrypted = p7->decrypt(*cert, *key);
+      std::vector<unsigned char> origin;
+      origin.reserve(dataVector.size() + dataVector.size());
+      origin.insert(origin.end(), dataVector.begin(), dataVector.end());
+      origin.insert(origin.end(), dataVector.begin(), dataVector.end());
+      REQUIRE(decrypted == origin);
       auto smime = p7->toSMime();
       REQUIRE_FALSE(smime.empty());
       REQUIRE(smime.find("application/pkcs7-signature") > 0);
@@ -206,17 +211,57 @@ SCENARIO("Encrypting with incremental data update with the last chunk of data in
     EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
     DataSource* data = DataSource::fromFile("assets/msg.txt");
     auto dataVector = data->readAll();
-    EncryptingType::Value type = EncryptingType::TEXT;
-
-    p7->updateSMime(dataVector);
+    EncryptingType::Value type = EncryptingType::BINARY;
     p7->updateSMime(dataVector);
     p7->finalizeEncryptSMime(dataVector, type);
-    THEN("Can produce S/MIME multipart signed message") {
+    THEN("Can be decrypted") {
+      auto decrypted = p7->decrypt(*cert, *key);
+      std::vector<unsigned char> origin;
+      origin.reserve(dataVector.size() + dataVector.size());
+      origin.insert(origin.end(), dataVector.begin(), dataVector.end());
+      origin.insert(origin.end(), dataVector.begin(), dataVector.end());
+      REQUIRE(decrypted == origin);
       auto smime = p7->toSMime();
       REQUIRE_FALSE(smime.empty());
       REQUIRE(smime.find("application/pkcs7-signature") > 0);
       REQUIRE(smime.find("smime.p7m") > 0);
       REQUIRE(smime.find("smime.p7s") == std::string::npos);
+      p7->updateSMime(dataVector);
+      p7->updateSMime(dataVector);
+      auto smimeA = p7->toSMime();
+      p7->updateSMime(dataVector);
+      p7->updateSMime(dataVector);
+      p7->updateSMime(dataVector);
+      auto smimeB = p7->toSMime();
+      REQUIRE(smime.length() == smimeA.length());
+      REQUIRE(smime.length() == smimeB.length());
+      REQUIRE(smimeA.length() == smimeB.length());
+    }
+  }
+}
+
+SCENARIO("Encrypting big file") {
+  GIVEN("Certificate and private key and data") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+
+    EnvelopedData* p7 = new EnvelopedData(*cert, ObjectId("1.2.840.113549.3.7"));
+    DataSource* data = DataSource::fromFile("assets/puncakjaya.jpg");
+    auto dataVector = data->readAll();
+    EncryptingType::Value type = EncryptingType::BINARY;
+    p7->updateSMime(dataVector);
+    p7->finalizeEncryptSMime(type);
+    THEN("Can be decrypted") {
+      auto decrypted = p7->decrypt(*cert, *key);
+      REQUIRE(decrypted == dataVector);
     }
   }
 }
@@ -467,7 +512,8 @@ SCENARIO("Import SMime to EnvelopedData partially") {
 
     auto partOne = pemData.substr(0, 100);
     auto partTwo = pemData.substr(100);
-    auto p7 = EnvelopedData::fromSMimeInit(partOne);
+    auto p7 = EnvelopedData::fromSMimeInit("");
+    p7->fromSMimeUpdate(partOne);
     p7->fromSMimeUpdate(partTwo);
     p7->fromSMimeFinalize();
     auto decrypted = p7->decrypt(*cert, *key);

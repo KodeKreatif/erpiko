@@ -114,8 +114,9 @@ class EnvelopedData {
      * @param onEnd function that called when the stream is ended
      * @param certificate the certificate of the decryptor
      * @param privateKey the private key of the decryptor
+     * @param chunkSize the chunk size per iteration
      */
-    void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey) const;
+    void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey, int chunkSize) const;
 
     /**
      * Encrypts the EnvelopedData in S/MIME mode. Data can be always updated with update API, and
@@ -158,8 +159,9 @@ class EnvelopedData {
      * Initiates the retrieval of the S/MIME representation of the structure and data. This call only makes sense
      * when it is preceeded by a signSMime call
      * @param type See EncryptingType namespace for enumeration values.
+     * @param chunkSize the chunk size per iteration
      */
-    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type) const;
+    void toSMime(std::function<void(std::string)> onData, std::function<void(void)> onEnd, EncryptingType::Value type, int chunkSize) const;
 
 
     /**
