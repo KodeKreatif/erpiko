@@ -15,7 +15,9 @@ Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 - S/MIME sigining, verification, encryption and decryption
 - TSA (request, response, and verification)
 - Random number generator
-- Crypto functions with CUDA when available and enabled
+- Message Digest (SHA1, SHA2, SHA512)
+- Cipher (AES)
+- Crypto functions with CUDA when available and enabled (*WIP*)
 
 ## Backend
 
