@@ -17,6 +17,17 @@ namespace CipherConstants {
   const char* const AES_128_OFB = "2.16.840.1.101.3.4.1.3";
   const char* const AES_128_CFB = "2.16.840.1.101.3.4.1.4";
   const char* const AES_128_GCM = "2.16.840.1.101.3.4.1.6";
+  const char* const AES_192_ECB = "2.16.840.1.101.3.4.1.21";
+  const char* const AES_192_CBC = "2.16.840.1.101.3.4.1.22";
+  const char* const AES_192_OFB = "2.16.840.1.101.3.4.1.23";
+  const char* const AES_192_CFB = "2.16.840.1.101.3.4.1.24";
+  const char* const AES_192_GCM = "2.16.840.1.101.3.4.1.26";
+  const char* const AES_256_ECB = "2.16.840.1.101.3.4.1.41";
+  const char* const AES_256_CBC = "2.16.840.1.101.3.4.1.42";
+  const char* const AES_256_OFB = "2.16.840.1.101.3.4.1.43";
+  const char* const AES_256_CFB = "2.16.840.1.101.3.4.1.44";
+  const char* const AES_256_GCM = "2.16.840.1.101.3.4.1.46";
+
 }
 
 /**
