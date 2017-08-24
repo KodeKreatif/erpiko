@@ -8,6 +8,7 @@ add_test(testsmime testdata WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(testtsa testtsa WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(testrng testrng WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 add_test(testdigest testdigest WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+add_test(testcipher testcipher WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
 
 add_executable(testkey rsakey.cpp)
 target_link_libraries(testkey erpiko libresslcrypto)
@@ -35,5 +36,8 @@ target_link_libraries(testrng erpiko libresslcrypto)
 
 add_executable(testdigest digest.cpp)
 target_link_libraries(testdigest erpiko libresslcrypto)
+
+add_executable(testcipher cipher.cpp)
+target_link_libraries(testcipher erpiko libresslcrypto)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")
