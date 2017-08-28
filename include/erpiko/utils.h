@@ -29,17 +29,21 @@ inline std::vector<unsigned char> fromHexString(const char* buffer) {
 
   if (buffer == nullptr) return ret;
   int len = strlen(buffer);
-  int i = 0;
+  int i = 0, j = 0;
   unsigned char t = 0;
   bool toAdd = false;
   while (i < len) {
     int l = tolower(buffer[i]);
-    if ((isalpha(buffer[i]) && l >= 97 && l <=102) || isdigit(buffer[i])) {
+    if ((isalpha(buffer[i]) && l >= 97 && l <=102) || isdigit(buffer[i]) || l == 32) {
+      if (l == 32) {
+        i ++;
+        continue;
+      }
       unsigned char v = l - 48;
       if (v > 9) {
         v = l - 97 + 10;
       }
-      if ((i - 1) % 2 || i == 0) {
+      if ((j - 1) % 2 || j == 0) {
         t = v << 4;
         toAdd = true;
       } else {
@@ -47,11 +51,10 @@ inline std::vector<unsigned char> fromHexString(const char* buffer) {
         toAdd = false;
         ret.push_back(t);
       }
-    } else {
-      break;
     }
 
     i ++;
+    j ++;
   }
   if (toAdd) {
     ret.push_back(t);

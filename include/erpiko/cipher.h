@@ -27,6 +27,13 @@ namespace CipherConstants {
   const char* const AES_256_OFB = "2.16.840.1.101.3.4.1.43";
   const char* const AES_256_CFB = "2.16.840.1.101.3.4.1.44";
   const char* const AES_256_GCM = "2.16.840.1.101.3.4.1.46";
+  const char* const RC2_CBC = "1.2.840.113549.3.2";
+  const char* const RC2_128_CBC = "1.2.840.113549.3.2";
+  const char* const RC2_64_CBC = "rc2-64-cbc";
+  const char* const RC4_CBC = "1.2.840.113549.3.4";
+  const char* const CAST5_128_CBC = "1.2.840.113533.7.66.10";
+  const char* const TRIPLEDES_CBC = "des3";
+  const char* const DES = "des";
 
 }
 
