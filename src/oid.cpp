@@ -14,7 +14,7 @@ class ObjectId::Impl {
 
     virtual ~Impl() {
       if (obj != nullptr) {
-        free(obj);
+        ASN1_OBJECT_free(obj);
         obj = nullptr;
       }
     }
