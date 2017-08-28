@@ -37,7 +37,7 @@ target_link_libraries(testrng erpiko libresslcrypto)
 add_executable(testdigest digest.cpp)
 target_link_libraries(testdigest erpiko libresslcrypto)
 
-add_executable(testcipher cipher.cpp)
+add_executable(testcipher cipher.cpp rc.cpp cast.cpp 3des.cpp des.cpp aes.cpp)
 target_link_libraries(testcipher erpiko libresslcrypto)
 
 file(COPY "${CMAKE_CURRENT_SOURCE_DIR}/assets" DESTINATION "${CMAKE_CURRENT_BINARY_DIR}")

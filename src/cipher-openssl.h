@@ -25,16 +25,24 @@ class CipherOpenSsl : public Cipher {
       {
       OpenSSL_add_all_digests();
       OpenSSL_add_all_algorithms();
-      auto obj = OBJ_txt2obj(objId, 1);
-      auto cipher = const_cast<EVP_CIPHER*>(EVP_get_cipherbyobj(obj));
-      ASN1_OBJECT_free(obj);
+      auto cipher = EVP_get_cipherbyname(objId);
       if (!cipher) {
-        return;
+        auto obj = OBJ_txt2obj(objId, 1);
+        cipher = const_cast<EVP_CIPHER*>(EVP_get_cipherbyobj(obj));
+        ASN1_OBJECT_free(obj);
+        if (!cipher) {
+        std::cerr << objId << std::endl;
+          return;
+        }
       }
 
       EVP_CIPHER_CTX_init(ctx);
-      EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_SET_KEY_LENGTH, key.size() * 8, nullptr);
-      EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, iv.size() * 8, nullptr);
+      if (key.size () > 0) {
+     //   EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_SET_KEY_LENGTH, key.size() * 8, nullptr);
+      }
+      if (iv.size() > 0) {
+        EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_SET_IVLEN, iv.size() * 8, nullptr);
+      }
       cipherOp = EVP_CipherInit_ex(ctx, cipher, NULL, key.data(), iv.data(), mode);
       if (cipherOp) {
         valid = true;
