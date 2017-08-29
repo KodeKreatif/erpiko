@@ -262,7 +262,7 @@ class EnvelopedData::Impl {
       } 
       std::vector<unsigned char> retval;
       while (ret) {
-        unsigned char buff[chunkSize + 1];
+        auto buff = new unsigned char[chunkSize];
         int r = BIO_read(bio, buff, chunkSize);
         if (r > 0) {
           buff[r] = 0;
@@ -395,7 +395,7 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
     chunkSize = 1024;
   } 
   while (r) {
-    unsigned char buff[chunkSize + 1];
+    auto buff = new unsigned char[chunkSize];
     int ret = BIO_read(out, buff, chunkSize);
     if (ret > 0) {
       buff[ret] = 0;
