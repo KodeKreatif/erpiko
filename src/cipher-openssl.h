@@ -59,16 +59,18 @@ class CipherOpenSsl : public Cipher {
     std::vector<unsigned char> update(std::vector<unsigned char> data) {
       std::vector<unsigned char> ret;
       if (!valid) return ret;
-      unsigned char buffer[data.size() + EVP_CIPHER_CTX_block_size(ctx)];
+      unsigned char* buffer = new unsigned char[data.size() + EVP_CIPHER_CTX_block_size(ctx)];
       int bufferLength;
       cipherOp = EVP_CipherUpdate(ctx, buffer, &bufferLength, data.data(), data.size());
       if (cipherOp == 0) {
+        delete buffer;
         return ret;
       }
 
       if (bufferLength > 0) {
         ret.assign(buffer, buffer + bufferLength);
       }
+      delete buffer;
       return ret;
     }
 
