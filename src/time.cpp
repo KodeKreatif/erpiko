@@ -191,9 +191,9 @@ void Time::seconds(const int value) {
 }
 
 bool Time::inRange(const Time& notBefore, const Time& notAfter) const {
-  auto eBefore = mktime(&notBefore.impl->timeData);
-  auto eAfter = mktime(&notAfter.impl->timeData);
-  auto now = mktime(&impl->timeData);
+  auto eBefore = timegm(&notBefore.impl->timeData);
+  auto eAfter = timegm(&notAfter.impl->timeData);
+  auto now = timegm(&impl->timeData);
 
   return (now >= eBefore && now < eAfter);
 }
@@ -208,8 +208,8 @@ void Time::operator=(const Time& other) {
 }
 
 bool Time::operator==(const Time& other) const {
-  auto eOther = mktime(&other.impl->timeData);
-  auto now = mktime(&impl->timeData);
+  auto eOther = timegm(&other.impl->timeData);
+  auto now = timegm(&impl->timeData);
 
   return (now == eOther);
 }
