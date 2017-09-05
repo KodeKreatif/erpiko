@@ -2,6 +2,9 @@
 #include <ctime>
 #include <cstdlib>
 
+#ifdef _WIN32
+#define timegm _mkgmtime
+#endif // _WIN32
 namespace Erpiko {
 
 class Time::Impl {
