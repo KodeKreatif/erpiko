@@ -19,6 +19,9 @@ class Time::Impl {
     struct tm fromString(const std::string &str)
     {
       struct tm t;
+      t.tm_yday = 0;
+      t.tm_mday = 0;
+      t.tm_isdst = -1;
       if (str == "") {
         time_t now;
         struct tm * timeinfo;
@@ -53,11 +56,12 @@ class Time::Impl {
           t.tm_year = 2000 + t.tm_year;
         }
       }
+      t.tm_year -= 1900;
 
       pos += length;
 
       tmp = str.substr(pos, 2);
-      t.tm_mon = atoi(tmp.c_str());
+      t.tm_mon = atoi(tmp.c_str()) - 1;
       pos += 2;
 
       tmp = str.substr(pos, 2);
@@ -82,13 +86,13 @@ class Time::Impl {
     {
       std::string value;
 
-      if (time.tm_year >= 1950 && time.tm_year <= 2049) {
+      unsigned int year = time.tm_year + 1900;
+      if (year >= 1950 && year <= 2049) {
         // This is UTC. It reserves only 2 digits for the year
-        unsigned int year;
-        if (time.tm_year >= 2000) {
-          year = time.tm_year - 2000;
+        if (year >= 2000) {
+          year = year - 2000;
         } else {
-          year = time.tm_year - 1900;
+          year = year - 1900;
         }
 
         if (year < 10) {
@@ -98,14 +102,14 @@ class Time::Impl {
         value += std::to_string(year);
       } else {
         // This is generalized time, we have full 4 digits
-        value += std::to_string(time.tm_year);
+        value += std::to_string(year);
       }
 
       if (time.tm_mon < 10) {
         // prepend month lower than 10 so it will occupy 2 digits
         value += "0";
       }
-      value += std::to_string(time.tm_mon);
+      value += std::to_string(time.tm_mon + 1);
 
       if (time.tm_mday < 10) {
         // same thing happens with the day
@@ -146,19 +150,19 @@ const std::string Time::toString() const {
 }
 
 int Time::year() const {
-  return impl->timeData.tm_year;
+  return impl->timeData.tm_year + 1900;
 }
 
 void Time::year(const int value) {
-  impl->timeData.tm_year = value;
+  impl->timeData.tm_year = value - 1900;
 }
 
 int Time::month() const {
-  return impl->timeData.tm_mon;
+  return impl->timeData.tm_mon + 1;
 }
 
 void Time::month(const int value) {
-  impl->timeData.tm_mon = value;
+  impl->timeData.tm_mon = value - 1;
 }
 
 int Time::day() const {

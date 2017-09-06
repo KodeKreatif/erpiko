@@ -33,24 +33,24 @@ SCENARIO("Basic time test") {
 
 SCENARIO("UTC vs generalized time parsing") {
   GIVEN("A new time on the heap between 1950 and 2049, month is under 10") {
-    Time t("800212345621Z");
+    Time t("800212215621Z");
     THEN("Time is parsed correctly") {
       REQUIRE(t.year() == 1980);
       REQUIRE(t.month() == 2);
       REQUIRE(t.day() == 12);
-      REQUIRE(t.hours() == 34);
+      REQUIRE(t.hours() == 21);
       REQUIRE(t.minutes() == 56);
       REQUIRE(t.seconds() == 21);
     }
   }
 
   GIVEN("A new time on the heap between 1950 and 2049, day is under 10") {
-    Time t("801202345621Z");
+    Time t("801202215621Z");
     THEN("Time is parsed correctly") {
       REQUIRE(t.year() == 1980);
       REQUIRE(t.month() == 12);
       REQUIRE(t.day() == 2);
-      REQUIRE(t.hours() == 34);
+      REQUIRE(t.hours() == 21);
       REQUIRE(t.minutes() == 56);
       REQUIRE(t.seconds() == 21);
     }
@@ -93,24 +93,24 @@ SCENARIO("UTC vs generalized time parsing") {
   }
 
   GIVEN("A new time on the heap before 1950") {
-    Time t("19200212345621Z");
+    Time t("19200212215621Z");
     THEN("Time is parsed correctly") {
       REQUIRE(t.year() == 1920);
       REQUIRE(t.month() == 2);
       REQUIRE(t.day() == 12);
-      REQUIRE(t.hours() == 34);
+      REQUIRE(t.hours() == 21);
       REQUIRE(t.minutes() == 56);
       REQUIRE(t.seconds() == 21);
     }
   }
 
   GIVEN("A new time on the heap after 2049") {
-    Time t("20500212345621Z");
+    Time t("20500212215621Z");
     THEN("Time is parsed correctly") {
       REQUIRE(t.year() == 2050);
       REQUIRE(t.month() == 2);
       REQUIRE(t.day() == 12);
-      REQUIRE(t.hours() == 34);
+      REQUIRE(t.hours() == 21);
       REQUIRE(t.minutes() == 56);
       REQUIRE(t.seconds() == 21);
     }
@@ -119,13 +119,13 @@ SCENARIO("UTC vs generalized time parsing") {
 
 SCENARIO("UTC vs generalized time construction") {
   GIVEN("A new time on the heap between 1950 and 2049, month is under 10") {
-    std::string ref("800212345621Z");
+    std::string ref("800212215621Z");
     Time t;
     THEN("Time is constructed correctly") {
       t.year(1980);
       t.month(2);
       t.day(12);
-      t.hours(34);
+      t.hours(21);
       t.minutes(56);
       t.seconds(21);
       REQUIRE(t.toString() == ref);
@@ -189,13 +189,13 @@ SCENARIO("UTC vs generalized time construction") {
   }
 
   GIVEN("A new time on the heap before 1950") {
-    std::string ref("19200212345621Z");
+    std::string ref("19200212215621Z");
     Time t;
     THEN("Time is constructed correctly") {
       t.year(1920);
       t.month(2);
       t.day(12);
-      t.hours(34);
+      t.hours(21);
       t.minutes(56);
       t.seconds(21);
       REQUIRE(t.toString() == ref);
@@ -203,13 +203,13 @@ SCENARIO("UTC vs generalized time construction") {
   }
 
   GIVEN("A new time on the heap after 2049") {
-    std::string ref("20500212345621Z");
+    std::string ref("20500212215621Z");
     Time t;
     THEN("Time is constructed correctly") {
       t.year(2050);
       t.month(2);
       t.day(12);
-      t.hours(34);
+      t.hours(21);
       t.minutes(56);
       t.seconds(21);
       REQUIRE(t.toString() == ref);
@@ -219,27 +219,27 @@ SCENARIO("UTC vs generalized time construction") {
 
 SCENARIO("In range") {
   GIVEN("Three Times, now being same with before, one sec before after") {
-    Time tBefore("800212345621Z");
-    Time tNow("800212345621Z");
-    Time tAfter("800212345622Z");
+    Time tBefore("800212215621Z");
+    Time tNow("800212215621Z");
+    Time tAfter("800212215622Z");
     THEN("in range is correctly computed") {
       REQUIRE(tNow.inRange(tBefore, tAfter));
     }
   }
 
   GIVEN("Three Times, now being one sec after before") {
-    Time tBefore("800212345620Z");
-    Time tNow("800212345621Z");
-    Time tAfter("800212345622Z");
+    Time tBefore("800212215620Z");
+    Time tNow("800212215621Z");
+    Time tAfter("800212215622Z");
     THEN("in range is correctly computed") {
       REQUIRE(tNow.inRange(tBefore, tAfter));
     }
   }
 
   GIVEN("Three Times, after being same with now") {
-    Time tBefore("800212345621Z");
-    Time tNow("800212345621Z");
-    Time tAfter("800212345621Z");
+    Time tBefore("800212215621Z");
+    Time tNow("800212215621Z");
+    Time tAfter("800212215621Z");
     THEN("in range is correctly computed") {
       REQUIRE_FALSE(tNow.inRange(tBefore, tAfter));
     }
@@ -249,8 +249,8 @@ SCENARIO("In range") {
 
 SCENARIO("Assignment") {
   GIVEN("Two different Times") {
-    Time t1("800212345621Z");
-    Time t2("800212345620Z");
+    Time t1("800212215621Z");
+    Time t2("800212215620Z");
     THEN("They are different") {
       REQUIRE_FALSE(t1 == t2);
       GIVEN("One is assigned to another") {
