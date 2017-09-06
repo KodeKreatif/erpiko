@@ -272,7 +272,7 @@ class EnvelopedData::Impl {
           break;
         }
       }
-      delete buff;
+      delete[] buff;
 
       EVP_PKEY_free(pkey);
       onEnd();
@@ -406,7 +406,7 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
       break;
     }
   }
-  delete buff;
+  delete[] buff;
   BIO_free(out);
 
   onEnd();
