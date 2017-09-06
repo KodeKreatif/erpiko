@@ -63,14 +63,14 @@ class CipherOpenSsl : public Cipher {
       int bufferLength;
       cipherOp = EVP_CipherUpdate(ctx, buffer, &bufferLength, data.data(), data.size());
       if (cipherOp == 0) {
-        delete buffer;
+        delete[] buffer;
         return ret;
       }
 
       if (bufferLength > 0) {
         ret.assign(buffer, buffer + bufferLength);
       }
-      delete buffer;
+      delete[] buffer;
       return ret;
     }
 
