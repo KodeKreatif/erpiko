@@ -6,7 +6,9 @@
 #include <openssl/bn.h>
 #include <openssl/err.h>
 #include <openssl/objects.h>
+#ifndef _WIN32
 #include <compat/stdlib.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <iostream>

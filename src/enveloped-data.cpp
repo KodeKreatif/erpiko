@@ -126,7 +126,7 @@ class EnvelopedData::Impl {
         return;
       }
     }
-    
+
     void fromSMimeFile(const std::string path) {
       isSMime = true;
       imported = true;
@@ -167,7 +167,7 @@ class EnvelopedData::Impl {
         finalized = true;
       }
     }
-    
+
     void update(const std::vector<unsigned char> data) {
       if (finalized) {
         return;
@@ -219,11 +219,11 @@ class EnvelopedData::Impl {
       pkey = Converters::rsaKeyToPkey(privateKey);
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
-	
+
       if (ret == 0) {
         ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
       }
-      
+
       if (ret == 0) {
         std::cerr << "Failed to decrypt\n";
       }
@@ -244,13 +244,13 @@ class EnvelopedData::Impl {
       EVP_PKEY_free(pkey);
       return retval;
     }
-    
+
     void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey, int chunkSize = 0) {
       EVP_PKEY *pkey = nullptr;
       pkey = Converters::rsaKeyToPkey(privateKey);
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
-	    
+
       if (ret == 0) {
         ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
       }
@@ -259,10 +259,10 @@ class EnvelopedData::Impl {
       }
       if (chunkSize == 0) {
         chunkSize = 1024;
-      } 
+      }
       std::vector<unsigned char> retval;
+      unsigned char* buff = new unsigned char[chunkSize + 1];
       while (ret) {
-        auto buff = new unsigned char[chunkSize];
         int r = BIO_read(bio, buff, chunkSize);
         if (r > 0) {
           buff[r] = 0;
@@ -272,7 +272,8 @@ class EnvelopedData::Impl {
           break;
         }
       }
-    
+      delete[] buff;
+
       EVP_PKEY_free(pkey);
       onEnd();
     }
@@ -393,9 +394,9 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
 
   if (chunkSize == 0) {
     chunkSize = 1024;
-  } 
+  }
+  unsigned char* buff = new unsigned char[chunkSize + 1];
   while (r) {
-    auto buff = new unsigned char[chunkSize];
     int ret = BIO_read(out, buff, chunkSize);
     if (ret > 0) {
       buff[ret] = 0;
@@ -405,6 +406,7 @@ void EnvelopedData::toSMime(std::function<void(std::string)> onData, std::functi
       break;
     }
   }
+  delete[] buff;
   BIO_free(out);
 
   onEnd();
