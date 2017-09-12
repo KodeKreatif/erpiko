@@ -5343,7 +5343,7 @@ diff -Naur crypto/cmp/cmp_ctx.c crypto-/cmp/cmp_ctx.c
 +	ctx->serverName		 = NULL;
 +	/* serverPath has to be an empty sting if not set since it is not mandatory */
 +	/* this will be freed by CMP_CTX_delete() */
-+	ctx->serverPath		 = OPENSSL_malloc(1);
++	ctx->serverPath		 = malloc(1);
 +	ctx->serverPath[0]	 = 0;
 +	ctx->serverPort		 = 0;
 +	ctx->proxyName		 = NULL;
@@ -5391,9 +5391,9 @@ diff -Naur crypto/cmp/cmp_ctx.c crypto-/cmp/cmp_ctx.c
 +	if (ctx->pkey) EVP_PKEY_free(ctx->pkey);
 +	if (ctx->newPkey) EVP_PKEY_free(ctx->newPkey);
 +
-+	if (ctx->serverName) OPENSSL_free(ctx->serverName);
-+	if (ctx->serverPath) OPENSSL_free(ctx->serverPath);
-+	if (ctx->proxyName) OPENSSL_free(ctx->proxyName);
++	if (ctx->serverName) free(ctx->serverName);
++	if (ctx->serverPath) free(ctx->serverPath);
++	if (ctx->proxyName) free(ctx->proxyName);
 +	if (ctx->trusted_store) X509_STORE_free(ctx->trusted_store);
 +	if (ctx->untrusted_store) X509_STORE_free(ctx->untrusted_store);
 +
@@ -6084,11 +6084,11 @@ diff -Naur crypto/cmp/cmp_ctx.c crypto-/cmp/cmp_ctx.c
 +
 +	if (ctx->proxyName)
 +		{
-+		OPENSSL_free( ctx->proxyName);
++		free( ctx->proxyName);
 +		ctx->proxyName = NULL;
 +		}
 +
-+	ctx->proxyName = OPENSSL_malloc( strlen(name)+1);
++	ctx->proxyName = malloc( strlen(name)+1);
 +	strcpy( ctx->proxyName, name);
 +
 +	return 1;
@@ -6108,11 +6108,11 @@ diff -Naur crypto/cmp/cmp_ctx.c crypto-/cmp/cmp_ctx.c
 +
 +	if (ctx->serverName)
 +		{
-+		OPENSSL_free( ctx->serverName);
++		free( ctx->serverName);
 +		ctx->serverName = NULL;
 +		}
 +
-+	ctx->serverName = OPENSSL_malloc( strlen(name)+1);
++	ctx->serverName = malloc( strlen(name)+1);
 +	strcpy( ctx->serverName, name);
 +
 +	return 1;
@@ -6177,11 +6177,11 @@ diff -Naur crypto/cmp/cmp_ctx.c crypto-/cmp/cmp_ctx.c
 +
 +	if (ctx->sourceAddress)
 +		{
-+		OPENSSL_free( ctx->sourceAddress);
++		free( ctx->sourceAddress);
 +		ctx->sourceAddress = NULL;
 +		}
 +
-+	ctx->sourceAddress = OPENSSL_malloc( strlen(ip)+1);
++	ctx->sourceAddress = malloc( strlen(ip)+1);
 +	strcpy( ctx->sourceAddress, ip);
 +
 +	return 1;
@@ -6216,19 +6216,19 @@ diff -Naur crypto/cmp/cmp_ctx.c crypto-/cmp/cmp_ctx.c
 +	if (ctx->serverPath)
 +		{
 +		/* clear the old value */
-+		OPENSSL_free( ctx->serverPath);
++		free( ctx->serverPath);
 +		ctx->serverPath = 0;
 +		}
 +
 +	if (!path)
 +		{
 +		/* clear the serverPath */
-+		ctx->serverPath = OPENSSL_malloc(1);
++		ctx->serverPath = malloc(1);
 +		ctx->serverPath[0] = 0;
 +		return 1;
 +		}
 +
-+	ctx->serverPath = OPENSSL_malloc( strlen(path)+1);
++	ctx->serverPath = malloc( strlen(path)+1);
 +	strcpy( ctx->serverPath, path);
 +
 +	return 1;
@@ -6749,8 +6749,8 @@ diff -Naur crypto/cmp/cmp_http.c crypto-/cmp/cmp_http.c
 +	if (rctx->mem)
 +		BIO_free(rctx->mem);
 +	if (rctx->iobuf)
-+		OPENSSL_free(rctx->iobuf);
-+	OPENSSL_free(rctx);
++		free(rctx->iobuf);
++	free(rctx);
 +	}
 +
 +int CMP_REQ_CTX_set1_req(CMP_REQ_CTX *rctx, CMP_PKIMESSAGE *req)
@@ -6793,7 +6793,7 @@ diff -Naur crypto/cmp/cmp_http.c crypto-/cmp/cmp_http.c
 +	static const char post_hdr[] = "POST %s HTTP/1.0\r\n";
 +
 +	CMP_REQ_CTX *rctx;
-+	rctx = OPENSSL_malloc(sizeof(CMP_REQ_CTX));
++	rctx = malloc(sizeof(CMP_REQ_CTX));
 +	rctx->state = OHS_ERROR;
 +	rctx->mem = BIO_new(BIO_s_mem());
 +	rctx->io = io;
@@ -6802,7 +6802,7 @@ diff -Naur crypto/cmp/cmp_http.c crypto-/cmp/cmp_http.c
 +		rctx->iobuflen = maxline;
 +	else
 +		rctx->iobuflen = CMP_MAX_LINE_LEN;
-+	rctx->iobuf = OPENSSL_malloc(rctx->iobuflen);
++	rctx->iobuf = malloc(rctx->iobuflen);
 +	if (!rctx->iobuf)
 +		return 0;
 +	if (!path)
@@ -7398,7 +7398,7 @@ diff -Naur crypto/cmp/cmp_http.c crypto-/cmp/cmp_http.c
 +		}
 +
 +	pathlen = strlen(ctx->serverName) + strlen(ctx->serverPath) + 32;
-+	path = (char*) OPENSSL_malloc(pathlen);
++	path = (char*) malloc(pathlen);
 +	if (!path) goto err;
 +
 +	/* Section 5.1.2 of RFC 1945 states that the absoluteURI form is only allowed when using a proxy */
@@ -7412,7 +7412,7 @@ diff -Naur crypto/cmp/cmp_http.c crypto-/cmp/cmp_http.c
 +
 +	*out = CMP_sendreq_bio(cbio, path, (CMP_PKIMESSAGE*) msg);
 +
-+	OPENSSL_free(path);
++	free(path);
 +	// BIO_reset(cbio);
 +	CMP_delete_http_bio(cbio);
 +	
@@ -7757,7 +7757,7 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +		}
 +	else {
 +		/* generate a random value if none was given */
-+		if(!(transactionIDuchar = (unsigned char*)OPENSSL_malloc(TRANSACTIONID_LENGTH))) goto err;
++		if(!(transactionIDuchar = (unsigned char*)malloc(TRANSACTIONID_LENGTH))) goto err;
 +		RAND_pseudo_bytes(transactionIDuchar, TRANSACTIONID_LENGTH);
 +
 +		if(hdr->transactionID == NULL)
@@ -7766,13 +7766,13 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +			}
 +		if(!(ASN1_OCTET_STRING_set(hdr->transactionID, transactionIDuchar, TRANSACTIONID_LENGTH))) goto err;
 +
-+		OPENSSL_free(transactionIDuchar);
++		free(transactionIDuchar);
 +		}
 +
 +	return 1;
 +err:
 +	if(transactionIDuchar)
-+		OPENSSL_free(transactionIDuchar);
++		free(transactionIDuchar);
 +	return 0;
 +	}
 +
@@ -8046,7 +8046,7 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +		CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_WRONG_ALGORITHM_OID);
 +		goto err;
 +		}
-+	OPENSSL_free(protPartDer);
++	free(protPartDer);
 +
 +	if(!(prot = ASN1_BIT_STRING_new())) goto err;
 +	ASN1_BIT_STRING_set(prot, mac, macLen);
@@ -8056,15 +8056,15 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +	prot->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 +
 +	/* cleanup */
-+	if (mac) OPENSSL_free(mac);
++	if (mac) free(mac);
 +	return prot;
 +
 +err:
-+	if (mac) OPENSSL_free(mac);
++	if (mac) free(mac);
 +
 +	CMPerr(CMP_F_CMP_CALC_PROTECTION_PBMAC, CMP_R_ERROR_CALCULATING_PROTECTION);
 +	if(prot) ASN1_BIT_STRING_free(prot);
-+	if(protPartDer) OPENSSL_free(protPartDer);
++	if(protPartDer) free(protPartDer);
 +	return NULL;
 +}
 +
@@ -8112,7 +8112,7 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +	if ((md = EVP_get_digestbynid(OBJ_obj2nid(algorOID))))
 +		{
 +		maxMacLen = EVP_PKEY_size(pkey);
-+		mac = OPENSSL_malloc(maxMacLen);
++		mac = malloc(maxMacLen);
 +
 +		/* calculate signature */
 +		evp_ctx = EVP_MD_CTX_create();
@@ -8135,14 +8135,14 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +
 +	/* cleanup */
 +	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
-+	if (mac) OPENSSL_free(mac);
-+	if (protPartDer) OPENSSL_free(protPartDer);
++	if (mac) free(mac);
++	if (protPartDer) free(protPartDer);
 +	return prot;
 +
 +err:
 +	if (evp_ctx) EVP_MD_CTX_destroy(evp_ctx);
-+	if (mac) OPENSSL_free(mac);
-+	if (protPartDer) OPENSSL_free(protPartDer);
++	if (mac) free(mac);
++	if (protPartDer) free(protPartDer);
 +
 +	CMPerr(CMP_F_CMP_CALC_PROTECTION_SIG, CMP_R_ERROR_CALCULATING_PROTECTION);
 +	if(prot) ASN1_BIT_STRING_free(prot);
@@ -8170,7 +8170,7 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +	pbmDerLen = i2d_CRMF_PBMPARAMETER( pbm, &pbmDer);
 +
 +	ASN1_STRING_set( pbmStr, pbmDer, pbmDerLen);
-+	OPENSSL_free( pbmDer);
++	free( pbmDer);
 +	pbmDer = NULL; /* to avoid double free in case there would be a "goto err" inserted behind this point later in development */
 +
 +	X509_ALGOR_set0( alg, OBJ_nid2obj(NID_id_PasswordBasedMAC), V_ASN1_SEQUENCE, pbmStr);
@@ -8181,7 +8181,7 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +err:
 +	if (alg) X509_ALGOR_free(alg);
 +	if (pbm) CRMF_PBMPARAMETER_free( pbm);
-+	if (pbmDer) OPENSSL_free( pbmDer);
++	if (pbmDer) free( pbmDer);
 +	return NULL;
 +	}
 +
@@ -8736,7 +8736,7 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +		size_t eksize = 0;
 +
 +		if (EVP_PKEY_decrypt(pkctx, NULL, &eksize, encKey->data, encKey->length) <= 0
-+			|| !(ek = OPENSSL_malloc(eksize))
++			|| !(ek = malloc(eksize))
 +			|| EVP_PKEY_decrypt(pkctx, ek, &eksize, encKey->data, encKey->length) <= 0)
 +			{
 +			CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_SYMMETRIC_KEY);
@@ -8755,12 +8755,12 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +		CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_UNSUPPORTED_CIPHER);
 +		goto err;
 +		}
-+	if (!(iv = OPENSSL_malloc(cipher->iv_len))) goto err;
++	if (!(iv = malloc(cipher->iv_len))) goto err;
 +	ASN1_TYPE_get_octetstring(encCert->symmAlg->parameter, iv, cipher->iv_len);
 +
 +	/* d2i_X509 changes the given pointer, so use p for decoding the message and keep the
 +	 * original pointer in outbuf so that the memory can be freed later */
-+	if (!(p = outbuf = OPENSSL_malloc(encCert->encValue->length + cipher->block_size))) goto err;
++	if (!(p = outbuf = malloc(encCert->encValue->length + cipher->block_size))) goto err;
 +	evp_ctx = EVP_CIPHER_CTX_new();
 +	EVP_CIPHER_CTX_set_padding(evp_ctx, 0);
 +
@@ -8780,17 +8780,17 @@ diff -Naur crypto/cmp/cmp_lib.c crypto-/cmp/cmp_lib.c
 +		goto err;
 +		}
 +
-+	OPENSSL_free(outbuf);
++	free(outbuf);
 +	EVP_CIPHER_CTX_free(evp_ctx);
-+	OPENSSL_free(ek);
-+	OPENSSL_free(iv);
++	free(ek);
++	free(iv);
 +	return cert;
 +err:
 +	CMPerr(CMP_F_CMP_CERTREPMESSAGE_ENCCERT_GET1, CMP_R_ERROR_DECRYPTING_ENCCERT);
-+	if (outbuf) OPENSSL_free(outbuf);
++	if (outbuf) free(outbuf);
 +	if (evp_ctx) EVP_CIPHER_CTX_free(evp_ctx);
-+	if (ek) OPENSSL_free(ek);
-+	if (iv) OPENSSL_free(iv);
++	if (ek) free(ek);
++	if (iv) free(iv);
 +	return NULL;
 +	}
 +
@@ -9185,7 +9185,7 @@ diff -Naur crypto/cmp/cmp_msg.c crypto-/cmp/cmp_msg.c
 +	if(!X509_EXTENSION_create_by_NID(&ext, NID_subject_alt_name, critical, str)) goto err;
 +
 +	ASN1_OCTET_STRING_free(str);
-+	OPENSSL_free(der);
++	free(der);
 +
 +	if(!X509v3_add_ext(extensions, ext, 0)) goto err;
 +
@@ -9219,7 +9219,7 @@ diff -Naur crypto/cmp/cmp_msg.c crypto-/cmp/cmp_msg.c
 +	if(!X509_EXTENSION_create_by_NID(&ext, NID_certificate_policies, 1, str)) goto err;
 +
 +	ASN1_OCTET_STRING_free(str);
-+	OPENSSL_free(der);
++	free(der);
 +
 +	if(!X509v3_add_ext(extensions, ext, 0)) goto err;
 +
@@ -10601,7 +10601,7 @@ diff -Naur crypto/cmp/cmp_vfy.c crypto-/cmp/cmp_vfy.c
 +
 +	/* cleanup */
 +	EVP_MD_CTX_destroy(ctx);
-+	OPENSSL_free(protPartDer);
++	free(protPartDer);
 +	EVP_PKEY_free(pubkey);
 +	return ret;
 +notsup:
@@ -19617,7 +19617,7 @@ diff -Naur crypto/crmf/crmf_lib.c crypto-/crmf/crmf_lib.c
 +	certReqSize = i2d_CRMF_CERTREQUEST( certReq, &certReqDer);
 +
 +	maxSignatureSize = EVP_PKEY_size( (EVP_PKEY*) pkey);
-+	signature = OPENSSL_malloc(maxSignatureSize);
++	signature = malloc(maxSignatureSize);
 +
 +	/* set the type of the algorithm */
 +	switch (EVP_PKEY_type(pkey->type))
@@ -19652,16 +19652,16 @@ diff -Naur crypto/crmf/crmf_lib.c crypto-/crmf/crmf_lib.c
 +	poposig->signature->flags |= ASN1_STRING_FLAG_BITS_LEFT;
 +
 +	/* cleanup */
-+	OPENSSL_free(certReqDer);
++	free(certReqDer);
 +	EVP_MD_CTX_destroy(ctx);
-+	OPENSSL_free(signature);
++	free(signature);
 +	return poposig;
 +err:
 +	CRMFerr(CRMF_F_CRMF_POPOSIGNINGKEY_NEW, CRMF_R_ERROR_SETTING_POPSIGNINGKEY);
 +	if( poposig) CRMF_POPOSIGNINGKEY_free( poposig);
-+	if( certReqDer) OPENSSL_free(certReqDer);
++	if( certReqDer) free(certReqDer);
 +	if( ctx) EVP_MD_CTX_destroy(ctx);
-+	if( signature) OPENSSL_free(signature);
++	if( signature) free(signature);
 +	return NULL;
 +	}
 +
@@ -20023,13 +20023,13 @@ diff -Naur crypto/crmf/crmf_pbm.c crypto-/crmf/crmf_pbm.c
 +	long iterations;
 +
 +	if (!mac) goto err;
-+	if( *mac) OPENSSL_free(*mac);
++	if( *mac) free(*mac);
 +
 +	if (!pbm) goto err;
 +	if (!msg) goto err;
 +	if (!secret) goto err;
 +
-+	*mac = OPENSSL_malloc(EVP_MAX_MD_SIZE);
++	*mac = malloc(EVP_MAX_MD_SIZE);
 +
 +	OpenSSL_add_all_digests();
 +
@@ -20082,7 +20082,7 @@ diff -Naur crypto/crmf/crmf_pbm.c crypto-/crmf/crmf_pbm.c
 +
 +	return 1;
 +err:
-+	if( mac && *mac) OPENSSL_free(*mac);
++	if( mac && *mac) free(*mac);
 +	CRMFerr(CRMF_F_CRMF_PASSWORDBASEDMAC_NEW, CRMF_R_CRMFERROR);
 +	return 0;
 +	}

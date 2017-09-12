@@ -11,8 +11,7 @@ namespace Erpiko {
 
 SCENARIO("CMP ir request") {
   GIVEN("A ca cert, a key and a subject") {
-/*
-    DataSource* src = DataSource::fromFile("assets/cacert.pem");
+    DataSource* src = DataSource::fromFile("assets/cert.pem");
     auto v = src->readAll();
     std::string pem(v.begin(),v.end());
     Certificate* cacert = Certificate::fromPem(pem);
@@ -27,6 +26,8 @@ SCENARIO("CMP ir request") {
     id->set("UID", "omama");
 
     auto cmp = new Cmp();
+
+/*
     We don't have mocking in place, so yeah...
 
     cmp->subject(*id);
