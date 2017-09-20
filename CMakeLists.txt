@@ -1,5 +1,6 @@
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 project("erpiko" LANGUAGES CXX)
 
@@ -18,7 +19,7 @@ if (NOT CONFIGURED_ONCE)
 endif()
 
 find_package(CUDA)
-if (${CUDA_VERSION}) 
+if (${CUDA_VERSION})
   if (NOT DISABLE_CUDA)
     include(FindCUDA)
     add_definitions(-DENABLE_CUDA)
