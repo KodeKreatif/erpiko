@@ -1,20 +1,57 @@
 version: 0.1.{build}
 clone_folder: C:\erpiko
+os: Visual Studio 2015
+platform:
+    - Win32
 init:
+- 'echo System architecture: %PLATFORM%'
 - ps: iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
-install:
-- cmd: >-
-    choco install cmake
+- cmd: cmake --version
+- cmd: msbuild /version
 
+install:
+- cmd: >-    
     choco install wget
+
+    choco install unzip
+
+    mkdir deps
 
     cd deps
 
-    wget http://ftp.openbsd.org/pub/OpenBSD/LibreSSL/libressl-2.3.3-windows.zip
+    wget -O tip.zip https://github.com/mdamt/libressl-portable/archive/tip.zip
 
-    unzip libressl-2.3.3-windows.zip
+    unzip tip.zip
 
-    xcopy libressl-2.3.3-windows libressl /e/i
+    cd libressl-portable-tip
+
+    C:\cygwin\bin\bash -lc "cd /cygdrive/c/erpiko/deps/libressl-portable-tip/ && bash autogen.sh"'
+
+    C:\cygwin\bin\bash -lc "cd /cygdrive/c/erpiko/deps/libressl-portable-tip/ && patch -p0 < ../../patch/cmp.patch"'
+
+    C:\cygwin\bin\bash -lc "cd /cygdrive/c/erpiko/deps/libressl-portable-tip/ && patch -p1 < ../../patch/CMakefiles.patch"'
+
+    cd ..
+
+    xcopy libressl-portable-tip libressl /e/i
+
+    cd libressl
+
+    mkdir build
+
+    cd build
+    
+    call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" %vs_toolset%
+    
+    cmake -DCMAKE_BUILD_TYPE=Release ..
+
+    msbuild LibreSSL.sln /p:Configuration=Release
+
+    copy ssl\Release\ssl.lib ..\ssl\
+
+    copy crypto\Release\crypto.lib ..\crypto\
+
+    cd ..\..
 
     mkdir catch
 
@@ -31,9 +68,9 @@ build_script:
 
     cd build
 
-    cmake -G "NMake Makefiles" ..
+    cmake -DCMAKE_BUILD_TYPE=Release ..
 
-    nmake
+    msbuild erpiko.sln /p:Configuration=Release
 
     cd C:\erpiko
 test_script:
@@ -42,10 +79,43 @@ test_script:
 
     cd build
 
-    xcopy ..\deps\libressl\x86\*.dll . /y
+    cd tests
 
-    xcopy ..\deps\libressl\x86\*.dll tests /y
+    Release\testbase.exe
 
-    nmake test
+    Release\testcertificate.exe
+    
+    Release\testcipher.exe
+    
+    Release\testcmp.exe
+    
+    Release\testdata.exe
+    
+    Release\testdigest.exe
+    
+    Release\testkey.exe
+    
+    Release\testrng.exe
+
+    Release\testsmime.exe
+    
+    Release\testtsa.exe
 
     cd C:\erpiko
+
+    mkdir erpiko
+
+    cd erpiko
+
+    mkdir lib
+
+    copy ..\deps\libressl\ssl\ssl.lib lib\
+
+    copy ..\deps\libressl\crypto\crypto.lib lib\
+
+    copy ..\build\src\Release\erpiko.lib lib\
+
+    xcopy ..\include include /e/i
+
+artifacts:
+- path: erpiko
