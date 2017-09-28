@@ -2,7 +2,7 @@
 
 ## Goals
 
-A decent C++ library with PKI functionalities are missing.
+A decent C++ library with PKI functionalities is missing.
 Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 
 ## Supported Features
