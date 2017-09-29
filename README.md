@@ -41,8 +41,9 @@ needed to disable CUDA.
 This apply to Linux & macOS build. Please consult to `appveyor.yml` for Windows build.
 
 ```
-./scripts/build-deps-unix.sh # Download and compile the dependencies (LibreSSL, catch and patches)
-./scripts/build.sh           # Compile the erpiko
+./scripts/build-deps-unix.sh  # Download and compile the dependencies (LibreSSL, catch and patches) for GNU/Linux
+./scripts/build-deps-mac.sh   # Download and compile the dependencies (LibreSSL, catch and patches) for Mac
+./scripts/build.sh            # Compile the erpiko
 ```
 
 ## Compatibility with OpenSSL
