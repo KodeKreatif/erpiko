@@ -1,3 +1,5 @@
+![](https://user-images.githubusercontent.com/2534060/31044979-4694eee8-a604-11e7-8f0c-4b1e11f31e2f.png)
+
 # Erpiko -- PKI made easy
 
 ## Goals
@@ -57,5 +59,5 @@ Erpiko is BSD.
 
 ## History
 
-Erpiko development was initiated under a sponsorship granted by the Ministry of Communication and Informatics of Indonesia, 
+Erpiko development was initiated under a sponsorship granted by the Ministry of Communication and Informatics of Indonesia,
 then it is continued by the Erpiko contributors.
