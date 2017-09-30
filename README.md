@@ -49,7 +49,13 @@ This apply to Linux & macOS build. Please consult to `appveyor.yml` for Windows 
 ## Compatibility with OpenSSL
 
 Since Erpiko uses LibreSSL, it isn't ABI compatible with OpenSSL. If you work with an application that require a library that depends on OpenSSL, you need to relink the library to LibreSSL.
+Please see also issue #6.
 
 ## License
 
 Erpiko is BSD.
+
+## History
+
+Erpiko development was initiated under a sponsorship granted by the Ministry of Communication and Informatics of Indonesia, 
+then it is continued by the Erpiko contributors.
