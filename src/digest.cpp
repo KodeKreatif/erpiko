@@ -1,9 +1,9 @@
 #include "erpiko/digest.h"
-#include "erpiko/sha1.h"
-#include "erpiko/sha224.h"
-#include "erpiko/sha256.h"
-#include "erpiko/sha384.h"
-#include "erpiko/sha512.h"
+#include "sha1.h"
+#include "sha224.h"
+#include "sha256.h"
+#include "sha384.h"
+#include "sha512.h"
 
 namespace Erpiko {
 Digest*

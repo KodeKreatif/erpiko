@@ -9,7 +9,7 @@ namespace Erpiko {
 
 SCENARIO("Digest") {
   GIVEN("Object Id") {
-    ObjectId o("1.3.14.3.2.26");
+    ObjectId o(DigestConstants::SHA1);
     Digest *d = Digest::get(o);
 
     REQUIRE(d != nullptr);
@@ -20,7 +20,7 @@ SCENARIO("Digest") {
 
 SCENARIO("Digest with update") {
   GIVEN("SHA1") {
-    ObjectId o("1.3.14.3.2.26");
+    ObjectId o(DigestConstants::SHA1);
     Digest *d = Digest::get(o);
 
     std::vector<unsigned char>data = { 0x61, 0x62, 0x63 };
@@ -33,7 +33,7 @@ SCENARIO("Digest with update") {
   }
 
   GIVEN("SHA224") {
-    ObjectId o("2.16.840.1.101.3.4.2.4");
+    ObjectId o(DigestConstants::SHA224);
     Digest *d = Digest::get(o);
 
     std::vector<unsigned char>data = { 0x61, 0x62, 0x63 };
@@ -46,7 +46,7 @@ SCENARIO("Digest with update") {
   }
 
   GIVEN("SHA256") {
-    ObjectId o("2.16.840.1.101.3.4.2.1");
+    ObjectId o(DigestConstants::SHA256);
     Digest *d = Digest::get(o);
 
     std::vector<unsigned char>data = { 0x61, 0x62, 0x63 };
@@ -59,7 +59,7 @@ SCENARIO("Digest with update") {
   }
 
   GIVEN("SHA384") {
-    ObjectId o("2.16.840.1.101.3.4.2.2");
+    ObjectId o(DigestConstants::SHA384);
     Digest *d = Digest::get(o);
 
     std::vector<unsigned char>data = { 0x61, 0x62, 0x63 };
@@ -72,7 +72,7 @@ SCENARIO("Digest with update") {
   }
 
   GIVEN("SHA512") {
-    ObjectId o("2.16.840.1.101.3.4.2.3");
+    ObjectId o(DigestConstants::SHA512);
     Digest *d = Digest::get(o);
 
     std::vector<unsigned char>data = { 0x61, 0x62, 0x63 };
