@@ -1,4 +1,4 @@
-#include "erpiko/sha1.h"
+#include "sha1.h"
 #include "digest-openssl.h"
 #include <iostream>
 

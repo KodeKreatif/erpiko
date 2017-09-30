@@ -6,6 +6,14 @@
 
 namespace Erpiko {
 
+namespace DigestConstants {
+  const char* const SHA1 = "1.3.14.3.2.26";
+  const char* const SHA224 = "2.16.840.1.101.3.4.2.4";
+  const char* const SHA256 = "2.16.840.1.101.3.4.2.1";
+  const char* const SHA384 = "2.16.840.1.101.3.4.2.2";
+  const char* const SHA512 = "2.16.840.1.101.3.4.2.3";
+};
+
 /**
  * Message digest interface
  */
