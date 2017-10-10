@@ -60,7 +60,7 @@ class SignedData {
      * @return pointer to SignedData
      */
     static SignedData* fromSMime(const std::string pem);
-    
+
     /**
      * Initiate empty SignedData. This should be updated and finalized later.
      * Any chunk of data that throwed into this instance will be collected in memory
@@ -69,7 +69,7 @@ class SignedData {
      * @return pointer to SignedData
      */
     static SignedData* fromSMimeInit(const std::string smimePartial);
-    
+
     /**
      * Update existing SignedData instance. This should be finalized later.
      * Any chunk of data that throwed into this instance will be collected in memory
@@ -153,6 +153,13 @@ class SignedData {
      * @return vector of Certificates
      */
     std::vector<const Certificate*> certificates() const;
+
+    /**
+     * Returns the encrypted digest from the specified signer
+     * @param index the index of the signer, default is 0
+     * @return The digest
+     */
+    std::vector<unsigned char> digest(unsigned int index = 0) const;
 
     virtual ~SignedData();
 

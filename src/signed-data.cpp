@@ -3,6 +3,7 @@
 #include "converters.h"
 #include <openssl/pkcs7.h>
 #include <openssl/err.h>
+#include <openssl/asn1.h>
 #include <iostream>
 
 namespace Erpiko {
@@ -103,7 +104,7 @@ class SignedData::Impl {
         return;
       }
     }
-    
+
     void fromSMime(const std::string smime) {
       signingMode = SMIME;
       imported = true;
@@ -174,6 +175,24 @@ class SignedData::Impl {
         certList.push_back(Certificate::fromPem(pem));
       }
       return certList;
+    }
+
+    std::vector<unsigned char> digest(unsigned int index = 0) {
+      STACK_OF(PKCS7_SIGNER_INFO) *infos = PKCS7_get_signer_info(pkcs7);
+
+      auto info = sk_PKCS7_SIGNER_INFO_value(infos, index);
+      std::vector<unsigned char> ret;
+
+      if (info) {
+        int length = ASN1_STRING_length(info->enc_digest);
+        unsigned char* data = ASN1_STRING_data(info->enc_digest);
+        if (length > 0) {
+          for (int i = 0; i < length; i ++) {
+            ret.push_back(data[i]);
+          }
+        }
+      }
+      return ret;
     }
 };
 
@@ -384,6 +403,10 @@ void SignedData::fromSMimeFinalize() {
 
 std::vector<const Certificate*> SignedData::certificates() const {
   return impl->getCertificates();
+}
+
+std::vector<unsigned char> SignedData::digest(unsigned int index) const {
+  return impl->digest(index);
 }
 
 } // namespace Erpiko
