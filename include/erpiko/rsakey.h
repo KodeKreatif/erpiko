@@ -66,6 +66,13 @@ class RsaKey {
      */
     const RsaPublicKey& publicKey() const;
 
+    /**
+     * Decrypts data using private key
+     * @return encrypted data
+     */
+    const std::vector<unsigned char> decrypt(const std::vector<unsigned char> data) const;
+
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

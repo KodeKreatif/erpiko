@@ -108,4 +108,21 @@ SCENARIO("Keys can be created") {
     }
   }
 }
+
+SCENARIO("Keys can encrypt and decrypt data") {
+  GIVEN("A newly created key pair") {
+    RsaKey* pair = RsaKey::create(1024);
+    THEN("can encrypt using public and decrypt using private key") {
+      std::string s = "data";
+      std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
+
+      auto result = pair->publicKey().encrypt(data);
+      auto decrypted = pair->decrypt(result);
+      REQUIRE(decrypted == data);
+    }
+  }
+
+}
+
+
 } // namespace Erpiko

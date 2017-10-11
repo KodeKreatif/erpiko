@@ -53,6 +53,34 @@ class RsaPublicKey::Impl {
       return e;
     }
 
+    const std::vector<unsigned char> encrypt(const std::vector<unsigned char> data) const {
+      std::vector<unsigned char> ret;
+
+      EVP_PKEY* evp = nullptr;
+      EVP_PKEY_CTX* ctx = nullptr;
+      evp = EVP_PKEY_new();
+      if (evp) {
+        EVP_PKEY_set1_RSA(evp, rsa);
+        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+      }
+
+      if (ctx && EVP_PKEY_encrypt_init(ctx)) {
+        size_t length = 0;
+        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+        EVP_PKEY_encrypt(ctx, nullptr, &length, data.data(), data.size());
+
+        ret.resize(length);
+        unsigned char* buf = ret.data();
+        EVP_PKEY_encrypt(ctx, buf, &length, data.data(), data.size());
+
+        EVP_PKEY_CTX_free(ctx);
+      }
+
+      if (evp) EVP_PKEY_free(evp);
+      return ret;
+
+    }
+
 };
 
 RsaPublicKey::~RsaPublicKey() = default;
@@ -137,5 +165,8 @@ const BigInt& RsaPublicKey::modulus() const {
   return impl->modulus();
 }
 
+const std::vector<unsigned char> RsaPublicKey::encrypt(const std::vector<unsigned char> data) const {
+  return impl->encrypt(data);
+}
 
 } // namespace Erpiko

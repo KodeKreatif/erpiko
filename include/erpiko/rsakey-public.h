@@ -57,6 +57,12 @@ class RsaPublicKey {
      */
     const std::vector<unsigned char> toDer() const;
 
+    /**
+     * Encrypts data using public key
+     * @return encrypted data
+     */
+    const std::vector<unsigned char> encrypt(const std::vector<unsigned char> data) const;
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;
