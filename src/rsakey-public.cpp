@@ -81,6 +81,36 @@ class RsaPublicKey::Impl {
 
     }
 
+    bool verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const {
+      bool ret = false;
+
+      EVP_PKEY* evp = nullptr;
+      EVP_PKEY_CTX* ctx = nullptr;
+      evp = EVP_PKEY_new();
+
+      if (evp) {
+        EVP_PKEY_set1_RSA(evp, rsa);
+        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+      }
+
+      auto obj = OBJ_txt2obj(digest.toString().c_str(), 1);
+      auto hashAlgorithmMd = const_cast<EVP_MD*>(EVP_get_digestbyobj(obj));
+      ASN1_OBJECT_free(obj);
+      if (ctx && EVP_PKEY_verify_init(ctx) && hashAlgorithmMd) {
+        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+        EVP_PKEY_CTX_set_signature_md(ctx, hashAlgorithmMd);
+        ret = (EVP_PKEY_verify(ctx, signature.data(), signature.size(), data.data(), data.size()) == 1);
+
+        EVP_PKEY_CTX_free(ctx);
+      }
+
+      if (evp) EVP_PKEY_free(evp);
+      return ret;
+
+    }
+
+
+
 };
 
 RsaPublicKey::~RsaPublicKey() = default;
@@ -168,5 +198,10 @@ const BigInt& RsaPublicKey::modulus() const {
 const std::vector<unsigned char> RsaPublicKey::encrypt(const std::vector<unsigned char> data) const {
   return impl->encrypt(data);
 }
+
+bool RsaPublicKey::verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const {
+  return impl->verify(signature, data, digest);
+}
+
 
 } // namespace Erpiko

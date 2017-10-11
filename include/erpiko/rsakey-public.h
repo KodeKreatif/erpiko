@@ -2,6 +2,7 @@
 #define _RSA_PUBLIC_KEY_H_
 
 #include "erpiko/bigint.h"
+#include "erpiko/oid.h"
 #include <memory>
 #include <vector>
 
@@ -62,6 +63,14 @@ class RsaPublicKey {
      * @return encrypted data
      */
     const std::vector<unsigned char> encrypt(const std::vector<unsigned char> data) const;
+
+    /**
+     * Verifies data using public key
+     * @return signature
+     */
+    bool verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const;
+
+
 
   private:
     class Impl;
