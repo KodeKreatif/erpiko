@@ -3,6 +3,10 @@ clone_folder: C:\erpiko
 os: Visual Studio 2015
 platform:
     - Win32
+    - x64
+configuration:
+    - Debug
+    - Release
 init:
 - 'echo System architecture: %PLATFORM%'
 - ps: iex ((new-object net.webclient).DownloadString('https://chocolatey.org/install.ps1'))
@@ -12,110 +16,129 @@ init:
 install:
 - cmd: >-    
     choco install wget
-
+    
     choco install unzip
-
+    
     mkdir deps
-
+    
     cd deps
-
+    
     wget -O tip.zip https://github.com/mdamt/libressl-portable/archive/tip.zip
-
+    
     unzip tip.zip
-
+    
     cd libressl-portable-tip
-
+    
     C:\cygwin\bin\bash -lc "cd /cygdrive/c/erpiko/deps/libressl-portable-tip/ && bash autogen.sh"'
-
+    
     C:\cygwin\bin\bash -lc "cd /cygdrive/c/erpiko/deps/libressl-portable-tip/ && patch -p0 < ../../patch/cmp.patch"'
-
+    
     C:\cygwin\bin\bash -lc "cd /cygdrive/c/erpiko/deps/libressl-portable-tip/ && patch -p1 < ../../patch/CMakefiles.patch"'
-
+    
     cd ..
-
+    
     xcopy libressl-portable-tip libressl /e/i
-
+    
     cd libressl
 
-    mkdir build
+    dir "C:\Program Files (x86)\Windows Kits\10\Lib"
 
-    cd build
+    dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0"
+
+    dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0\um\"
+
+    dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0\um\x64"
+
+    mkdir build%PLATFORM%
     
-    call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" %vs_toolset%
+    cd build%PLATFORM%
+
+    if "%platform%"=="Win32" set CALL_VS=call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
     
-    cmake -DCMAKE_BUILD_TYPE=Release ..
+    if "%platform%"=="x64" set CALL_VS=call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" amd64
+    
+    if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 14 2015
 
-    msbuild LibreSSL.sln /p:Configuration=Release
+    if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 14 2015 Win64
 
-    copy ssl\Release\ssl.lib ..\ssl\
+    cmake -G "%CMAKE_GENERATOR_NAME%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% ..
+    
+    msbuild LibreSSL.sln /p:Configuration=%CONFIGURATION%
 
-    copy crypto\Release\crypto.lib ..\crypto\
+    copy ssl\%CONFIGURATION%\ssl.lib ..\ssl\
 
+    copy crypto\%CONFIGURATION%\crypto.lib ..\crypto\
+            
     cd ..\..
-
+    
     mkdir catch
-
+    
     cd catch
-
+    
     wget -O catch.hpp https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp
-
+    
     cd C:\erpiko
 build_script:
 - cmd: >-
-    call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" %vs_toolset%
+    copy deps\libressl\build%PLATFORM%\ssl\%CONFIGURATION%\ssl.lib deps\libressl\ssl
+    
+    mkdir build%PLATFORM%
+    
+    cd build%PLATFORM%
 
-    mkdir build
+    if "%platform%"=="Win32" set CALL_VS=call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
+    
+    if "%platform%"=="x64" set CALL_VS=call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" amd64   
+    
+    if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 14 2015
 
-    cd build
+    if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 14 2015 Win64
 
-    cmake -DCMAKE_BUILD_TYPE=Release ..
-
-    msbuild erpiko.sln /p:Configuration=Release
-
+    cmake -G "%CMAKE_GENERATOR_NAME%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% ..
+    
+    msbuild erpiko.sln /p:Configuration=%CONFIGURATION%
+    
     cd C:\erpiko
 test_script:
 - cmd: >-
-    call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" %vs_toolset%
-
-    cd build
-
+    cd build%PLATFORM%
+    
     cd tests
-
-    Release\testbase.exe
-
-    Release\testcertificate.exe
     
-    Release\testcipher.exe
+    %CONFIGURATION%\testbase.exe
     
-    Release\testcmp.exe
+    %CONFIGURATION%\testcertificate.exe
     
-    Release\testdata.exe
+    %CONFIGURATION%\testcipher.exe
     
-    Release\testdigest.exe
+    %CONFIGURATION%\testcmp.exe
     
-    Release\testkey.exe
+    %CONFIGURATION%\testdata.exe
     
-    Release\testrng.exe
-
-    Release\testsmime.exe
+    %CONFIGURATION%\testdigest.exe
     
-    Release\testtsa.exe
+    %CONFIGURATION%\testkey.exe
+    
+    %CONFIGURATION%\testrng.exe
+    
+    %CONFIGURATION%\testsmime.exe
+    
+    %CONFIGURATION%\testtsa.exe
 
     cd C:\erpiko
-
+    
     mkdir erpiko
-
+    
     cd erpiko
-
-    mkdir lib
-
-    copy ..\deps\libressl\ssl\ssl.lib lib\
-
-    copy ..\deps\libressl\crypto\crypto.lib lib\
-
-    copy ..\build\src\Release\erpiko.lib lib\
-
-    xcopy ..\include include /e/i
-
+    
+    mkdir deps%PLATFORM%-%CONFIGURATION%
+    
+    copy ..\deps\libressl\build%PLATFORM%\ssl\%CONFIGURATION%\ssl.lib deps%PLATFORM%-%CONFIGURATION%\lib
+    
+    copy ..\deps\libressl\build%PLATFORM%\crypto\%CONFIGURATION%\crypto.lib deps%PLATFORM%-%CONFIGURATION%\lib
+    
+    copy ..\build%PLATFORM%\src\%CONFIGURATION%\erpiko.lib deps%PLATFORM%-%CONFIGURATION%\lib
+    
+    xcopy ..\include deps%PLATFORM%-%CONFIGURATION%\include /e/i
 artifacts:
 - path: erpiko
