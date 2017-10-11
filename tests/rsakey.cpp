@@ -5,6 +5,7 @@
 #include "erpiko/bigint.h"
 #include "erpiko/rsakey.h"
 #include "erpiko/rsakey-public.h"
+#include "erpiko/digest.h"
 
 namespace Erpiko {
 SCENARIO("Keys can be created") {
@@ -108,4 +109,48 @@ SCENARIO("Keys can be created") {
     }
   }
 }
+
+SCENARIO("Keys can encrypt and decrypt data") {
+  GIVEN("A newly created key pair") {
+    RsaKey* pair = RsaKey::create(1024);
+    THEN("can encrypt using public and decrypt using private key") {
+      std::string s = "data";
+      std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
+
+      auto result = pair->publicKey().encrypt(data);
+      auto decrypted = pair->decrypt(result);
+      REQUIRE(decrypted == data);
+    }
+  }
+
+}
+
+SCENARIO("Keys can sign and verify data") {
+  GIVEN("A newly created key pair") {
+    RsaKey* pair = RsaKey::create(1024);
+    RsaKey* pair2 = RsaKey::create(1024);
+    THEN("can sign using public and verify using private key") {
+      ObjectId o(DigestConstants::SHA256);
+      std::string s = "data";
+      Digest *d = Digest::get(o);
+      std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
+      std::vector<unsigned char> empty;
+      d->update(data);
+      auto hash = d->finalize(empty);
+
+      auto result = pair->sign(hash, o);
+      auto result2 = pair2->sign(hash, o);
+      auto verified = pair->publicKey().verify(result, hash, o);
+      auto verified2 = pair2->publicKey().verify(result, hash, o);
+      auto verified3 = pair2->publicKey().verify(result2, hash, o);
+      REQUIRE(verified == true);
+      REQUIRE(verified2 == false);
+      REQUIRE(verified3 == true);
+    }
+  }
+
+}
+
+
+
 } // namespace Erpiko

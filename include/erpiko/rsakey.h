@@ -2,6 +2,7 @@
 #define _RSA_KEY_H_
 
 #include "erpiko/rsakey-public.h"
+#include "erpiko/oid.h"
 #include <memory>
 #include <vector>
 
@@ -65,6 +66,18 @@ class RsaKey {
      * @return public key reference
      */
     const RsaPublicKey& publicKey() const;
+
+    /**
+     * Decrypts data using private key
+     * @return encrypted data
+     */
+    const std::vector<unsigned char> decrypt(const std::vector<unsigned char> data) const;
+
+    /**
+     * Signs data using private key
+     * @return signature
+     */
+    const std::vector<unsigned char> sign(const std::vector<unsigned char> data, const ObjectId& digest) const;
 
   private:
     class Impl;

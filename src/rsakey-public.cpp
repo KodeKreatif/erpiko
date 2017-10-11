@@ -53,6 +53,64 @@ class RsaPublicKey::Impl {
       return e;
     }
 
+    const std::vector<unsigned char> encrypt(const std::vector<unsigned char> data) const {
+      std::vector<unsigned char> ret;
+
+      EVP_PKEY* evp = nullptr;
+      EVP_PKEY_CTX* ctx = nullptr;
+      evp = EVP_PKEY_new();
+      if (evp) {
+        EVP_PKEY_set1_RSA(evp, rsa);
+        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+      }
+
+      if (ctx && EVP_PKEY_encrypt_init(ctx)) {
+        size_t length = 0;
+        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+        EVP_PKEY_encrypt(ctx, nullptr, &length, data.data(), data.size());
+
+        ret.resize(length);
+        unsigned char* buf = ret.data();
+        EVP_PKEY_encrypt(ctx, buf, &length, data.data(), data.size());
+
+        EVP_PKEY_CTX_free(ctx);
+      }
+
+      if (evp) EVP_PKEY_free(evp);
+      return ret;
+
+    }
+
+    bool verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const {
+      bool ret = false;
+
+      EVP_PKEY* evp = nullptr;
+      EVP_PKEY_CTX* ctx = nullptr;
+      evp = EVP_PKEY_new();
+
+      if (evp) {
+        EVP_PKEY_set1_RSA(evp, rsa);
+        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+      }
+
+      auto obj = OBJ_txt2obj(digest.toString().c_str(), 1);
+      auto hashAlgorithmMd = const_cast<EVP_MD*>(EVP_get_digestbyobj(obj));
+      ASN1_OBJECT_free(obj);
+      if (ctx && EVP_PKEY_verify_init(ctx) && hashAlgorithmMd) {
+        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
+        EVP_PKEY_CTX_set_signature_md(ctx, hashAlgorithmMd);
+        ret = (EVP_PKEY_verify(ctx, signature.data(), signature.size(), data.data(), data.size()) == 1);
+
+        EVP_PKEY_CTX_free(ctx);
+      }
+
+      if (evp) EVP_PKEY_free(evp);
+      return ret;
+
+    }
+
+
+
 };
 
 RsaPublicKey::~RsaPublicKey() = default;
@@ -135,6 +193,14 @@ const BigInt& RsaPublicKey::exponent() const {
 
 const BigInt& RsaPublicKey::modulus() const {
   return impl->modulus();
+}
+
+const std::vector<unsigned char> RsaPublicKey::encrypt(const std::vector<unsigned char> data) const {
+  return impl->encrypt(data);
+}
+
+bool RsaPublicKey::verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const {
+  return impl->verify(signature, data, digest);
 }
 
 
