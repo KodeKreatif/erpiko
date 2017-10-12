@@ -127,7 +127,7 @@ test_script:
 
     copy ..\deps\libressl\crypto\crypto.lib lib\
 
-    copy ..\build\src\Release\erpiko.lib lib\
+    copy ..\build\src\%CONFIGURATION%\erpiko.lib lib\
 
     xcopy ..\include include /e/i
 
