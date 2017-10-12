@@ -59,6 +59,8 @@ install:
 
     copy ssl\%CONFIGURATION%\ssl.lib ..\ssl\
 
+    copy tls\%CONFIGURATION%\tls.lib ..\tls\
+
     copy crypto\%CONFIGURATION%\crypto.lib ..\crypto\
             
     cd ..\..
@@ -124,6 +126,8 @@ test_script:
     mkdir lib
 
     copy ..\deps\libressl\ssl\ssl.lib lib\
+
+    copy ..\deps\libressl\tls\tls.lib lib\
 
     copy ..\deps\libressl\crypto\crypto.lib lib\
 
