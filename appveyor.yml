@@ -41,17 +41,9 @@ install:
     
     cd libressl
 
-    dir "C:\Program Files (x86)\Windows Kits\10\Lib"
-
-    dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0"
-
-    dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0\um\"
-
-    dir "C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0\um\x64"
-
-    mkdir build%PLATFORM%
+    mkdir build
     
-    cd build%PLATFORM%
+    cd build
 
     if "%platform%"=="Win32" set CALL_VS=call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
     
@@ -79,12 +71,10 @@ install:
     
     cd C:\erpiko
 build_script:
-- cmd: >-
-    copy deps\libressl\build%PLATFORM%\ssl\%CONFIGURATION%\ssl.lib deps\libressl\ssl
+- cmd: >-    
+    mkdir build
     
-    mkdir build%PLATFORM%
-    
-    cd build%PLATFORM%
+    cd build
 
     if "%platform%"=="Win32" set CALL_VS=call "%VS140COMNTOOLS%\..\..\vc\vcvarsall.bat" x86
     
@@ -101,7 +91,7 @@ build_script:
     cd C:\erpiko
 test_script:
 - cmd: >-
-    cd build%PLATFORM%
+    cd build
     
     cd tests
     
@@ -128,17 +118,18 @@ test_script:
     cd C:\erpiko
     
     mkdir erpiko
-    
+
     cd erpiko
-    
-    mkdir deps%PLATFORM%-%CONFIGURATION%
-    
-    copy ..\deps\libressl\build%PLATFORM%\ssl\%CONFIGURATION%\ssl.lib deps%PLATFORM%-%CONFIGURATION%\lib
-    
-    copy ..\deps\libressl\build%PLATFORM%\crypto\%CONFIGURATION%\crypto.lib deps%PLATFORM%-%CONFIGURATION%\lib
-    
-    copy ..\build%PLATFORM%\src\%CONFIGURATION%\erpiko.lib deps%PLATFORM%-%CONFIGURATION%\lib
-    
-    xcopy ..\include deps%PLATFORM%-%CONFIGURATION%\include /e/i
+
+    mkdir lib
+
+    copy ..\deps\libressl\ssl\ssl.lib lib\
+
+    copy ..\deps\libressl\crypto\crypto.lib lib\
+
+    copy ..\build\src\Release\erpiko.lib lib\
+
+    xcopy ..\include include /e/i
+
 artifacts:
 - path: erpiko
