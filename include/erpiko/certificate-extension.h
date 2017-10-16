@@ -74,7 +74,5 @@ class CertificateBasicConstraintsExtension : public CertificateExtension {
 };
 
 
-
-
 } // namespace Erpiko
 #endif // _CERTIFICATE_EXTENSION_H_
