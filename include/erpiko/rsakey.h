@@ -7,6 +7,10 @@
 #include <vector>
 
 namespace Erpiko {
+namespace RsaAlgorithmConstants {
+  const char* const RSA_SHA256 = "1.2.840.113549.1.1.11";
+  const char* const RSA_SHA1 = "1.2.840.113549.1.1.5";
+} // namespace RsaAlgorithmConstants
 
 class RsaKey {
   public:

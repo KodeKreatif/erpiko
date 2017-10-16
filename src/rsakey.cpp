@@ -145,8 +145,6 @@ class RsaKey::Impl {
 
     }
 
-
-
 };
 
 RsaKey::~RsaKey() = default;

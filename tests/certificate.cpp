@@ -3,8 +3,12 @@
 
 #include "erpiko/certificate.h"
 #include "erpiko/certificate-extension.h"
+#include "erpiko/certificate-request.h"
 #include "erpiko/data-source.h"
 #include "erpiko/utils.h"
+#include "erpiko/rsakey.h"
+#include "erpiko/oid.h"
+#include "erpiko/digest.h"
 #include <iostream>
 
 namespace Erpiko {
@@ -187,6 +191,88 @@ SCENARIO("Export certificate to PEM test") {
       }
     }
   }
+}
+
+SCENARIO("Generate a PKCS10 test") {
+  GIVEN("A key, an identity and an algo") {
+
+    ObjectId o(RsaAlgorithmConstants::RSA_SHA256);
+    auto srcKey = DataSource::fromFile("assets/keyx1.pem");
+    auto v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    ObjectId ox(DigestConstants::SHA256);
+    Digest *d = Digest::get(ox);
+    std::string s = "data";
+    std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
+    std::vector<unsigned char> empty;
+    d->update(data);
+    auto hash = d->finalize(empty);
+
+    auto sign = key->sign(hash, ox);
+
+    Identity id;
+    id.set("commonName", "omama");
+
+    THEN("Can produce a CertificateRequest") {
+      CertificateRequest* req = new CertificateRequest(id, *key, o);
+      REQUIRE(req->isValid());
+      const RsaPublicKey& pkey = req->publicKey();
+      REQUIRE(id == req->subject());
+      REQUIRE(pkey.verify(sign, hash, o) == true);
+
+      CertificateRequest* req2 = CertificateRequest::fromDer(req->toDer());
+      REQUIRE(req2->isValid());
+      const RsaPublicKey& pkey2 = req2->publicKey();
+      REQUIRE(id == req2->subject());
+      REQUIRE(pkey2.verify(sign, hash, o) == true);
+
+      delete(req);
+      delete(req2);
+
+    }
+  }
+
+  GIVEN("A key, an identity and an algo") {
+
+    ObjectId o(RsaAlgorithmConstants::RSA_SHA256);
+    auto srcKey = DataSource::fromFile("assets/keyx1.pem");
+    auto v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    Identity id;
+    id.set("commonName", "omama");
+
+    THEN("Can produce a CertificateRequest and the PEM can be read back") {
+      CertificateRequest* req = new CertificateRequest(id, *key, o);
+      REQUIRE(req->isValid());
+
+      auto req2 = CertificateRequest::fromPem(req->toPem());
+      REQUIRE(req2 != nullptr);
+      REQUIRE(req2->isValid());
+      REQUIRE(req->subject() == req2->subject());
+
+      delete(req);
+
+    }
+
+    THEN("Can produce a CertificateRequest and the DER can be read back") {
+      CertificateRequest* req = new CertificateRequest(id, *key, o);
+      REQUIRE(req->isValid());
+
+      auto req2 = CertificateRequest::fromDer(req->toDer());
+      REQUIRE(req2 != nullptr);
+      REQUIRE(req2->isValid());
+      REQUIRE(req->subject() == req2->subject());
+
+      delete(req);
+
+    }
+
+  }
+
 }
 
 

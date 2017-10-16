@@ -12,8 +12,9 @@ Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 - X509 Certificate
 - CMP over HTTP (RFC-4210, RFC-6712) (*partial*)
 - SIM (RFC-4683)
-- PKCS#12
 - PKCS#7 (*partial*)
+- PKCS#10
+- PKCS#12
 - S/MIME sigining, verification, encryption and decryption
 - TSA (request, response, and verification)
 - Random number generator

@@ -62,15 +62,20 @@ namespace Converters {
     return v;
   }
 
-  inline const std::vector<unsigned char> rsaKeyToDer(EVP_PKEY *pkey, const std::string passphrase) {
+  inline const std::vector<unsigned char> rsaKeyToDer(EVP_PKEY *pkey, const std::string passphrase, bool isPublic = false) {
     std::vector<unsigned char> retval;
     int ret;
     BIO* mem = BIO_new(BIO_s_mem());
 
-    if (passphrase == "") {
-      ret = i2d_PKCS8PrivateKey_bio(mem, pkey, NULL, NULL, 0, 0, NULL);
+    if (isPublic) {
+      auto rsa = EVP_PKEY_get1_RSA(pkey);
+      ret = i2d_RSA_PUBKEY_bio(mem, rsa);
     } else {
-      ret = i2d_PKCS8PrivateKey_bio(mem, pkey, EVP_aes_256_cbc(), const_cast<char*>(passphrase.c_str()), passphrase.length(), 0, NULL);
+      if (passphrase == "") {
+        ret = i2d_PKCS8PrivateKey_bio(mem, pkey, NULL, NULL, 0, 0, NULL);
+      } else {
+        ret = i2d_PKCS8PrivateKey_bio(mem, pkey, EVP_aes_256_cbc(), const_cast<char*>(passphrase.c_str()), passphrase.length(), 0, NULL);
+      }
     }
 
     while (ret) {
@@ -105,7 +110,42 @@ namespace Converters {
 
     return v;
   }
-  
+
+  inline std::string certificateRequestToPem(X509_REQ* r) {
+    BIO* bio = BIO_new(BIO_s_mem());
+    PEM_write_bio_X509_REQ(bio, r);
+    BUF_MEM *mem = NULL;
+    BIO_get_mem_ptr(bio, &mem);
+    std::string pem(mem->data, mem->length);
+    BIO_free(bio);
+
+    return pem;
+  }
+
+  inline std::vector<unsigned char> certificateRequestToDer(X509_REQ* r) {
+    std::vector<unsigned char> retval;
+    int ret;
+    BIO* mem = BIO_new(BIO_s_mem());
+
+    ret = i2d_X509_REQ_bio(mem, r);
+
+    while (ret) {
+      unsigned char buff[1024];
+      int ret = BIO_read(mem, buff, 1024);
+      if (ret > 0) {
+        for (int i = 0; i < ret; i ++) {
+          retval.push_back(buff[i]);
+        }
+      } else {
+        break;
+      }
+    }
+    BIO_free(mem);
+
+    return retval;
+  }
+
+
   inline std::string certificateToPem(X509* r) {
     BIO* bio = BIO_new(BIO_s_mem());
     PEM_write_bio_X509(bio, r);
