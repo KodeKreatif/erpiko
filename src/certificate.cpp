@@ -33,7 +33,7 @@ class Certificate::Impl {
       x509 = X509_new();
       x509_CRL = X509_CRL_new();
     }
-    
+
 
     void fromDer(const std::vector<unsigned char> der) {
       BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
@@ -75,6 +75,85 @@ class Certificate::Impl {
       x509_CRL = nullptr;
     }
 
+    // Copy values from our structure to X509
+    void updateValues(const RsaKey& signerKey) {
+      X509_set_version(x509, 2);
+      updateValidity();
+      updateIdentities();
+      updateSerialNumber();
+      updatePublicKey(signerKey);
+    }
+
+    void updatePublicKey(const RsaKey& signerKey) {
+      if (!publicKey.get()) return;
+      auto rsa = RSA_new();
+      auto der = publicKey.get()->toDer();
+      BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
+      if (mem && d2i_RSA_PUBKEY_bio(mem, &rsa)) {
+        EVP_PKEY* pub = EVP_PKEY_new();
+        EVP_PKEY_set1_RSA(pub, rsa);
+        X509_set_pubkey(x509, pub);
+
+        BIO_free(mem);
+        mem = nullptr;
+
+        X509V3_CTX ext_ctx;
+        X509V3_set_ctx(&ext_ctx, x509, x509, nullptr, nullptr, 0);
+        X509V3_set_nconf(&ext_ctx, nullptr);
+
+        auto digest = EVP_sha256();
+        EVP_MD_CTX mctx;
+        EVP_MD_CTX_init(&mctx);
+        EVP_PKEY_CTX *pkctx = nullptr;
+        EVP_PKEY *pkey = EVP_PKEY_new();
+        der = signerKey.toDer();
+        mem = BIO_new_mem_buf((void*) der.data(), der.size());
+        PKCS8_PRIV_KEY_INFO *p8inf;
+        p8inf = d2i_PKCS8_PRIV_KEY_INFO_bio(mem, NULL);
+        if (p8inf) {
+          pkey = EVP_PKCS82PKEY(p8inf);
+          PKCS8_PRIV_KEY_INFO_free(p8inf);
+        }
+        //BIO_free(mem);
+
+        if (EVP_DigestSignInit(&mctx, &pkctx, digest, nullptr, pkey))
+        if (X509_sign_ctx(x509, &mctx)) {
+          EVP_MD_CTX_cleanup(&mctx);
+        }
+      }
+      if (mem) {
+        BIO_free(mem);
+      }
+    }
+
+    void updateSerialNumber() {
+      BIGNUM* b = BN_new();
+      BN_hex2bn(&b, serialNumber.toHexString().c_str());
+      ASN1_INTEGER* sn = BN_to_ASN1_INTEGER(b, nullptr);
+      X509_set_serialNumber(x509, sn);
+      ASN1_INTEGER_free(sn);
+      BN_free(b);
+    }
+
+    void updateIdentities() {
+      if (subjectIdentity) {
+        X509_set_subject_name(x509, Converters::identityToName(*subjectIdentity.get()));
+      }
+      if (issuerIdentity) {
+        X509_set_issuer_name(x509, Converters::identityToName(*issuerIdentity.get()));
+      }
+    }
+
+    void updateValidity() {
+      ASN1_TIME* t = ASN1_TIME_new();
+      ASN1_TIME_set_string(t, notBefore.toString().c_str());
+      X509_set_notBefore(x509, t);
+      ASN1_TIME_set_string(t, notAfter.toString().c_str());
+      X509_set_notAfter(x509, t);
+      ASN1_TIME_free(t);
+    }
+
+    // Copy values from X509 structure to our structures
     void resetValues() {
       resetSubjectIdentity();
       resetIssuerIdentity();
@@ -234,7 +313,7 @@ CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsig
   Certificate* issuerCert = new Certificate();
   issuerCert->impl->fromDer(issuerDer);
   X509 * issuer = issuerCert->impl->x509;
-  
+
   Certificate* crlCert = new Certificate();
   crlCert->impl->crlFromDer(crlDer);
   X509_CRL * crl = crlCert->impl->x509_CRL;
@@ -253,7 +332,7 @@ CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsig
           if (memcmp(entry->serialNumber->data, serial->data, serial->length) == 0) {
             status = CertificateRevocationState::REVOKED;
           }
-        } 
+        }
       }
     }
   }
@@ -263,16 +342,16 @@ CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsig
 CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer, const std::string& cacertsPemPath) const {
   CertificateTrustState::State status = CertificateTrustState::UNKNOWN;
   STACK_OF(X509)* chain = sk_X509_new_null();
-  
+
   Certificate* issuerCert = new Certificate();
   issuerCert->impl->fromDer(issuerDer);
   X509 * issuer = issuerCert->impl->x509;
   sk_X509_push(chain, issuer);
-  
+
   Certificate* crlCert = new Certificate();
   crlCert->impl->crlFromDer(crlDer);
   X509_CRL * crl = crlCert->impl->x509_CRL;
-  
+
   X509_STORE *store = X509_STORE_new();
   X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
   X509_LOOKUP_load_file(lookup, cacertsPemPath.c_str(), X509_FILETYPE_PEM);
@@ -419,7 +498,17 @@ unsigned int CertificateBasicConstraintsExtension::pathLengthConstraints() const
 }
 
 
-
-
+Certificate*
+Certificate::create(const Time& notBefore, const Time& notAfter, const Identity& subjectIdentity, const Identity& issuerIdentity, const BigInt& serialNumber, const RsaPublicKey& publicKey, const RsaKey& signerKey) {
+  Certificate* c = new Certificate();
+  c->impl->notBefore = notBefore;
+  c->impl->notAfter = notAfter;
+  c->impl->subjectIdentity.reset(Identity::fromDer(subjectIdentity.toDer()));
+  c->impl->issuerIdentity.reset(Identity::fromDer(issuerIdentity.toDer()));
+  c->impl->serialNumber = serialNumber;
+  c->impl->publicKey.reset(RsaPublicKey::fromDer(publicKey.toDer()));
+  c->impl->updateValues(signerKey);
+  return c;
+}
 
 } // namespace Erpiko
