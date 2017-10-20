@@ -221,5 +221,18 @@ bool Time::operator==(const Time& other) const {
   return (now == eOther);
 }
 
+bool Time::operator<(const Time& other) const {
+  auto eOther = timegm(&other.impl->timeData);
+  auto now = timegm(&impl->timeData);
+
+  return (now < eOther);
+}
+
+bool Time::operator>(const Time& other) const {
+  auto eOther = timegm(&other.impl->timeData);
+  auto now = timegm(&impl->timeData);
+
+  return (now > eOther);
+}
 
 } // namespace Erpiko
