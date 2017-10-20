@@ -108,6 +108,18 @@ class Time {
      */
     bool operator==(const Time &other) const;
 
+    /**
+     * Operator <
+     */
+    bool operator<(const Time &other) const;
+
+    /**
+     * Operator >
+     */
+    bool operator>(const Time &other) const;
+
+
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

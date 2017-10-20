@@ -275,5 +275,34 @@ SCENARIO("Generate a PKCS10 test") {
 
 }
 
+SCENARIO("Writing to certificate test") {
+  GIVEN("A new certificate") {
+    Certificate* cert = new Certificate();
+    Time start("800212215620Z");
+    Time end("800212215622Z");
+    Identity subject;
+    subject.set("commonName", "omama");
+    Identity issuer;
+    issuer.set("commonName", "olala");
+    BigInt sn(123);
+    RsaKey* pair = RsaKey::create(1024);
+
+    THEN("can create a cert") {
+      auto cert = Certificate::create(start, end, subject, issuer, sn, pair->publicKey(), *pair);
+      if (cert) {
+        auto c2 = Certificate::fromDer(cert->toDer());
+        REQUIRE(c2->notBefore() == start);
+        REQUIRE(c2->notAfter() == end);
+        REQUIRE(c2->subjectIdentity().toString() == subject.toString());
+        REQUIRE(c2->issuerIdentity().toString() == issuer.toString());
+        REQUIRE(c2->serialNumber() == sn);
+        REQUIRE(c2->publicKey().toDer() == pair->publicKey().toDer());
+      }
+      delete(pair);
+    }
+  }
+}
+
+
 
 } //namespace Erpiko

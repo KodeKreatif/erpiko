@@ -4,6 +4,7 @@
 #include "erpiko/identity.h"
 #include "erpiko/bigint.h"
 #include "erpiko/time.h"
+#include "erpiko/rsakey.h"
 #include "erpiko/rsakey-public.h"
 #include <string>
 #include <memory>
@@ -74,6 +75,18 @@ class Certificate {
     static Certificate* fromDer(const std::vector<unsigned char> der);
 
     /**
+     * Creates a new Certificate from specified data
+     * @param notBefore the start date
+     * @param notAfter the end date
+     * @param subjectIdentity the subject Identity
+     * @param issuerIdentity the issuer Identity
+     * @param serialNumber the serial number
+     * @param publicKey the public key of the signer
+     * @param signerKey the signer key
+     */
+    static Certificate* create(const Time& notBefore, const Time& notAfter, const Identity& subjectIdentity, const Identity& issuerIdentity, const BigInt& serialNumber, const RsaPublicKey& publicKey, const RsaKey& signerKey);
+
+    /**
      * Creates a new Certificate from PEM data
      * @param pem PEM data
      * @return Certificate
@@ -115,7 +128,6 @@ class Certificate {
      * @return the public key
      */
     const RsaPublicKey& publicKey() const;
-
 
     /**
      * Gets key usage

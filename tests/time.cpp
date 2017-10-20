@@ -247,12 +247,14 @@ SCENARIO("In range") {
 
 }
 
-SCENARIO("Assignment") {
+SCENARIO("Assignment and comparison") {
   GIVEN("Two different Times") {
     Time t1("800212215621Z");
     Time t2("800212215620Z");
     THEN("They are different") {
       REQUIRE_FALSE(t1 == t2);
+      REQUIRE(t2 < t1);
+      REQUIRE(t1 > t2);
       GIVEN("One is assigned to another") {
         t1 = t2;
         THEN("They are now the same") {
