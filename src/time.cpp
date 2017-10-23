@@ -105,7 +105,7 @@ class Time::Impl {
         value += std::to_string(year);
       }
 
-      if (time.tm_mon < 10) {
+      if ((time.tm_mon + 1)< 10) {
         // prepend month lower than 10 so it will occupy 2 digits
         value += "0";
       }
