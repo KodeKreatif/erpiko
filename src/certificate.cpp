@@ -12,8 +12,6 @@
 #include <algorithm>
 
 namespace Erpiko {
-
-
 class Certificate::Impl {
   public:
     X509* x509;

@@ -3,8 +3,11 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include <openssl/engine.h>
 #include <iostream>
 #include <string.h>
+
+extern ENGINE* erpikoEngine;
 
 namespace Erpiko {
 
@@ -61,7 +64,7 @@ class RsaPublicKey::Impl {
       evp = EVP_PKEY_new();
       if (evp) {
         EVP_PKEY_set1_RSA(evp, rsa);
-        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+        ctx = EVP_PKEY_CTX_new(evp, erpikoEngine);
       }
 
       if (ctx && EVP_PKEY_encrypt_init(ctx)) {
@@ -90,7 +93,7 @@ class RsaPublicKey::Impl {
 
       if (evp) {
         EVP_PKEY_set1_RSA(evp, rsa);
-        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+        ctx = EVP_PKEY_CTX_new(evp, erpikoEngine);
       }
 
       auto obj = OBJ_txt2obj(digest.toString().c_str(), 1);

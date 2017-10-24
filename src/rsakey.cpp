@@ -7,8 +7,11 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/err.h>
+#include <openssl/engine.h>
 #include <iostream>
 #include <string.h>
+
+extern ENGINE* erpikoEngine;
 
 namespace Erpiko {
 
@@ -48,7 +51,7 @@ class RsaKey::Impl {
       if (ret != 1) {
         return;
       }
-      ret = RSA_generate_key_ex(rsa, bits, bne, NULL);
+      ret = RSA_generate_key_ex(rsa, bits, bne, nullptr);
       if (ret != 1) {
         BN_free(bne);
         return;
@@ -100,7 +103,7 @@ class RsaKey::Impl {
 
     const std::vector<unsigned char> decrypt(const std::vector<unsigned char> data) const {
       std::vector<unsigned char> ret;
-      EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp, nullptr);
+      EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp, erpikoEngine);
 
       if (ctx && EVP_PKEY_decrypt_init(ctx)) {
         size_t length = 0;
@@ -122,7 +125,7 @@ class RsaKey::Impl {
     const std::vector<unsigned char> sign(const std::vector<unsigned char> data, const ObjectId& digest) const {
       std::vector<unsigned char> ret;
 
-      EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp, nullptr);
+      EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new(evp, erpikoEngine);
 
       auto obj = OBJ_txt2obj(digest.toString().c_str(), 1);
       auto hashAlgorithmMd = const_cast<EVP_MD*>(EVP_get_digestbyobj(obj));
