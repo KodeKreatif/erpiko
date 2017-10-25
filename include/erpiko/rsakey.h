@@ -83,6 +83,11 @@ class RsaKey {
      */
     const std::vector<unsigned char> sign(const std::vector<unsigned char> data, const ObjectId& digest) const;
 
+    /**
+     * Checks whether the key resides on device or not. If the key is generated on device using Token
+     * object, then the key is on device and can't be exported.
+     */
+    bool onDevice() const;
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

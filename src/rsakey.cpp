@@ -23,6 +23,7 @@ class RsaKey::Impl {
     EVP_PKEY* evp;
     bool evpPopulated = false;
     std::unique_ptr<RsaPublicKey> publicKey;
+    bool onDevice = false;
 
     Impl() {
       rsa = RSA_new();
@@ -59,7 +60,11 @@ class RsaKey::Impl {
       BN_free(bne);
       this->bits = bits;
       EVP_PKEY_set1_RSA(evp, rsa);
+      evpPopulated = true;
       resetPublicKey();
+      if (erpikoEngine != nullptr) {
+        onDevice = true;
+      }
     }
 
     void fromPem(const std::string pem, const std::string passphrase) {
@@ -193,6 +198,8 @@ unsigned int RsaKey::bits() const {
 }
 
 const std::string RsaKey::toPem(const std::string passphrase) const {
+  if (onDevice()) return "";
+
   std::string retval;
   int ret;
   BIO* mem = BIO_new(BIO_s_mem());
@@ -223,7 +230,8 @@ const std::string RsaKey::toPem(const std::string passphrase) const {
 }
 
 const std::vector<unsigned char> RsaKey::toDer(const std::string passphrase) const {
-
+  std::vector<unsigned char> empty;
+  if (onDevice()) return empty;
   if (impl->evpPopulated == false) {
     EVP_PKEY_set1_RSA(impl->evp, impl->rsa);
   }
@@ -242,6 +250,11 @@ const std::vector<unsigned char> RsaKey::decrypt(const std::vector<unsigned char
 
 const std::vector<unsigned char> RsaKey::sign(const std::vector<unsigned char> data, const ObjectId& digest) const {
   return impl->sign(data, digest);
+}
+
+bool
+RsaKey::onDevice() const {
+  return impl->onDevice;
 }
 
 

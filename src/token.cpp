@@ -15,10 +15,15 @@ class Token::Impl {
     engine.init();
   }
 
+  ~Impl() {
+    engine.finalize();
+  }
+
   bool load(string path) {
     valid = engine.load(path);
     return valid;
   }
+
 };
 
 Token::Token() : impl{ std::make_unique<Impl>()} {
@@ -36,4 +41,13 @@ Token::isValid() {
   return impl->valid;
 }
 
+bool
+Token::login(const unsigned long slot, const std::string& pin) {
+  return impl->engine.login(slot, pin);
+}
+
+void Token::setKeyId(const unsigned char id, const std::string& label) {
+  impl->engine.setKeyLabel(label);
+  impl->engine.setKeyId(id);
+}
 } // namespace Erpiko
