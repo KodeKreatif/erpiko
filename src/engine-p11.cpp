@@ -179,6 +179,105 @@ int rsaPrivDecrypt(int flen, const unsigned char *from, unsigned char *to, RSA *
   return outLength;
 }
 
+int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned char *to, unsigned int *siglen, const RSA *rsa) {
+  (void) rsa;
+  (void) type;
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_MECHANISM mechanism = {
+     CKM_SHA256_RSA_PKCS, nullptr, 0
+  };
+
+  CK_BYTE id[] = { (unsigned char) p11.getKeyId() };
+  CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(p11.getKeyLabel().c_str()));
+  CK_OBJECT_CLASS keyClass = CKO_PRIVATE_KEY;
+  CK_KEY_TYPE pKeyType = CKK_RSA;
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_ID, id, sizeof(id) },
+    { CKA_LABEL, subject, p11.getKeyLabel().size()}
+  };
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) return 0;
+
+  rv = F->C_SignInit(p11.getSession(), &mechanism, key);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+  CK_ULONG outLength = 128; // FIXME
+  rv = F->C_Sign(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  *siglen = (unsigned int) outLength;
+  return 1;
+}
+
+int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsigned char *sig, unsigned int siglen, const RSA *rsa) {
+  (void) rsa;
+  (void) type;
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_MECHANISM mechanism = {
+     CKM_SHA256_RSA_PKCS, nullptr, 0
+  };
+
+  CK_BYTE id[] = { (unsigned char) p11.getKeyId() };
+  CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(p11.getKeyLabel().c_str()));
+  CK_OBJECT_CLASS keyClass = CKO_PUBLIC_KEY;
+  CK_KEY_TYPE publicKeyType = CKK_RSA;
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &publicKeyType, sizeof(publicKeyType) },
+    { CKA_ID, id, sizeof(id) },
+    { CKA_LABEL, subject, p11.getKeyLabel().size()}
+  };
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) return 0;
+
+  rv = F->C_VerifyInit(p11.getSession(), &mechanism, key);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+  rv = F->C_Verify(p11.getSession(), const_cast<unsigned char*>(from), flen, const_cast<unsigned char*>(sig), siglen);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  return 1;
+}
+
+
 
 
 const RSA_METHOD* rsaMethod() {
@@ -186,10 +285,12 @@ const RSA_METHOD* rsaMethod() {
 
   if (m == nullptr) {
     m = const_cast<RSA_METHOD*>(RSA_get_default_method());
-    m->flags = 0;
+    m->flags = RSA_FLAG_SIGN_VER;
     m->rsa_keygen = rsaKeygen;
     m->rsa_pub_enc = rsaPubEncrypt;
     m->rsa_priv_dec = rsaPrivDecrypt;
+    m->rsa_sign = rsaSign;
+    m->rsa_verify = rsaVerify;
   }
   return m;
 }
@@ -203,6 +304,7 @@ static int pkey_meths(ENGINE*e, EVP_PKEY_METHOD** meth, const int** nids, int ni
   (void) meth;
   (void) nids;
   (void) nid;
+
   if (nid == EVP_PKEY_RSA) {
     *meth = const_cast<EVP_PKEY_METHOD*>(EVP_PKEY_meth_find(nid));
     return 1;

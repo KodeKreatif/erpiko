@@ -3,6 +3,8 @@
 #include "erpiko/token.h"
 #include "erpiko/rsakey.h"
 #include "erpiko/utils.h"
+#include "erpiko/digest.h"
+
 #include <iostream>
 
 using namespace std;
@@ -11,6 +13,17 @@ namespace Erpiko {
 SCENARIO("Token init", "[.][p11]") {
   GIVEN("A token") {
     THEN("Token is initialized") {
+
+      ObjectId o(DigestConstants::SHA256);
+      std::string s = "data";
+      Digest *d = Digest::get(o);
+      std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
+      std::vector<unsigned char> empty;
+      d->update(data);
+      auto hash = d->finalize(empty);
+
+
+
       int bits = 1024;
       RsaKey* k = RsaKey::create(bits);
 
@@ -34,6 +47,12 @@ SCENARIO("Token init", "[.][p11]") {
 
       auto dec3 = k->decrypt(enc2);
       REQUIRE(dec3 == v);
+
+      auto signedData = k->sign(hash, o);
+      REQUIRE(signedData.size() > 0);
+      auto verified = k->publicKey().verify(signedData, hash, o);
+      REQUIRE(verified == true);
+
 
       REQUIRE(t.logout() == true);
       enc2 = k->publicKey().encrypt(v);
