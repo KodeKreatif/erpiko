@@ -33,10 +33,10 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   };
   CK_ULONG modulusBits = bits;
   CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(p11.getKeyLabel().c_str()));
-  CK_BYTE id[] = { p11.getKeyId() };
+  CK_BYTE id[] = { (unsigned char)p11.getKeyId() };
   CK_BBOOL trueValue = CK_TRUE;
   CK_ATTRIBUTE publicKeyTemplate[] = {
-    {CKA_ID, id, 3},
+    {CKA_ID, id, sizeof(id)},
     {CKA_LABEL, subject, p11.getKeyLabel().size()},
     {CKA_TOKEN, &trueValue, sizeof(trueValue)},
     {CKA_ENCRYPT, &trueValue, sizeof(trueValue)},
@@ -47,7 +47,7 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   };
   CK_ATTRIBUTE privateKeyTemplate[] = {
     {CKA_ID, id, sizeof(id)},
-    {CKA_LABEL, subject, 5},
+    {CKA_LABEL, subject, p11.getKeyLabel().size()},
     {CKA_TOKEN, &trueValue, sizeof(trueValue)},
     {CKA_PRIVATE, &trueValue, sizeof(trueValue)},
     {CKA_SENSITIVE, &trueValue, sizeof(trueValue)},
@@ -66,22 +66,120 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
 
   unsigned char e[1024] = { 0 };
   unsigned char n[1024] = { 0 };
-  CK_ATTRIBUTE privValueT[] = {
+  CK_ATTRIBUTE pubValueT[] = {
     {CKA_PUBLIC_EXPONENT, e, sizeof(e)},
     {CKA_MODULUS, n, sizeof(n)}
   };
 
-  rv = F->C_GetAttributeValue(p11.getSession(), privateKey, privValueT, 2);
-  std::vector<unsigned char> vec(e, e + privValueT[0].ulValueLen);
-
+  rv = F->C_GetAttributeValue(p11.getSession(), publicKey, pubValueT, 2);
+  std::vector<unsigned char> vec(e, e + pubValueT[0].ulValueLen);
   if (rv == CKR_OK)
   if ((rsa->e = BN_bin2bn(vec.data(), vec.size(), nullptr)) != nullptr)
-  if ((rsa->n = BN_bin2bn(n, privValueT[1].ulValueLen, nullptr)) != nullptr)
+  if ((rsa->n = BN_bin2bn(n, pubValueT[1].ulValueLen, nullptr)) != nullptr)
   {
     return 1;
   }
   return 0;
 }
+
+int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding) {
+  (void) rsa;
+  (void) padding;
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_RSA_PKCS_OAEP_PARAMS oaepParams = {CKM_SHA_1, CKG_MGF1_SHA1, 1, nullptr, 0 };
+  CK_MECHANISM mechanism = {
+    CKM_RSA_PKCS_OAEP, &oaepParams, sizeof(oaepParams)
+  };
+
+  CK_BYTE id[] = { (unsigned char) p11.getKeyId() };
+  CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(p11.getKeyLabel().c_str()));
+  CK_OBJECT_CLASS keyClass = CKO_PUBLIC_KEY;
+  CK_KEY_TYPE publicKeyType = CKK_RSA;
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &publicKeyType, sizeof(publicKeyType) },
+    { CKA_ID, id, sizeof(id) },
+    { CKA_LABEL, subject, p11.getKeyLabel().size()}
+  };
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) return 0;
+
+  rv = F->C_EncryptInit(p11.getSession(), &mechanism, key);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+  CK_ULONG outLength;
+  rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  return outLength;
+}
+
+int rsaPrivDecrypt(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding) {
+  (void) rsa;
+  (void) padding;
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_RSA_PKCS_OAEP_PARAMS oaepParams = {CKM_SHA_1, CKG_MGF1_SHA1, 1, nullptr, 0 };
+  CK_MECHANISM mechanism = {
+    CKM_RSA_PKCS_OAEP, &oaepParams, sizeof(oaepParams)
+  };
+
+  CK_BYTE id[] = { (unsigned char) p11.getKeyId() };
+  CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(p11.getKeyLabel().c_str()));
+  CK_OBJECT_CLASS keyClass = CKO_PRIVATE_KEY;
+  CK_KEY_TYPE publicKeyType = CKK_RSA;
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &publicKeyType, sizeof(publicKeyType) },
+    { CKA_ID, id, sizeof(id) },
+    { CKA_LABEL, subject, p11.getKeyLabel().size()}
+  };
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) return 0;
+
+  rv = F->C_DecryptInit(p11.getSession(), &mechanism, key);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+  CK_ULONG outLength = flen;
+  rv = F->C_Decrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
+
+  return outLength;
+}
+
+
 
 const RSA_METHOD* rsaMethod() {
   static RSA_METHOD* m = nullptr;
@@ -90,9 +188,34 @@ const RSA_METHOD* rsaMethod() {
     m = const_cast<RSA_METHOD*>(RSA_get_default_method());
     m->flags = 0;
     m->rsa_keygen = rsaKeygen;
+    m->rsa_pub_enc = rsaPubEncrypt;
+    m->rsa_priv_dec = rsaPrivDecrypt;
   }
   return m;
 }
+
+static const int meths[] = {
+  EVP_PKEY_RSA,
+};
+
+static int pkey_meths(ENGINE*e, EVP_PKEY_METHOD** meth, const int** nids, int nid) {
+  (void) e;
+  (void) meth;
+  (void) nids;
+  (void) nid;
+  if (nid == EVP_PKEY_RSA) {
+    *meth = const_cast<EVP_PKEY_METHOD*>(EVP_PKEY_meth_find(nid));
+    return 1;
+  } else if (nid != 0) {
+    return 0;
+  }
+  if (nids != NULL) {
+    *nids = meths;
+    return 1;
+  }
+  return 0;
+}
+
 
 int e_init(ENGINE* e) {
   (void) e;
@@ -114,7 +237,8 @@ EngineP11::init() {
       ENGINE_set_id(erpikoEngine, "Erpiko-P11") &&
       ENGINE_set_name(erpikoEngine, "Erpiko-P11 Engine") &&
       ENGINE_set_init_function(erpikoEngine, e_init) &&
-      ENGINE_set_RSA(erpikoEngine, rsaMethod())
+      ENGINE_set_RSA(erpikoEngine, rsaMethod()) &&
+      ENGINE_set_pkey_meths(erpikoEngine, pkey_meths)
       )
   {
     if (ENGINE_init(erpikoEngine)) {
@@ -157,6 +281,16 @@ EngineP11::finalize() {
 }
 
 bool
+EngineP11::logout() {
+  if (F->C_Logout(session) == CKR_OK &&
+      F->C_CloseSession(session) == CKR_OK) {
+    session = 0;
+    return true;
+  }
+  return false;
+}
+
+bool
 EngineP11::login(const unsigned long slot, const string& pin) {
   if (!F && !F->C_OpenSession) return false;
   if (!F && !F->C_Login) return false;
@@ -166,7 +300,6 @@ EngineP11::login(const unsigned long slot, const string& pin) {
   if (rv != CKR_OK) return false;
   rv = F->C_Login(session, CKU_USER, reinterpret_cast<unsigned char*>(const_cast<char*>(pin.c_str())), pin.size());
   if (rv != CKR_OK) return false;
-
   return true;
 }
 

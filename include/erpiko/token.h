@@ -28,14 +28,20 @@ class Token {
      * @param pin the pin used for login
      * @return whether the login was successfully performed
      */
-    bool login(const unsigned long slot, const std::string& pin);
+    bool login(const unsigned long slot, const std::string& pin) const;
+
+    /**
+     * Performs logout on the device
+     * @return whether the logout was successfully performed
+     */
+    bool logout() const;
 
     /**
      * Sets key id and label to be recorded in the device
      * @param id the id of the key
      * @param label the label of the key
      */
-    void setKeyId(const unsigned char id, const std::string& label);
+    void setKeyId(const unsigned int id, const std::string& label);
 
   private:
     class Impl;

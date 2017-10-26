@@ -42,11 +42,16 @@ Token::isValid() {
 }
 
 bool
-Token::login(const unsigned long slot, const std::string& pin) {
+Token::login(const unsigned long slot, const std::string& pin) const {
   return impl->engine.login(slot, pin);
 }
 
-void Token::setKeyId(const unsigned char id, const std::string& label) {
+bool
+Token::logout() const {
+  return impl->engine.logout();
+}
+
+void Token::setKeyId(const unsigned int id, const std::string& label) {
   impl->engine.setKeyLabel(label);
   impl->engine.setKeyId(id);
 }

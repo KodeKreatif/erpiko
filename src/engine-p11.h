@@ -3,15 +3,16 @@
 
 #include <map>
 #include <string>
+#include <iostream>
 using namespace std;
 namespace Erpiko {
 
 class EngineP11 {
   bool initialized = false;
   void* lib = nullptr;
-  unsigned long session;
+  unsigned long session = 0;
   string keyLabel;
-  unsigned char keyId;
+  unsigned int keyId;
 
   private:
     EngineP11() { }
@@ -30,6 +31,7 @@ class EngineP11 {
     void finalize();
 
     bool login(const unsigned long slot, const string& pin);
+    bool logout();
     unsigned long getSession() {
       return session;
     }
@@ -38,7 +40,7 @@ class EngineP11 {
       keyLabel = label;
     }
 
-    void setKeyId(const unsigned char id) {
+    void setKeyId(const unsigned int id) {
       keyId = id;
     }
 
@@ -46,7 +48,7 @@ class EngineP11 {
       return keyLabel;
     }
 
-    unsigned char getKeyId() const {
+    unsigned int getKeyId() const {
       return keyId;
     }
 };

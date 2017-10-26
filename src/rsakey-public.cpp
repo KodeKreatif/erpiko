@@ -69,13 +69,19 @@ class RsaPublicKey::Impl {
 
       if (ctx && EVP_PKEY_encrypt_init(ctx)) {
         size_t length = 0;
-        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
-        EVP_PKEY_encrypt(ctx, nullptr, &length, data.data(), data.size());
+        if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING))
+        if (!EVP_PKEY_encrypt(ctx, nullptr, &length, data.data(), data.size())) {
+          if (evp) EVP_PKEY_free(evp);
+          return ret;
+        }
 
         ret.resize(length);
         unsigned char* buf = ret.data();
         EVP_PKEY_encrypt(ctx, buf, &length, data.data(), data.size());
 
+        if (length == 0) {
+          ret.resize(0);
+        }
         EVP_PKEY_CTX_free(ctx);
       }
 
