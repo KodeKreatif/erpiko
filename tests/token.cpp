@@ -14,13 +14,36 @@ SCENARIO("Token init", "[.][p11]") {
   GIVEN("A token") {
     THEN("Token is initialized") {
 
+      ObjectId o512(DigestConstants::SHA512);
+      ObjectId o384(DigestConstants::SHA384);
+      ObjectId o224(DigestConstants::SHA224);
       ObjectId o(DigestConstants::SHA256);
+
       std::string s = "data";
+
       Digest *d = Digest::get(o);
       std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
       std::vector<unsigned char> empty;
       d->update(data);
       auto hash = d->finalize(empty);
+      delete d;
+
+      d = Digest::get(o224);
+      d->update(data);
+      auto hash224 = d->finalize(empty);
+      delete d;
+
+      d = Digest::get(o384);
+      d->update(data);
+      auto hash384 = d->finalize(empty);
+      delete d;
+
+      d = Digest::get(o512);
+      d->update(data);
+      auto hash512 = d->finalize(empty);
+      delete d;
+
+
 
 
 
@@ -52,6 +75,23 @@ SCENARIO("Token init", "[.][p11]") {
       REQUIRE(signedData.size() > 0);
       auto verified = k->publicKey().verify(signedData, hash, o);
       REQUIRE(verified == true);
+
+      signedData = k->sign(hash224, o224);
+      REQUIRE(signedData.size() > 0);
+      verified = k->publicKey().verify(signedData, hash224, o224);
+      REQUIRE(verified == true);
+
+      signedData = k->sign(hash384, o384);
+      REQUIRE(signedData.size() > 0);
+      verified = k->publicKey().verify(signedData, hash384, o384);
+      REQUIRE(verified == true);
+
+      signedData = k->sign(hash512, o512);
+      REQUIRE(signedData.size() > 0);
+      verified = k->publicKey().verify(signedData, hash512, o512);
+      REQUIRE(verified == true);
+
+
 
 
       REQUIRE(t.logout() == true);
