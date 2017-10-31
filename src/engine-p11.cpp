@@ -78,12 +78,11 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   }
 
   delete[] publicExponent;
-  CK_BYTE e[1024] = { 0 };
   CK_BYTE* n = new CK_BYTE[bits];
   CK_ATTRIBUTE pubValueT[] = {
     {CKA_MODULUS, n, sizeof(CK_BYTE) * bits}
   };
-  
+
   rv = F->C_GetAttributeValue(p11.getSession(), publicKey, pubValueT, 1);
   if (rv == CKR_OK)
   if ((rsa->e = BN_bin2bn(publicExponent, size, nullptr)) != nullptr)
