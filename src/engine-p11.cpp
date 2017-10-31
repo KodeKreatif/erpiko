@@ -5,7 +5,11 @@
 #include <string>
 #include <openssl/engine.h>
 #include <openssl/rsa.h>
+#ifdef WIN32
+#include <Windows.h>
+#else
 #include <dlfcn.h>
+#endif
 
 ENGINE *erpikoEngine = nullptr;
 CK_FUNCTION_LIST_PTR F;
@@ -19,8 +23,9 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   char* eStr = BN_bn2hex(exp);
   if (!eStr) return 0;
   auto v = Utils::fromHexString(eStr);
-  CK_BYTE publicExponent[v.size()];
-  for (unsigned int i = 0; i < v.size(); i ++) {
+  const unsigned int size = v.size();
+  CK_BYTE* publicExponent = new CK_BYTE[size];
+  for (unsigned int i = 0; i < size; i ++) {
     publicExponent[i] = v.at(i);
   }
   free(eStr);
@@ -35,19 +40,23 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(p11.getKeyLabel().c_str()));
   CK_BYTE id[] = { (unsigned char)p11.getKeyId() };
   CK_BBOOL trueValue = CK_TRUE;
+  CK_OBJECT_CLASS privateClass = CKO_PRIVATE_KEY;
+  CK_OBJECT_CLASS publicClass = CKO_PUBLIC_KEY;
   CK_ATTRIBUTE publicKeyTemplate[] = {
-    {CKA_ID, id, sizeof(id)},
+    {CKA_ID, id, sizeof(CK_BYTE)},
     {CKA_LABEL, subject, p11.getKeyLabel().size()},
+	{CKA_CLASS, &publicClass, sizeof(publicClass) },
     {CKA_TOKEN, &trueValue, sizeof(trueValue)},
     {CKA_ENCRYPT, &trueValue, sizeof(trueValue)},
     {CKA_VERIFY, &trueValue, sizeof(trueValue)},
     {CKA_WRAP, &trueValue, sizeof(trueValue)},
     {CKA_MODULUS_BITS, &modulusBits, sizeof(modulusBits)},
-    {CKA_PUBLIC_EXPONENT, publicExponent, sizeof(publicExponent)}
+    {CKA_PUBLIC_EXPONENT, publicExponent, sizeof(CK_BYTE) * size}
   };
   CK_ATTRIBUTE privateKeyTemplate[] = {
-    {CKA_ID, id, sizeof(id)},
+    {CKA_ID, id, sizeof(CK_BYTE)},
     {CKA_LABEL, subject, p11.getKeyLabel().size()},
+	{CKA_CLASS, &privateClass, sizeof(privateClass)},
     {CKA_TOKEN, &trueValue, sizeof(trueValue)},
     {CKA_PRIVATE, &trueValue, sizeof(trueValue)},
     {CKA_SENSITIVE, &trueValue, sizeof(trueValue)},
@@ -59,22 +68,26 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   CK_RV rv = CKR_OK;
   rv = F->C_GenerateKeyPair(p11.getSession(),
       &mechanism,
-      publicKeyTemplate, 8,
-      privateKeyTemplate, 8,
+      publicKeyTemplate, 9,
+      privateKeyTemplate, 9,
       &publicKey,
       &privateKey);
 
-  unsigned char e[1024] = { 0 };
-  unsigned char n[1024] = { 0 };
-  CK_ATTRIBUTE pubValueT[] = {
-    {CKA_PUBLIC_EXPONENT, e, sizeof(e)},
-    {CKA_MODULUS, n, sizeof(n)}
-  };
+  if (rv != CKR_OK) {
+	  return 0;
+  }
 
-  rv = F->C_GetAttributeValue(p11.getSession(), publicKey, pubValueT, 2);
+  delete[] publicExponent;
+  CK_BYTE e[1024] = { 0 };
+  CK_BYTE* n = new CK_BYTE[bits];
+  CK_ATTRIBUTE pubValueT[] = {
+    {CKA_MODULUS, n, sizeof(CK_BYTE) * bits}
+  };
+  
+  rv = F->C_GetAttributeValue(p11.getSession(), publicKey, pubValueT, 1);
   if (rv == CKR_OK)
-  if ((rsa->e = BN_bin2bn(e, pubValueT[0].ulValueLen, nullptr)) != nullptr)
-  if ((rsa->n = BN_bin2bn(n, pubValueT[1].ulValueLen, nullptr)) != nullptr)
+  if ((rsa->e = BN_bin2bn(publicExponent, size, nullptr)) != nullptr)
+  if ((rsa->n = BN_bin2bn(n, pubValueT[0].ulValueLen, nullptr)) != nullptr)
   {
     return 1;
   }
@@ -344,6 +357,24 @@ bool
 EngineP11::load(const string path) {
   if (lib && F) return true;
 
+#ifdef WIN32
+  if (lib != nullptr) {
+	  FreeLibrary(lib);
+	  lib = nullptr;
+  }
+  lib = LoadLibrary(TEXT(path.c_str()));
+
+  if (!lib) {
+	  DWORD dw = GetLastError();
+	  std::cout << "Could not load the dynamic library: " << path << ": 0x" << hex << dw << std::endl;
+	 
+	  return false;
+  }
+
+  CK_C_GetFunctionList getF = (CK_C_GetFunctionList)GetProcAddress(lib, "C_GetFunctionList");
+
+
+#else
   if (lib) {
     dlclose(lib);
     lib = nullptr;
@@ -354,12 +385,21 @@ EngineP11::load(const string path) {
     return false;
   }
   auto getF = reinterpret_cast<CK_C_GetFunctionList> (reinterpret_cast<long long> (dlsym(lib, "C_GetFunctionList")));
+#endif
+
   if (getF != nullptr) {
     CK_RV rv = getF(&F);
-    if (rv == CKR_OK) {
-      return F->C_Initialize(nullptr) == CKR_OK;
+    if (rv != CKR_OK) {
+		return false;
     }
+	rv = F->C_Initialize(nullptr);
+	if (rv != CKR_OK) {
+		return false;
+	}
+	return true;
   }
+  cout << "This is not a PKCS#11 library\n";
+
   return false;
 }
 
@@ -368,7 +408,11 @@ EngineP11::finalize() {
   if (F != nullptr) {
     F->C_Finalize(nullptr);
     F = nullptr;
+#ifdef WIN32
+	FreeLibrary(lib);
+#else
     dlclose(lib);
+#endif
     lib = nullptr;
   }
 }

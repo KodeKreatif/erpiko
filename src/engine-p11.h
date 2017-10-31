@@ -4,12 +4,19 @@
 #include <map>
 #include <string>
 #include <iostream>
+#ifdef WIN32
+#include <Windows.h>
+#endif
 using namespace std;
 namespace Erpiko {
 
 class EngineP11 {
   bool initialized = false;
+#ifdef WIN32
+  HMODULE lib;
+#else
   void* lib = nullptr;
+#endif
   unsigned long session = 0;
   string keyLabel;
   unsigned int keyId;
