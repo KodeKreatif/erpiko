@@ -21,6 +21,7 @@ Erpiko wants to fill the gap and provide an easy to use C++ interfaces.
 - Message Digest (SHA1, SHA2, SHA512)
 - Cipher (AES, RC2, RC4, CAST5, 3DES, DES)
 - Crypto functions with CUDA when available and enabled (*WIP*)
+- PKCS#11 client (which means your Erpiko can use PKCS#11 devices as backend)
 
 ## Backend
 

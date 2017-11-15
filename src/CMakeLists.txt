@@ -1,4 +1,4 @@
-set (SOURCES rsakey.cpp rsakey-public.cpp bigint.cpp certificate.cpp identity.cpp oid.cpp time.cpp data-source.cpp pkcs12.cpp cmp.cpp signed-data.cpp sim.cpp enveloped-data.cpp tsa-request.cpp tsa-response.cpp rng.cpp digest.cpp sha1.cpp sha224.cpp sha256.cpp sha384.cpp sha512.cpp cipher.cpp certificate-request.cpp)
+set (SOURCES rsakey.cpp rsakey-public.cpp bigint.cpp certificate.cpp identity.cpp oid.cpp time.cpp data-source.cpp pkcs12.cpp cmp.cpp signed-data.cpp sim.cpp enveloped-data.cpp tsa-request.cpp tsa-response.cpp rng.cpp digest.cpp sha1.cpp sha224.cpp sha256.cpp sha384.cpp sha512.cpp cipher.cpp certificate-request.cpp token.cpp engine-p11.cpp)
 set (CUDA_SOURCES rng.cu)
 
 if (ENABLE_CUDA)
@@ -12,6 +12,6 @@ else()
   if (ENABLE_CUDA)
     target_link_libraries(erpiko libresslssl libresslcrypto ${CUDA_LIBRARIES})
   else()
-    target_link_libraries(erpiko libresslssl libresslcrypto)
+    target_link_libraries(erpiko libresslssl libresslcrypto dl)
   endif()
 endif()

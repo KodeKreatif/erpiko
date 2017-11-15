@@ -3,8 +3,11 @@
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>
+#include <openssl/engine.h>
 #include <iostream>
 #include <string.h>
+
+extern ENGINE* erpikoEngine;
 
 namespace Erpiko {
 
@@ -61,18 +64,24 @@ class RsaPublicKey::Impl {
       evp = EVP_PKEY_new();
       if (evp) {
         EVP_PKEY_set1_RSA(evp, rsa);
-        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+        ctx = EVP_PKEY_CTX_new(evp, erpikoEngine);
       }
 
       if (ctx && EVP_PKEY_encrypt_init(ctx)) {
         size_t length = 0;
-        EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING);
-        EVP_PKEY_encrypt(ctx, nullptr, &length, data.data(), data.size());
+        if (EVP_PKEY_CTX_set_rsa_padding(ctx, RSA_PKCS1_OAEP_PADDING))
+        if (!EVP_PKEY_encrypt(ctx, nullptr, &length, data.data(), data.size())) {
+          if (evp) EVP_PKEY_free(evp);
+          return ret;
+        }
 
         ret.resize(length);
         unsigned char* buf = ret.data();
         EVP_PKEY_encrypt(ctx, buf, &length, data.data(), data.size());
 
+        if (length == 0) {
+          ret.resize(0);
+        }
         EVP_PKEY_CTX_free(ctx);
       }
 
@@ -90,7 +99,7 @@ class RsaPublicKey::Impl {
 
       if (evp) {
         EVP_PKEY_set1_RSA(evp, rsa);
-        ctx = EVP_PKEY_CTX_new(evp, nullptr);
+        ctx = EVP_PKEY_CTX_new(evp, erpikoEngine);
       }
 
       auto obj = OBJ_txt2obj(digest.toString().c_str(), 1);
