@@ -62,6 +62,18 @@ install:
     copy tls\%CONFIGURATION%\tls.lib ..\tls\
 
     copy crypto\%CONFIGURATION%\crypto.lib ..\crypto\
+
+    mkdir ..\ssl\Debug
+
+    mkdir ..\tls\Debug
+
+    mkdir ..\crypto\Debug
+
+    copy ssl\%CONFIGURATION%\ssl.lib ..\ssl\Debug\
+
+    copy tls\%CONFIGURATION%\tls.lib ..\tls\Debug\
+
+    copy crypto\%CONFIGURATION%\crypto.lib ..\crypto\Debug\
             
     cd ..\..
     
