@@ -4,10 +4,10 @@
 #include "erpiko/rsakey.h"
 #include "erpiko/utils.h"
 #include "erpiko/digest.h"
-
 #include <iostream>
 
 using namespace std;
+
 namespace Erpiko {
 
 SCENARIO("Token init", "[.][p11]") {
@@ -60,18 +60,40 @@ SCENARIO("Token init", "[.][p11]") {
 	  auto r = t.load("/home/mdamt/src/tmp/hsm/lib/softhsm/libsofthsm2.so");
 #endif
       REQUIRE(r == true);
+
+      std::cout << "Please insert the smartcard to slot" << std::endl;
+
+
+      int slotId;
 #ifdef WIN32
-      r = t.login(0, "qwerty");
+      r = t.waitForSlotEvent(slotId);
+
+      REQUIRE(r == true);
+      std::cout << "Slot event occured. Card is present on slot : " << slotId << std::endl;
+
+      r = t.login(slotId, "qwerty");
 #else
-	  r = t.login(933433059, "qwerty");
+      r = t.waitForSlotEvent();
+
+      REQUIRE(r == true);
+      std::cout << "Slot event occured. Card is present." << std::endl;
+
+      r = t.login(933433059, "qwerty");
 #endif
+      REQUIRE(r == true);
+      std::cout << "Smartcard has been inserted" << std::endl;
       
       REQUIRE(r == true);
+      std::cout << "Logged in" << std::endl;
 
       t.setKeyId(02, "key2");	  
       k = RsaKey::create(1024);
 	  
-	  REQUIRE(k != nullptr);
+#ifdef WIN32
+	    REQUIRE(k != nullptr);
+#else
+	    REQUIRE(k != nullptr);
+#endif
       auto vec = k->toDer();
 	  
       REQUIRE(k->onDevice() == true);

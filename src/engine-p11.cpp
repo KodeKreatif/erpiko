@@ -1,8 +1,8 @@
-#include "engine-p11.h"
 #include "erpiko/utils.h"
-#include "pkcs11/cryptoki.h"
 #include <iostream>
 #include <string>
+#include "engine-p11.h"
+#include "pkcs11/cryptoki.h"
 #include <openssl/engine.h>
 #include <openssl/rsa.h>
 #ifdef WIN32
@@ -424,6 +424,22 @@ EngineP11::logout() {
     return true;
   }
   return false;
+}
+
+bool EngineP11::waitForSlotEvent(int &slot) {
+  std::cout << "Waiting for the slot event...\n";
+  CK_SLOT_ID slotId; 
+  CK_RV rvslot = F->C_WaitForSlotEvent(0, &slotId, nullptr);
+  if (rvslot != CKR_OK) {
+    return false;
+  }
+  CK_TOKEN_INFO pInfo;
+  slot = (int)slotId;
+  CK_RV rv = F->C_GetTokenInfo(slotId, &pInfo);
+  if (rv == CKR_TOKEN_NOT_PRESENT) {
+    return false;
+  }
+  return true;
 }
 
 bool

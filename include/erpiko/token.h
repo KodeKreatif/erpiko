@@ -24,6 +24,16 @@ class Token {
      */
     bool isValid();
     /**
+     * Wait for slot event on reader device. This is a blocking function until the event occured.
+     * @param slot the slot, the slot ID will be assigned here if the return value is true
+     * @return returned if the an event has been occured
+     */
+    bool waitForSlotEvent(int &slot) const;
+    /**
+     * Open the session of specific slot
+     * @return whether the smartcard is present or not in the slot
+     */
+    /**
      * Performs login on the device
      * @param slot the slot
      * @param pin the pin used for login

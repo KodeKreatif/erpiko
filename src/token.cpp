@@ -42,6 +42,11 @@ Token::isValid() {
 }
 
 bool
+Token::waitForSlotEvent(int &slot) const {
+  return impl->engine.waitForSlotEvent(slot);
+}
+
+bool
 Token::login(const unsigned long slot, const std::string& pin) const {
   return impl->engine.login(slot, pin);
 }
