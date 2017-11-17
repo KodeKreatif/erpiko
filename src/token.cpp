@@ -41,9 +41,12 @@ Token::isValid() {
   return impl->valid;
 }
 
-bool
-Token::waitForSlotEvent(int &slot) const {
-  return impl->engine.waitForSlotEvent(slot);
+CardStatus::Value Token::waitForCardStatus(int &slot) const {
+  bool result = impl->engine.waitForCardStatus(slot);
+  if (result != true) {
+    return CardStatus::NOT_PRESENT;
+  }
+  return CardStatus::PRESENT;
 }
 
 bool

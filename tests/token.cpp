@@ -66,16 +66,14 @@ SCENARIO("Token init", "[.][p11]") {
 
       int slotId;
 #ifdef WIN32
-      r = t.waitForSlotEvent(slotId);
-
-      REQUIRE(r == true);
+      auto status = t.waitForCardStatus(slotId);
+      REQUIRE(status == CardStatus::PRESENT);
       std::cout << "Slot event occured. Card is present on slot : " << slotId << std::endl;
 
       r = t.login(slotId, "qwerty");
 #else
-      r = t.waitForSlotEvent();
-
-      REQUIRE(r == true);
+      auto status = t.waitForCardStatus(slotId);
+      REQUIRE(status == CardStatus::PRESENT);
       std::cout << "Slot event occured. Card is present." << std::endl;
 
       r = t.login(933433059, "qwerty");
@@ -89,11 +87,7 @@ SCENARIO("Token init", "[.][p11]") {
       t.setKeyId(02, "key2");	  
       k = RsaKey::create(1024);
 	  
-#ifdef WIN32
 	    REQUIRE(k != nullptr);
-#else
-	    REQUIRE(k != nullptr);
-#endif
       auto vec = k->toDer();
 	  
       REQUIRE(k->onDevice() == true);

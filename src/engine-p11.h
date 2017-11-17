@@ -4,11 +4,11 @@
 #include <map>
 #include <string>
 #include <iostream>
-#include <functional>
 #ifdef WIN32
 #include <Windows.h>
 #endif
 using namespace std;
+
 namespace Erpiko {
 
 class EngineP11 {
@@ -37,8 +37,7 @@ class EngineP11 {
     void init();
     bool load(const std::string path);
     void finalize();
-    bool waitForSlotEvent(int &slot);
-    void onSlotEvent(std::function<void(int slotId, bool status)>);
+    bool waitForCardStatus(int &slot);
     bool login(const unsigned long slot, const string& pin);
     bool logout();
     unsigned long getSession() {

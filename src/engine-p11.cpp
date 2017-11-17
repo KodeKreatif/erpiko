@@ -426,7 +426,7 @@ EngineP11::logout() {
   return false;
 }
 
-bool EngineP11::waitForSlotEvent(int &slot) {
+bool EngineP11::waitForCardStatus(int &slot) {
   std::cout << "Waiting for the slot event...\n";
   CK_SLOT_ID slotId; 
   CK_RV rvslot = F->C_WaitForSlotEvent(0, &slotId, nullptr);

@@ -3,6 +3,14 @@
 
 #include <string>
 #include <memory>
+
+namespace CardStatus {
+enum Value {
+    PRESENT,
+    NOT_PRESENT,
+};
+}
+
 namespace Erpiko {
 
 /**
@@ -28,7 +36,7 @@ class Token {
      * @param slot the slot, the slot ID will be assigned here if the return value is true
      * @return returned if the an event has been occured
      */
-    bool waitForSlotEvent(int &slot) const;
+    CardStatus::Value waitForCardStatus(int &slot) const;
     /**
      * Open the session of specific slot
      * @return whether the smartcard is present or not in the slot
