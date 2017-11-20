@@ -8,6 +8,7 @@
 #include <Windows.h>
 #endif
 using namespace std;
+
 namespace Erpiko {
 
 class EngineP11 {
@@ -36,7 +37,7 @@ class EngineP11 {
     void init();
     bool load(const std::string path);
     void finalize();
-
+    bool waitForCardStatus(int &slot);
     bool login(const unsigned long slot, const string& pin);
     bool logout();
     unsigned long getSession() {

@@ -41,6 +41,14 @@ Token::isValid() {
   return impl->valid;
 }
 
+CardStatus::Value Token::waitForCardStatus(int &slot) const {
+  bool result = impl->engine.waitForCardStatus(slot);
+  if (result != true) {
+    return CardStatus::NOT_PRESENT;
+  }
+  return CardStatus::PRESENT;
+}
+
 bool
 Token::login(const unsigned long slot, const std::string& pin) const {
   return impl->engine.login(slot, pin);
