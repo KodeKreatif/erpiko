@@ -428,7 +428,7 @@ EngineP11::logout() {
 
 bool EngineP11::waitForCardStatus(int &slot) {
   std::cout << "Waiting for the slot event...\n";
-  CK_SLOT_ID slotId; 
+  CK_SLOT_ID slotId;
   CK_RV rvslot = F->C_WaitForSlotEvent(0, &slotId, nullptr);
   if (rvslot != CKR_OK) {
     return false;
@@ -461,11 +461,13 @@ EngineP11::putData(const std::string& applicationName, std::string& label, std::
   CK_OBJECT_CLASS keyClass = CKO_DATA;
   CK_BBOOL trueValue = CK_TRUE;
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_TOKEN, &trueValue, sizeof(trueValue) },
     { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
     { CKA_LABEL, labelByte, label.size()},
+    { CKA_APPLICATION, appNameByte, applicationName.size()},
     { CKA_VALUE, data.data(), (CK_ULONG) data.size() }
   };
 
@@ -473,7 +475,7 @@ EngineP11::putData(const std::string& applicationName, std::string& label, std::
   CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 
-  rv = F->C_CreateObject(p11.getSession(), t, 5, &obj);
+  rv = F->C_CreateObject(p11.getSession(), t, 6, &obj);
   if (rv != CKR_OK) {
     switch (rv) {
       case CKR_DATA_LEN_RANGE:
@@ -497,10 +499,12 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
   CK_OBJECT_CLASS keyClass = CKO_DATA;
   CK_BBOOL trueValue = CK_TRUE;
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_TOKEN, &trueValue, sizeof(trueValue) },
     { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
+    { CKA_APPLICATION, appNameByte, applicationName.size()},
     { CKA_LABEL, labelByte, label.size()}
   };
   CK_OBJECT_HANDLE obj;
@@ -508,7 +512,7 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
 
   std::vector<unsigned char> v;
   CK_RV rv = CKR_OK;
-  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 5);
   if (rv != CKR_OK) {
     return v;
   }
