@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include <iostream>
+#include "erpiko/token.h"
 #ifdef WIN32
 #include <Windows.h>
 #endif
@@ -59,7 +60,9 @@ class EngineP11 {
     unsigned int getKeyId() const {
       return keyId;
     }
-};
 
+    TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
+    std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
+  };
 } // namespace Erpiko
 #endif // _ENGINE_P11_H

@@ -428,7 +428,7 @@ EngineP11::logout() {
 
 bool EngineP11::waitForCardStatus(int &slot) {
   std::cout << "Waiting for the slot event...\n";
-  CK_SLOT_ID slotId; 
+  CK_SLOT_ID slotId;
   CK_RV rvslot = F->C_WaitForSlotEvent(0, &slotId, nullptr);
   if (rvslot != CKR_OK) {
     return false;
@@ -453,6 +453,96 @@ EngineP11::login(const unsigned long slot, const string& pin) {
   rv = F->C_Login(session, CKU_USER, reinterpret_cast<unsigned char*>(const_cast<char*>(pin.c_str())), pin.size());
   if (rv != CKR_OK) return false;
   return true;
+}
+
+
+TokenOpResult::Value
+EngineP11::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
+  CK_OBJECT_CLASS keyClass = CKO_DATA;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
+    { CKA_LABEL, labelByte, label.size()},
+    { CKA_APPLICATION, appNameByte, applicationName.size()},
+    { CKA_VALUE, data.data(), (CK_ULONG) data.size() }
+  };
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_RV rv = CKR_OK;
+  CK_OBJECT_HANDLE obj;
+
+  rv = F->C_CreateObject(p11.getSession(), t, 6, &obj);
+  if (rv != CKR_OK) {
+    switch (rv) {
+      case CKR_DATA_LEN_RANGE:
+      case CKR_DEVICE_MEMORY:
+        return TokenOpResult::TOO_LARGE;
+        break;
+      case CKR_SESSION_READ_ONLY:
+      case CKR_TOKEN_WRITE_PROTECTED:
+        return TokenOpResult::READ_ONLY;
+        break;
+      default:
+        return TokenOpResult::GENERIC_ERROR;
+        break;
+    }
+  }
+
+  return TokenOpResult::SUCCESS;
+}
+
+std::vector<unsigned char> EngineP11::getData(const std::string& applicationName, std::string& label) {
+  CK_OBJECT_CLASS keyClass = CKO_DATA;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
+    { CKA_APPLICATION, appNameByte, applicationName.size()},
+    { CKA_LABEL, labelByte, label.size()}
+  };
+  CK_OBJECT_HANDLE obj;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  std::vector<unsigned char> v;
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 5);
+  if (rv != CKR_OK) {
+    return v;
+  }
+
+  CK_ULONG objectCount;
+  rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return v;
+  }
+
+  CK_ATTRIBUTE attribute;
+  attribute.type = CKA_VALUE;
+  attribute.pValue = NULL_PTR;
+  rv = F->C_GetAttributeValue(p11.getSession(), obj, &attribute, 1);
+  if (rv != CKR_OK) {
+    return v;
+  }
+
+  if (attribute.ulValueLen == 0) {
+    return v;
+  }
+
+  v.resize(attribute.ulValueLen);
+  attribute.pValue = &v.front();
+  rv = F->C_GetAttributeValue(p11.getSession(), obj, &attribute, 1);
+  if (rv != CKR_OK) {
+    return v;
+  }
+
+  return v;
 }
 
 } // namespace Erpiko

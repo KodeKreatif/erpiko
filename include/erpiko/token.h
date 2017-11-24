@@ -3,6 +3,9 @@
 
 #include <string>
 #include <memory>
+#include <vector>
+
+namespace Erpiko {
 
 namespace CardStatus {
 enum Value {
@@ -11,7 +14,14 @@ enum Value {
 };
 }
 
-namespace Erpiko {
+namespace TokenOpResult {
+  enum Value {
+    SUCCESS,
+    GENERIC_ERROR,
+    TOO_LARGE,
+    READ_ONLY
+  };
+};
 
 /**
  * Hardware token interface
@@ -61,6 +71,24 @@ class Token {
      * @param label the label of the key
      */
     void setKeyId(const unsigned int id, const std::string& label);
+
+    /**
+     * Puts an arbitrary data into token
+     * @param applicationName application name
+     * @param the label of the data
+     * @param data
+     * @return Token operation result
+     */
+    TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
+
+    /**
+     * Gets an arbitrary data out of the token
+     * @param applicationName application name
+     * @param the label of the data
+     * @return the data if found, otherwise it will return an empty vector
+     */
+    std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
+
 
   private:
     class Impl;
