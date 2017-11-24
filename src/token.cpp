@@ -59,8 +59,20 @@ Token::logout() const {
   return impl->engine.logout();
 }
 
-void Token::setKeyId(const unsigned int id, const std::string& label) {
+void
+Token::setKeyId(const unsigned int id, const std::string& label) {
   impl->engine.setKeyLabel(label);
   impl->engine.setKeyId(id);
 }
+
+TokenOpResult::Value
+Token::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
+  return impl->engine.putData(applicationName, label, data);
+}
+
+std::vector<unsigned char>
+Token::getData(const std::string& applicationName, std::string& label) {
+  return impl->engine.getData(applicationName, label);
+}
+
 } // namespace Erpiko
