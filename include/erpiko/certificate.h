@@ -167,15 +167,20 @@ class Certificate {
 
     /**
      * Check against CRL
+     * @param issuerDer Issuer certificate in DER
+     * @param crlDer CRL certificate in DER
      * @return integer value 1 if the cert has been revoked. Otherwise, it hasn't.
      */
     CertificateRevocationState::State isRevoked(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer) const;
 
     /**
-     * Verify trust against cacert
+     * Verify trust against root CA certificate & CRL
+     * @param rootCaDer Root CA certificate in DER
+     * @param crlDer CRL certificate in DER
+     * @param caChainPemPath Path of the certificate chain (in PEM)
      * @return integer value 1 if the cert is trusted by the issuer and certificate chain. Otherwise, it isn't trusted.
      */
-    CertificateTrustState::State isTrusted(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer, const std::string& cacertsPemPath) const;
+    CertificateTrustState::State isTrusted(const std::vector<unsigned char> rootCaDer, const std::vector<unsigned char> crlDer, const std::string& caChainPemPath) const;
 
   private:
     class Impl;

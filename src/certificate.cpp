@@ -315,11 +315,10 @@ CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsig
   Certificate* crlCert = new Certificate();
   crlCert->impl->crlFromDer(crlDer);
   X509_CRL * crl = crlCert->impl->x509_CRL;
-
   if (issuer) {
     EVP_PKEY *issuerKey = X509_get_pubkey(issuer);
     ASN1_INTEGER *serial = X509_get_serialNumber(impl->x509);
-
+    
     if (crl && issuerKey && X509_CRL_verify(crl, issuerKey)) {
       status = CertificateRevocationState::NOT_REVOKED;
       auto *revokedList = crl->crl->revoked;
@@ -337,13 +336,13 @@ CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsig
   return status;
 }
 
-CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned char> issuerDer, const std::vector<unsigned char> crlDer, const std::string& cacertsPemPath) const {
+CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned char> rootCaDer, const std::vector<unsigned char> crlDer, const std::string& caChainPemPath) const {
   CertificateTrustState::State status = CertificateTrustState::UNKNOWN;
   STACK_OF(X509)* chain = sk_X509_new_null();
 
-  Certificate* issuerCert = new Certificate();
-  issuerCert->impl->fromDer(issuerDer);
-  X509 * issuer = issuerCert->impl->x509;
+  Certificate* rootCaCert = new Certificate();
+  rootCaCert->impl->fromDer(rootCaDer);
+  X509 * issuer = rootCaCert->impl->x509;
   sk_X509_push(chain, issuer);
 
   Certificate* crlCert = new Certificate();
@@ -352,7 +351,7 @@ CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned c
 
   X509_STORE *store = X509_STORE_new();
   X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
-  X509_LOOKUP_load_file(lookup, cacertsPemPath.c_str(), X509_FILETYPE_PEM);
+  X509_LOOKUP_load_file(lookup, caChainPemPath.c_str(), X509_FILETYPE_PEM);
 
   X509_STORE_CTX *ctx = X509_STORE_CTX_new();
   X509_STORE_CTX_init(ctx, store, impl->x509, chain);
