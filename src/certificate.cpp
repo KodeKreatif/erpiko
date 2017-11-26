@@ -30,6 +30,11 @@ class Certificate::Impl {
     Impl() {
       x509 = X509_new();
       x509_CRL = X509_CRL_new();
+
+      ERR_load_crypto_strings();
+      OpenSSL_add_all_algorithms();
+      OPENSSL_config(NULL);
+
     }
 
 
