@@ -1,11 +1,11 @@
-#include "erpiko/token.h"
+#include "erpiko/p11-token.h"
 #include "engine-p11.h"
 #include <openssl/engine.h>
 
 using namespace std;
 namespace Erpiko {
 
-class Token::Impl {
+class P11Token::Impl {
   public:
 
   EngineP11& engine;
@@ -26,22 +26,22 @@ class Token::Impl {
 
 };
 
-Token::Token() : impl{ std::make_unique<Impl>()} {
+P11Token::P11Token() : impl{ std::make_unique<Impl>()} {
 }
 
-Token::~Token() = default;
+P11Token::~P11Token() = default;
 
 bool
-Token::load(const std::string path) {
+P11Token::load(const std::string path) {
   return impl->load(path);
 }
 
 bool
-Token::isValid() {
+P11Token::isValid() {
   return impl->valid;
 }
 
-CardStatus::Value Token::waitForCardStatus(int &slot) const {
+CardStatus::Value P11Token::waitForCardStatus(int &slot) const {
   bool result = impl->engine.waitForCardStatus(slot);
   if (result != true) {
     return CardStatus::NOT_PRESENT;
@@ -50,29 +50,34 @@ CardStatus::Value Token::waitForCardStatus(int &slot) const {
 }
 
 bool
-Token::login(const unsigned long slot, const std::string& pin) const {
+P11Token::login(const unsigned long slot, const std::string& pin) const {
   return impl->engine.login(slot, pin);
 }
 
 bool
-Token::logout() const {
+P11Token::logout() const {
   return impl->engine.logout();
 }
 
 void
-Token::setKeyId(const unsigned int id, const std::string& label) {
+P11Token::setKeyId(const unsigned int id, const std::string& label) {
   impl->engine.setKeyLabel(label);
   impl->engine.setKeyId(id);
 }
 
 TokenOpResult::Value
-Token::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
+P11Token::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
   return impl->engine.putData(applicationName, label, data);
 }
 
 std::vector<unsigned char>
-Token::getData(const std::string& applicationName, std::string& label) {
+P11Token::getData(const std::string& applicationName, std::string& label) {
   return impl->engine.getData(applicationName, label);
+}
+
+void *
+P11Token::engine() const {
+  return (void*) impl->engine.erpikoEngine;
 }
 
 } // namespace Erpiko

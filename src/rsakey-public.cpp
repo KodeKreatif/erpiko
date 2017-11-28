@@ -7,19 +7,21 @@
 #include <iostream>
 #include <string.h>
 
-extern ENGINE* erpikoEngine;
-
 namespace Erpiko {
 
 class RsaPublicKey::Impl {
+  ENGINE* erpikoEngine = nullptr;
   public:
     RSA* rsa;
     bool success = false;
     BigInt e;
     BigInt n;
 
-    Impl() {
+    Impl(Token* t = nullptr) {
       rsa = RSA_new();
+      if (t != nullptr) {
+        erpikoEngine = (ENGINE*) t->engine();
+      }
     }
 
     virtual ~Impl() {
@@ -87,7 +89,6 @@ class RsaPublicKey::Impl {
 
       if (evp) EVP_PKEY_free(evp);
       return ret;
-
     }
 
     bool verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const {
@@ -118,13 +119,11 @@ class RsaPublicKey::Impl {
 
     }
 
-
-
 };
 
 RsaPublicKey::~RsaPublicKey() = default;
 
-RsaPublicKey::RsaPublicKey() : impl{std::make_unique<Impl>()} {
+RsaPublicKey::RsaPublicKey(Token* t) : impl{std::make_unique<Impl>(t)} {
 }
 
 RsaPublicKey* RsaPublicKey::fromPem(const std::string pem) {
@@ -211,6 +210,5 @@ const std::vector<unsigned char> RsaPublicKey::encrypt(const std::vector<unsigne
 bool RsaPublicKey::verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const {
   return impl->verify(signature, data, digest);
 }
-
 
 } // namespace Erpiko

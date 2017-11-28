@@ -11,12 +11,12 @@
 #include <iostream>
 #include <string.h>
 
-extern ENGINE* erpikoEngine;
 
 namespace Erpiko {
 
 class RsaKey::Impl {
   public:
+    ENGINE* erpikoEngine = nullptr;
     unsigned int bits = 0;
     int ret;
     RSA* rsa;
@@ -25,10 +25,14 @@ class RsaKey::Impl {
     std::unique_ptr<RsaPublicKey> publicKey;
     bool onDevice = false;
 
-    Impl() {
+    Impl(Token* t = nullptr) {
       rsa = RSA_new();
       evp = EVP_PKEY_new();
       OpenSSL_add_all_algorithms();
+
+      if (t != nullptr) {
+        erpikoEngine = (ENGINE*) t->engine();
+      }
     }
 
     virtual ~Impl() {
@@ -157,11 +161,11 @@ class RsaKey::Impl {
 
 RsaKey::~RsaKey() = default;
 
-RsaKey::RsaKey() : impl{std::make_unique<Impl>()} {
+RsaKey::RsaKey(Token* t) : impl{std::make_unique<Impl>(t)} {
 }
 
-RsaKey* RsaKey::create(const unsigned int bits) {
-  RsaKey* rsa = new RsaKey();
+RsaKey* RsaKey::create(const unsigned int bits, Token* t) {
+  RsaKey* rsa = new RsaKey(t);
 
   rsa->impl->createKey(bits);
   if (bits == rsa->impl->bits) {
@@ -256,6 +260,5 @@ bool
 RsaKey::onDevice() const {
   return impl->onDevice;
 }
-
 
 } // namespace Erpiko

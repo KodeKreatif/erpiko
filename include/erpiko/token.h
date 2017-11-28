@@ -28,25 +28,23 @@ namespace TokenOpResult {
  */
 class Token {
   public:
-    Token();
-    virtual ~Token();
     /**
      * Loads a dynamic library provided by the token manufacturer
      * @param path path to the dynamic library
      */
-    bool load(const std::string path);
+    virtual bool load(const std::string path) = 0;
 
     /**
      * Checks whether the token is valid or not
      * @return the value
      */
-    bool isValid();
+    virtual bool isValid() = 0;
     /**
      * Wait for slot event on reader device. This is a blocking function until the event occured.
      * @param slot the slot, the slot ID will be assigned here if the return value is true
      * @return returned if the an event has been occured
      */
-    CardStatus::Value waitForCardStatus(int &slot) const;
+    virtual CardStatus::Value waitForCardStatus(int &slot) const = 0;
     /**
      * Open the session of specific slot
      * @return whether the smartcard is present or not in the slot
@@ -57,20 +55,20 @@ class Token {
      * @param pin the pin used for login
      * @return whether the login was successfully performed
      */
-    bool login(const unsigned long slot, const std::string& pin) const;
+    virtual bool login(const unsigned long slot, const std::string& pin) const = 0;
 
     /**
      * Performs logout on the device
      * @return whether the logout was successfully performed
      */
-    bool logout() const;
+    virtual bool logout() const = 0;
 
     /**
      * Sets key id and label to be recorded in the device
      * @param id the id of the key
      * @param label the label of the key
      */
-    void setKeyId(const unsigned int id, const std::string& label);
+    virtual void setKeyId(const unsigned int id, const std::string& label) = 0;
 
     /**
      * Puts an arbitrary data into token
@@ -79,7 +77,7 @@ class Token {
      * @param data
      * @return Token operation result
      */
-    TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
+    virtual TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) = 0;
 
     /**
      * Gets an arbitrary data out of the token
@@ -87,12 +85,14 @@ class Token {
      * @param the label of the data
      * @return the data if found, otherwise it will return an empty vector
      */
-    std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
+    virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label) = 0;
 
+    /**
+     * Returns internal engine handle
+     * @return internal handle
+     */
+    virtual void* engine() const = 0;
 
-  private:
-    class Impl;
-    std::unique_ptr<Impl> impl;
 };
 } // namespace Erpiko
 #endif // _TOKEN_H_

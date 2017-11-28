@@ -1,6 +1,6 @@
 ﻿#define CATCH_CONFIG_MAIN
 #include "catch.hpp"
-#include "erpiko/token.h"
+#include "erpiko/p11-token.h"
 #include "erpiko/rsakey.h"
 #include "erpiko/utils.h"
 #include "erpiko/digest.h"
@@ -43,16 +43,13 @@ SCENARIO("Token init", "[.][p11]") {
       auto hash512 = d->finalize(empty);
       delete d;
 
-
-
-
-
       int bits = 1024;
       RsaKey* k = RsaKey::create(bits);
 
       auto v = Utils::fromHexString("751965349686009581002736762779192355");
       auto enc = k->publicKey().encrypt(v);
-      Token t;
+      P11Token p11Token;
+      Token& t = (Token&)p11Token;
 #ifdef WIN32
 	  //auto r = t.load("C:\\SoftHSM2\\lib\\softhsm2-x64.dll");
 	  auto r = t.load("c:\\windows\\system32\\eTPKCS11.dll");
@@ -85,7 +82,7 @@ SCENARIO("Token init", "[.][p11]") {
       std::cout << "Logged in" << std::endl;
 
       t.setKeyId(02, "key2");
-      k = RsaKey::create(1024);
+      k = RsaKey::create(1024, &t);
 
 	    REQUIRE(k != nullptr);
       auto vec = k->toDer();
@@ -155,7 +152,7 @@ SCENARIO("Token init", "[.][p11]") {
   GIVEN("A token") {
     THEN("Token is initialized") {
 
-      Token t;
+      P11Token t;
 #ifdef WIN32
 	  //auto r = t.load("C:\\SoftHSM2\\lib\\softhsm2-x64.dll");
 	  auto r = t.load("c:\\windows\\system32\\eTPKCS11.dll");
