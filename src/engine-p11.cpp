@@ -3,7 +3,6 @@
 #include <string>
 #include "engine-p11.h"
 #include "pkcs11/cryptoki.h"
-#include <openssl/engine.h>
 #include <openssl/rsa.h>
 #ifdef WIN32
 #include <Windows.h>
@@ -11,7 +10,6 @@
 #include <dlfcn.h>
 #endif
 
-ENGINE *erpikoEngine = nullptr;
 CK_FUNCTION_LIST_PTR F;
 
 using namespace std;

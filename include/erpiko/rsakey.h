@@ -3,6 +3,7 @@
 
 #include "erpiko/rsakey-public.h"
 #include "erpiko/oid.h"
+#include "erpiko/token.h"
 #include <memory>
 #include <vector>
 
@@ -16,16 +17,18 @@ class RsaKey {
   public:
     /**
      * Creates a new instance of RSA key
+     * @param token if exists, use the specified token
      */
-    RsaKey();
+    RsaKey(Token* t = nullptr);
     virtual ~RsaKey();
 
     /**
      * Creates a new RsaKey pair
      * @param bits number of bits
+     * @param token if exists, use the specified token
      * @return a new instance of RsaKey initialized to the number of bits as specified
      */
-    static RsaKey* create(const unsigned int bits);
+    static RsaKey* create(const unsigned int bits, Token *t = nullptr);
 
     /**
      * Imports a pair of RsaKey from PEM
@@ -85,9 +88,10 @@ class RsaKey {
 
     /**
      * Checks whether the key resides on device or not. If the key is generated on device using Token
-     * object, then the key is on device and can't be exported.
+     * object, then the key is on device and can't be exported. This only matters if token is enabled.
      */
     bool onDevice() const;
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

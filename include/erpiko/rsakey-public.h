@@ -3,6 +3,7 @@
 
 #include "erpiko/bigint.h"
 #include "erpiko/oid.h"
+#include "erpiko/token.h"
 #include <memory>
 #include <vector>
 
@@ -12,8 +13,9 @@ class RsaPublicKey {
   public:
     /**
      * Creates a new instance of RSA public key
+     * @param token if exists, use the specified token
      */
-    RsaPublicKey();
+    RsaPublicKey(Token *t = nullptr);
     virtual ~RsaPublicKey();
 
     /**
@@ -69,6 +71,17 @@ class RsaPublicKey {
      * @return signature
      */
     bool verify(const std::vector<unsigned char> signature, const std::vector<unsigned char> data, const ObjectId& digest) const;
+
+
+    /**
+     * Enable token to be used in cryptography operations
+     */
+    void enableToken();
+
+    /**
+     * Disable token to be used in cryptography operations
+     */
+    void disableToken();
 
 
 
