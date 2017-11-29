@@ -75,6 +75,11 @@ P11Token::getData(const std::string& applicationName, std::string& label) {
   return impl->engine.getData(applicationName, label);
 }
 
+std::vector<Certificate*>
+P11Token::getCertificates() {
+  return impl->engine.getCertificates();
+}
+
 void *
 P11Token::engine() const {
   return (void*) impl->engine.erpikoEngine;

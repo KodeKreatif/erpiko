@@ -4,6 +4,7 @@
 #include "erpiko/rsakey.h"
 #include "erpiko/utils.h"
 #include "erpiko/digest.h"
+#include "erpiko/certificate.h"
 #include <iostream>
 
 using namespace std;
@@ -163,10 +164,17 @@ SCENARIO("Token init", "[.][p11]") {
 #ifdef WIN32
       r = t.login(0, "qwerty");
 #else
-	  r = t.login(933433059, "qwerty");
+	    r = t.login(933433059, "qwerty");
 #endif
 
       REQUIRE(r == true);
+
+      std::vector<Erpiko::Certificate*> certs = t.getCertificates(); 
+      for (auto const& cert : certs) {
+        std::string cN = cert->subjectIdentity().get("commonName");
+        std::cout << cN << std::endl;
+        REQUIRE(cN.length() > 0);
+      }
 
       ObjectId o(DigestConstants::SHA256);
       std::string s = "data";
