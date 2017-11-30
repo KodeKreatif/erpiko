@@ -80,6 +80,11 @@ P11Token::getCertificates() {
   return impl->engine.getCertificates();
 }
 
+TokenOpResult::Value
+P11Token::putCertificate(std::vector<unsigned char> data) {
+  return impl->engine.putCertificate(data);
+}
+
 void *
 P11Token::engine() const {
   return (void*) impl->engine.erpikoEngine;

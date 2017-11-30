@@ -1,4 +1,5 @@
 #include "erpiko/utils.h"
+#include "erpiko/bigint.h"
 #include <iostream>
 #include <string>
 #include "engine-p11.h"
@@ -631,6 +632,56 @@ std::vector<Certificate*> EngineP11::getCertificates() {
     }
   }
   return certs;
+}
+
+TokenOpResult::Value
+EngineP11::putCertificate(std::vector<unsigned char> data) {
+  auto cert = Certificate::fromDer(data);
+  auto subjectDer = cert->subjectIdentity().toDer();
+  auto serialNumberDer = cert->serialNumber().dump();
+  std::string serialNumberStr = cert->serialNumber().toHexString();
+
+  CK_OBJECT_CLASS keyClass = CKO_CERTIFICATE;
+  CK_CERTIFICATE_TYPE certType =  CKC_X_509;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BBOOL falseValue = CK_FALSE;
+  // Use serial number hex string as certificate label
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(serialNumberStr.c_str()));
+
+  CK_ATTRIBUTE t[] = {
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_VALUE, data.data(), (CK_ULONG) data.size() },
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_CERTIFICATE_TYPE, &certType, sizeof(certType) },
+    { CKA_PRIVATE, &falseValue, sizeof(falseValue) },
+    { CKA_SUBJECT, subjectDer.data(), subjectDer.size() },
+    { CKA_SERIAL_NUMBER, serialNumberDer.data() , serialNumberDer.size() },
+    { CKA_LABEL, labelByte, serialNumberStr.size()}
+  };
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_RV rv = CKR_OK;
+  CK_OBJECT_HANDLE obj;
+
+  rv = F->C_CreateObject(p11.getSession(), t, 8, &obj);
+
+  if (rv != CKR_OK) {
+    switch (rv) {
+      case CKR_DATA_LEN_RANGE:
+      case CKR_DEVICE_MEMORY:
+        return TokenOpResult::TOO_LARGE;
+        break;
+      case CKR_SESSION_READ_ONLY:
+      case CKR_TOKEN_WRITE_PROTECTED:
+        return TokenOpResult::READ_ONLY;
+        break;
+      default:
+        return TokenOpResult::GENERIC_ERROR;
+        break;
+    }
+  }
+
+  return TokenOpResult::SUCCESS;
 }
 
 } // namespace Erpiko

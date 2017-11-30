@@ -68,6 +68,7 @@ class EngineP11 {
     std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
     bool parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value = nullptr);
     std::vector<Certificate*> getCertificates();
+    TokenOpResult::Value putCertificate(std::vector<unsigned char> data);
 
     ENGINE *erpikoEngine = nullptr;
   };

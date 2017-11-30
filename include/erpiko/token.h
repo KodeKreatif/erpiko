@@ -21,7 +21,8 @@ namespace TokenOpResult {
     SUCCESS,
     GENERIC_ERROR,
     TOO_LARGE,
-    READ_ONLY
+    READ_ONLY,
+    ALREADY_EXIST,
   };
 };
 
@@ -94,6 +95,13 @@ class Token {
      * @return a vector of Erpiko::Certificate*
      */
     virtual std::vector<Certificate*> getCertificates() = 0;
+
+    /**
+     * Puts an certificate into token
+     * @param data the certificate data in vector<unsigned char>
+     * @return Token operation result
+     */
+    virtual TokenOpResult::Value putCertificate(std::vector<unsigned char> data) = 0;
 
     /**
      * Returns internal engine handle
