@@ -98,7 +98,7 @@ class Token {
 
     /**
      * Puts an certificate into token
-     * @param data the certificate data in vector<unsigned char>
+     * @param cert the certificate in Certificate format
      * @return Token operation result
      */
     virtual TokenOpResult::Value putCertificate(const Certificate* cert) = 0;
