@@ -101,7 +101,7 @@ class Token {
      * @param data the certificate data in vector<unsigned char>
      * @return Token operation result
      */
-    virtual TokenOpResult::Value putCertificate(std::vector<unsigned char> data) = 0;
+    virtual TokenOpResult::Value putCertificate(const Certificate* cert) = 0;
 
     /**
      * Returns internal engine handle

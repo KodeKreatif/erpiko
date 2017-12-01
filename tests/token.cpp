@@ -181,9 +181,8 @@ SCENARIO("Token init", "[.][p11]") {
       auto certData = src->readAll();
       std::string pkitbverify1Pem(certData.begin(),certData.end());
       Certificate* pkitbverify1Cert = Certificate::fromPem(pkitbverify1Pem);
-      auto der = pkitbverify1Cert->toDer();
       REQUIRE_FALSE(pkitbverify1Cert == nullptr);
-      auto putCertResult = t.putCertificate(der);
+      auto putCertResult = t.putCertificate(pkitbverify1Cert);
 
       std::cout << "put cert result : " << std::endl;
       if (putCertResult == TokenOpResult::SUCCESS) {
@@ -205,7 +204,7 @@ SCENARIO("Token init", "[.][p11]") {
         REQUIRE(cN.length() > 0);
       }
 
-      putCertResult = t.putCertificate(der);
+      putCertResult = t.putCertificate(pkitbverify1Cert);
       REQUIRE(putCertResult == TokenOpResult::GENERIC_ERROR);
 
       ObjectId o(DigestConstants::SHA256);

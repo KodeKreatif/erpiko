@@ -81,8 +81,8 @@ P11Token::getCertificates() {
 }
 
 TokenOpResult::Value
-P11Token::putCertificate(std::vector<unsigned char> data) {
-  return impl->engine.putCertificate(data);
+P11Token::putCertificate(const Certificate* cert) {
+  return impl->engine.putCertificate(cert);
 }
 
 void *

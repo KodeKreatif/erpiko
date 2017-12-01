@@ -635,11 +635,11 @@ std::vector<Certificate*> EngineP11::getCertificates() {
 }
 
 TokenOpResult::Value
-EngineP11::putCertificate(std::vector<unsigned char> data) {
-  auto cert = Certificate::fromDer(data);
+EngineP11::putCertificate(const Certificate* cert) {
   auto subjectDer = cert->subjectIdentity().toDer();
   auto serialNumberDer = cert->serialNumber().dump();
   std::string serialNumberStr = cert->serialNumber().toHexString();
+  std::vector<unsigned char> data = cert->toDer();
 
   CK_OBJECT_CLASS keyClass = CKO_CERTIFICATE;
   CK_CERTIFICATE_TYPE certType =  CKC_X_509;
