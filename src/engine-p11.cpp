@@ -546,7 +546,6 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
 
 bool EngineP11::parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value) {
   CK_RV rv;
-  CK_BYTE_PTR data;
   rv = F->C_GetAttributeValue(session, obj, &attr, 1);
   if (rv == CKR_OK) {
     if (attr.ulValueLen == (CK_ULONG)(-1)) {
@@ -574,7 +573,6 @@ bool EngineP11::parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<
 std::vector<Certificate*> EngineP11::getCertificates() {
   std::vector<Certificate*> certs;
   std::vector<std::string> labels;
-  CK_OBJECT_CLASS certClass = CKO_CERTIFICATE;
   CK_OBJECT_HANDLE object;
   CK_ULONG count;
   CK_RV rv;
@@ -604,9 +602,6 @@ std::vector<Certificate*> EngineP11::getCertificates() {
   F->C_FindObjectsFinal(session);
   for (auto const& label : labels) {
     CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
-    CK_BBOOL _true = CK_TRUE;
-    CK_OBJECT_CLASS certClass = CKO_CERTIFICATE;
-    CK_CERTIFICATE_TYPE certType = CKC_X_509;
     CK_ATTRIBUTE certificateSearchTemplate[] = {
       {CKA_LABEL, labelByte, label.size()},
     };
