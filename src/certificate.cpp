@@ -185,7 +185,7 @@ class Certificate::Impl {
       BN_free(bn);
       serialNumber = dec;
     }
-
+    
     void resetPublicKey() {
       auto evp = X509_get_pubkey(x509);
       if (evp) {

@@ -1,11 +1,13 @@
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
-
 #include <string>
 #include <memory>
 #include <vector>
 
+
 namespace Erpiko {
+
+class Certificate;
 
 namespace CardStatus {
 enum Value {
@@ -19,7 +21,8 @@ namespace TokenOpResult {
     SUCCESS,
     GENERIC_ERROR,
     TOO_LARGE,
-    READ_ONLY
+    READ_ONLY,
+    ALREADY_EXIST,
   };
 };
 
@@ -86,6 +89,19 @@ class Token {
      * @return the data if found, otherwise it will return an empty vector
      */
     virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label) = 0;
+
+    /**
+     * Gets list of certificate(s) from smartcard
+     * @return a vector of Erpiko::Certificate*
+     */
+    virtual std::vector<Certificate*> getCertificates() = 0;
+
+    /**
+     * Puts an certificate into token
+     * @param cert the certificate in Certificate format
+     * @return Token operation result
+     */
+    virtual TokenOpResult::Value putCertificate(const Certificate* cert) = 0;
 
     /**
      * Returns internal engine handle

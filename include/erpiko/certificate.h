@@ -84,7 +84,8 @@ class Certificate {
      * @param publicKey the public key of the signer
      * @param signerKey the signer key
      */
-    static Certificate* create(const Time& notBefore, const Time& notAfter, const Identity& subjectIdentity, const Identity& issuerIdentity, const BigInt& serialNumber, const RsaPublicKey& publicKey, const RsaKey& signerKey);
+    //static Certificate* create(const Time& notBefore, const Time& notAfter, const Identity& subjectIdentity, const Identity& issuerIdentity, const BigInt& serialNumber, const RsaPublicKey& publicKey, const RsaKey& signerKey);
+    static Certificate* create(const Time &notBefore, const Time &notAfter, const Identity &subjectIdentity, const Identity &issuerIdentity, const BigInt &serialNumber, const RsaPublicKey &publicKey, const RsaKey &signerKey);
 
     /**
      * Creates a new Certificate from PEM data

@@ -1,2 +1,3 @@
 build/
 deps/
+include/catch.hpp

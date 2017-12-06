@@ -3,12 +3,18 @@
 #include "erpiko/p11-token.h"
 #include "erpiko/rsakey.h"
 #include "erpiko/utils.h"
+#include "erpiko/data-source.h"
 #include "erpiko/digest.h"
+#include "erpiko/certificate.h"
 #include <iostream>
 
 using namespace std;
 
 namespace Erpiko {
+/*
+ * This test supposed to be run against a newly initialized smartcard with empty storage
+ *
+ */
 
 SCENARIO("Token init", "[.][p11]") {
   GIVEN("A token") {
@@ -163,14 +169,47 @@ SCENARIO("Token init", "[.][p11]") {
 #ifdef WIN32
       r = t.login(0, "qwerty");
 #else
-	  r = t.login(933433059, "qwerty");
+	    r = t.login(933433059, "qwerty");
 #endif
 
       REQUIRE(r == true);
 
+      std::vector<Erpiko::Certificate*> certs = t.getCertificates(); 
+      int certsTotal = certs.size();
+
+      auto src = DataSource::fromFile("assets/verify/pkitbverify1.pem");
+      auto certData = src->readAll();
+      std::string pkitbverify1Pem(certData.begin(),certData.end());
+      Certificate* pkitbverify1Cert = Certificate::fromPem(pkitbverify1Pem);
+      REQUIRE_FALSE(pkitbverify1Cert == nullptr);
+      auto putCertResult = t.putCertificate(pkitbverify1Cert);
+
+      std::cout << "put cert result : " << std::endl;
+      if (putCertResult == TokenOpResult::SUCCESS) {
+         std::cout << "success" << std::endl;
+      } else if (putCertResult == TokenOpResult::GENERIC_ERROR) {
+         std::cout << "generic error" << std::endl;
+      } else if (putCertResult == TokenOpResult::TOO_LARGE) {
+         std::cout << "too large" << std::endl;
+      } else if (putCertResult == TokenOpResult::READ_ONLY) {
+         std::cout << "read only" << std::endl;
+      }
+
+      certs = t.getCertificates(); 
+      REQUIRE(certsTotal < certs.size());
+      std::cout << "The certificates :"  << std::endl;
+      for (auto const& cert : certs) {
+        std::string cN = cert->subjectIdentity().get("commonName");
+        std::cout << "- commonName : " << cN << std::endl;
+        REQUIRE(cN.length() > 0);
+      }
+
+      putCertResult = t.putCertificate(pkitbverify1Cert);
+      REQUIRE(putCertResult == TokenOpResult::GENERIC_ERROR);
+
       ObjectId o(DigestConstants::SHA256);
-      std::string s = "data";
       std::string appName = "appName";
+      std::string s = "data";
       std::string label = "label1";
       Digest *d = Digest::get(o);
       std::vector<unsigned char> data(s.c_str(), s.c_str() + s.length());
@@ -184,8 +223,6 @@ SCENARIO("Token init", "[.][p11]") {
 
       auto h = t.getData(appName, label);
       REQUIRE(h == hash);
-
-
 
     }
   }

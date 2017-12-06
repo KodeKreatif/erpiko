@@ -5,7 +5,9 @@
 #include <string>
 #include <iostream>
 #include "erpiko/token.h"
+#include "erpiko/certificate.h"
 #include <openssl/engine.h>
+#include "pkcs11/cryptoki.h"
 #ifdef WIN32
 #include <Windows.h>
 #endif
@@ -64,6 +66,10 @@ class EngineP11 {
 
     TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
     std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
+    bool parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value = nullptr);
+    std::vector<Certificate*> getCertificates();
+    TokenOpResult::Value putCertificate(const Certificate* cert);
+
     ENGINE *erpikoEngine = nullptr;
   };
 } // namespace Erpiko

@@ -1,4 +1,5 @@
 #include "erpiko/utils.h"
+#include "erpiko/bigint.h"
 #include <iostream>
 #include <string>
 #include "engine-p11.h"
@@ -541,6 +542,141 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
   }
 
   return v;
+}
+
+bool EngineP11::parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value) {
+  CK_RV rv;
+  rv = F->C_GetAttributeValue(session, obj, &attr, 1);
+  if (rv == CKR_OK) {
+    if (attr.ulValueLen == (CK_ULONG)(-1)) {
+      return false;
+    }
+    if (attr.type == CKA_LABEL) {
+      if (!(attr.pValue = calloc(1, attr.ulValueLen + 1))) {
+        // Out of memory
+        return false;
+      }
+    } else if (attr.type == CKA_VALUE) {
+      value->resize(attr.ulValueLen);
+      attr.pValue = &value->front();
+    }
+
+    rv = F->C_GetAttributeValue(session, obj, &attr, 1);
+    if (attr.ulValueLen == (CK_ULONG)(-1)) {
+      free(attr.pValue);
+      return false;
+    }
+  }
+  return true;
+}
+
+std::vector<Certificate*> EngineP11::getCertificates() {
+  std::vector<Certificate*> certs;
+  std::vector<std::string> labels;
+  CK_OBJECT_HANDLE object;
+  CK_ULONG count;
+  CK_RV rv;
+
+  rv = F->C_FindObjectsInit(session, NULL, 0);
+  if (rv != CKR_OK) {
+    return certs;
+  }
+  while (true) {
+    rv = F->C_FindObjects(session, &object, 1, &count);
+    if (rv != CKR_OK) {
+      break;
+    }
+    if (count == 0) {
+      break;
+    }
+    CK_ATTRIBUTE labelAttr = { CKA_LABEL, NULL, 0 };
+    auto r = this->parseAttr(object, labelAttr, NULL);
+    if (!r) {
+      break;
+    }
+    std::string label ((char *)labelAttr.pValue);
+    if (label.length() >= 16) {
+      labels.push_back(label);
+    }
+  }
+  F->C_FindObjectsFinal(session);
+  for (auto const& label : labels) {
+    CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+    CK_ATTRIBUTE certificateSearchTemplate[] = {
+      {CKA_LABEL, labelByte, label.size()},
+    };
+
+    CK_RV rv = F->C_FindObjectsInit(session, certificateSearchTemplate, 1);
+    if (rv != CKR_OK) {
+      break;
+    }
+   
+    CK_OBJECT_HANDLE certObject;
+    CK_ULONG certObjectCount;
+    rv = F->C_FindObjects(session, &certObject, 1, &certObjectCount); 
+    if (rv != CKR_OK) {
+      continue;
+    }
+    rv = F->C_FindObjectsFinal(session);
+    CK_ATTRIBUTE certAttr = {CKA_VALUE, NULL_PTR, 1};
+    std::vector<unsigned char> value;
+    auto r = this->parseAttr(certObject, certAttr, &value);
+    if (r && sizeof(value) > 0) {
+      auto cert = Certificate::fromDer(value);
+      certs.push_back(cert);
+    }
+  }
+  return certs;
+}
+
+TokenOpResult::Value
+EngineP11::putCertificate(const Certificate* cert) {
+  auto subjectDer = cert->subjectIdentity().toDer();
+  auto serialNumberDer = cert->serialNumber().dump();
+  std::string serialNumberStr = cert->serialNumber().toHexString();
+  std::vector<unsigned char> data = cert->toDer();
+
+  CK_OBJECT_CLASS keyClass = CKO_CERTIFICATE;
+  CK_CERTIFICATE_TYPE certType =  CKC_X_509;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BBOOL falseValue = CK_FALSE;
+  // Use serial number hex string as certificate label
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(serialNumberStr.c_str()));
+
+  CK_ATTRIBUTE t[] = {
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_VALUE, data.data(), (CK_ULONG) data.size() },
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_CERTIFICATE_TYPE, &certType, sizeof(certType) },
+    { CKA_PRIVATE, &falseValue, sizeof(falseValue) },
+    { CKA_SUBJECT, subjectDer.data(), subjectDer.size() },
+    { CKA_SERIAL_NUMBER, serialNumberDer.data() , serialNumberDer.size() },
+    { CKA_LABEL, labelByte, serialNumberStr.size()}
+  };
+
+  EngineP11& p11 = EngineP11::getInstance();
+  CK_RV rv = CKR_OK;
+  CK_OBJECT_HANDLE obj;
+
+  rv = F->C_CreateObject(p11.getSession(), t, 8, &obj);
+
+  if (rv != CKR_OK) {
+    switch (rv) {
+      case CKR_DATA_LEN_RANGE:
+      case CKR_DEVICE_MEMORY:
+        return TokenOpResult::TOO_LARGE;
+        break;
+      case CKR_SESSION_READ_ONLY:
+      case CKR_TOKEN_WRITE_PROTECTED:
+        return TokenOpResult::READ_ONLY;
+        break;
+      default:
+        return TokenOpResult::GENERIC_ERROR;
+        break;
+    }
+  }
+
+  return TokenOpResult::SUCCESS;
 }
 
 } // namespace Erpiko
