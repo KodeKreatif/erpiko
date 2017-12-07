@@ -174,7 +174,7 @@ SCENARIO("Token init", "[.][p11]") {
 
       REQUIRE(r == true);
 
-      std::vector<Erpiko::Certificate*> certs = t.getCertificates(); 
+      std::vector<Erpiko::Certificate*> certs = t.getCertificates();
       int certsTotal = certs.size();
 
       auto src = DataSource::fromFile("assets/verify/pkitbverify1.pem");
@@ -195,7 +195,7 @@ SCENARIO("Token init", "[.][p11]") {
          std::cout << "read only" << std::endl;
       }
 
-      certs = t.getCertificates(); 
+      certs = t.getCertificates();
       REQUIRE(certsTotal < certs.size());
       std::cout << "The certificates :"  << std::endl;
       for (auto const& cert : certs) {
@@ -206,6 +206,7 @@ SCENARIO("Token init", "[.][p11]") {
 
       putCertResult = t.putCertificate(pkitbverify1Cert);
       REQUIRE(putCertResult == TokenOpResult::GENERIC_ERROR);
+
 
       ObjectId o(DigestConstants::SHA256);
       std::string appName = "appName";
@@ -223,6 +224,14 @@ SCENARIO("Token init", "[.][p11]") {
 
       auto h = t.getData(appName, label);
       REQUIRE(h == hash);
+
+      // double check
+      r = t.putData(appName, label, hash);
+      REQUIRE(r == TokenOpResult::SUCCESS);
+
+      h = t.getData(appName, label);
+      REQUIRE(h == hash);
+
 
     }
   }

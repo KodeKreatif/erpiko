@@ -522,6 +522,7 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
     return v;
   }
 
+  F->C_FindObjectsFinal(session);
   CK_ATTRIBUTE attribute;
   attribute.type = CKA_VALUE;
   attribute.pValue = NULL_PTR;
@@ -610,10 +611,10 @@ std::vector<Certificate*> EngineP11::getCertificates() {
     if (rv != CKR_OK) {
       break;
     }
-   
+
     CK_OBJECT_HANDLE certObject;
     CK_ULONG certObjectCount;
-    rv = F->C_FindObjects(session, &certObject, 1, &certObjectCount); 
+    rv = F->C_FindObjects(session, &certObject, 1, &certObjectCount);
     if (rv != CKR_OK) {
       continue;
     }
