@@ -1,9 +1,10 @@
 #ifndef _TOKEN_H_
 #define _TOKEN_H_
+#include "erpiko/rsakey.h"
+#include "erpiko/certificate.h"
 #include <string>
 #include <memory>
 #include <vector>
-
 
 namespace Erpiko {
 
@@ -91,17 +92,49 @@ class Token {
     virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label) = 0;
 
     /**
+     * Removes arbitrary data out of the token
+     * @param applicationName application name
+     * @param the label of the data
+     * @return true if data is removed
+     */
+    virtual bool removeData(const std::string& applicationName, const std::string& label) = 0;
+
+    /**
      * Gets list of certificate(s) from smartcard
      * @return a vector of Erpiko::Certificate*
      */
     virtual std::vector<Certificate*> getCertificates() = 0;
 
     /**
-     * Puts an certificate into token
+     * Puts a certificate into token
      * @param cert the certificate in Certificate format
      * @return Token operation result
      */
-    virtual TokenOpResult::Value putCertificate(const Certificate* cert) = 0;
+    virtual TokenOpResult::Value putCertificate(const Certificate& cert) = 0;
+
+    /**
+     * Removes a certificate from the token
+     * @param cert the certificate in Certificate format
+     * @return Token operation result
+     */
+    virtual bool removeCertificate(const Certificate& cert) = 0;
+
+    /**
+     * Puts a private key into the token
+     * @param data the private key
+     * @param labelStr the label on the token
+     * @return Token operation result
+     */
+    virtual TokenOpResult::Value putPrivateKey(const RsaKey& data, const std::string& labelStr) = 0;
+
+    /**
+     * Removes a private key from the token
+     * @param labelStr the label on the token
+     * @return true if data is removed
+     */
+    virtual bool removePrivateKey(const std::string& labelStr) = 0;
+
+
 
     /**
      * Returns internal engine handle
