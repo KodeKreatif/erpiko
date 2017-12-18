@@ -1,3 +1,4 @@
+#include "converters.h"
 #include "erpiko/utils.h"
 #include "erpiko/bigint.h"
 #include <iostream>
@@ -15,6 +16,10 @@ CK_FUNCTION_LIST_PTR F;
 
 using namespace std;
 using namespace Erpiko;
+
+#define PUT(var, from) \
+  std::vector<unsigned char> var(BN_num_bytes(from)); \
+  BN_bn2bin(from, var.data());
 
 int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   (void) cb;
@@ -545,6 +550,38 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
   return v;
 }
 
+bool EngineP11::removeData(const std::string& applicationName, const std::string& label) {
+  CK_OBJECT_CLASS keyClass = CKO_DATA;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
+    { CKA_APPLICATION, appNameByte, applicationName.size()},
+    { CKA_LABEL, labelByte, label.size()}
+  };
+  CK_OBJECT_HANDLE obj;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  std::vector<unsigned char> v;
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 5);
+  if (rv != CKR_OK) {
+    return false;
+  }
+
+  CK_ULONG objectCount;
+  rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return false;
+  }
+
+  F->C_FindObjectsFinal(session);
+  return F->C_DestroyObject(p11.getSession(), obj) == CKR_OK ?  true : false;
+}
+
 bool EngineP11::parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value) {
   CK_RV rv;
   rv = F->C_GetAttributeValue(session, obj, &attr, 1);
@@ -630,12 +667,45 @@ std::vector<Certificate*> EngineP11::getCertificates() {
   return certs;
 }
 
+bool EngineP11::removeCertificate(const Certificate& cert) {
+  std::string serialNumberStr = cert.serialNumber().toHexString();
+
+  CK_OBJECT_CLASS keyClass = CKO_CERTIFICATE;
+  CK_CERTIFICATE_TYPE certType =  CKC_X_509;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(serialNumberStr.c_str()));
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_CERTIFICATE_TYPE, &certType, sizeof(certType) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_LABEL, labelByte, serialNumberStr.size()}
+  };
+  CK_OBJECT_HANDLE obj;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  std::vector<unsigned char> v;
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return false;
+  }
+
+  CK_ULONG objectCount;
+  rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return false;
+  }
+
+  F->C_FindObjectsFinal(session);
+  return F->C_DestroyObject(p11.getSession(), obj) == CKR_OK ?  true : false;
+}
+
 TokenOpResult::Value
-EngineP11::putCertificate(const Certificate* cert) {
-  auto subjectDer = cert->subjectIdentity().toDer();
-  auto serialNumberDer = cert->serialNumber().dump();
-  std::string serialNumberStr = cert->serialNumber().toHexString();
-  std::vector<unsigned char> data = cert->toDer();
+EngineP11::putCertificate(const Certificate& cert) {
+  auto subjectDer = cert.subjectIdentity().toDer();
+  auto serialNumberDer = cert.serialNumber().dump();
+  std::string serialNumberStr = cert.serialNumber().toHexString();
+  std::vector<unsigned char> data = cert.toDer();
 
   CK_OBJECT_CLASS keyClass = CKO_CERTIFICATE;
   CK_CERTIFICATE_TYPE certType =  CKC_X_509;
@@ -678,6 +748,112 @@ EngineP11::putCertificate(const Certificate* cert) {
   }
 
   return TokenOpResult::SUCCESS;
+}
+
+TokenOpResult::Value
+EngineP11::putPrivateKey(const RsaKey& data, const std::string& labelStr) {
+  EVP_PKEY *evp_key = NULL;
+  int keyType;
+
+  evp_key = Converters::rsaKeyToPkey(data);
+  keyType = EVP_PKEY_base_id(evp_key);
+
+  // A private key pair of certificate should be a EVP_PKEY_RSA type
+  if (keyType !=  EVP_PKEY_RSA) {
+    free(evp_key);
+    return TokenOpResult::GENERIC_ERROR;
+  }
+
+  // Parse the RSA key
+  RSA *r = EVP_PKEY_get1_RSA(evp_key);
+
+  PUT(modulus, r->n);
+  PUT(publicExponent, r->e);
+  PUT(privateExponent, r->d);
+  PUT(firstPrime, r->p);
+  PUT(secondPrime, r->q);
+  PUT(firstExponent, r->dmp1);
+  PUT(secondExponent, r->dmq1);
+  PUT(coefficient, r->iqmp);
+
+  CK_OBJECT_CLASS keyClass = CKO_PRIVATE_KEY;
+  CK_BBOOL trueValue = TRUE;
+  CK_KEY_TYPE ckaKeyType = CKK_RSA;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(labelStr.c_str()));
+  CK_ATTRIBUTE t[] = {
+    // Mandatory attribute
+    {CKA_CLASS, &keyClass, sizeof(keyClass) },
+    {CKA_TOKEN, &trueValue, sizeof(trueValue)},
+    {CKA_PRIVATE, &trueValue, sizeof(trueValue)},
+    {CKA_SENSITIVE, &trueValue, sizeof(trueValue)},
+    // The label for identification
+    { CKA_LABEL, labelByte, labelStr.size()},
+    // Attributes for EVP_PKEY_RSA
+    { CKA_KEY_TYPE, &ckaKeyType, sizeof(ckaKeyType) },
+    { CKA_MODULUS, modulus.data(), modulus.size() },
+    { CKA_PUBLIC_EXPONENT, publicExponent.data(), publicExponent.size() },
+    { CKA_PRIVATE_EXPONENT, privateExponent.data(), privateExponent.size() },
+    { CKA_PRIME_1, firstPrime.data(), firstPrime.size() },
+    { CKA_PRIME_2, secondPrime.data(), secondPrime.size() },
+    { CKA_EXPONENT_1, firstExponent.data(), firstExponent.size() },
+    { CKA_EXPONENT_2, secondExponent.data(), secondExponent.size() },
+    { CKA_COEFFICIENT, coefficient.data(), coefficient.size() }
+  };
+
+  CK_RV rv = CKR_OK;
+  CK_OBJECT_HANDLE obj;
+
+  rv = F->C_CreateObject(session, t, 14, &obj);
+
+  free(evp_key);
+  if (rv != CKR_OK) {
+    switch (rv) {
+      case CKR_DATA_LEN_RANGE:
+      case CKR_DEVICE_MEMORY:
+        return TokenOpResult::TOO_LARGE;
+        break;
+      case CKR_SESSION_READ_ONLY:
+      case CKR_TOKEN_WRITE_PROTECTED:
+        return TokenOpResult::READ_ONLY;
+        break;
+      default:
+        return TokenOpResult::GENERIC_ERROR;
+        break;
+    }
+  }
+
+  return TokenOpResult::SUCCESS;
+}
+
+bool EngineP11::removePrivateKey(const std::string& labelStr) {
+  CK_OBJECT_CLASS keyClass = CKO_PRIVATE_KEY;
+  CK_KEY_TYPE ckaKeyType = CKK_RSA;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(labelStr.c_str()));
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_KEY_TYPE, &ckaKeyType, sizeof(ckaKeyType) },
+    { CKA_LABEL, labelByte, labelStr.size()}
+  };
+  CK_OBJECT_HANDLE obj;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  std::vector<unsigned char> v;
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return false;
+  }
+
+  CK_ULONG objectCount;
+  rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return false;
+  }
+
+  F->C_FindObjectsFinal(session);
+  return F->C_DestroyObject(p11.getSession(), obj) == CKR_OK ?  true : false;
 }
 
 } // namespace Erpiko

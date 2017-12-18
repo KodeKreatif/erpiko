@@ -3,7 +3,6 @@
 
 #include "erpiko/rsakey-public.h"
 #include "erpiko/oid.h"
-#include "erpiko/token.h"
 #include <memory>
 #include <vector>
 
@@ -13,6 +12,7 @@ namespace RsaAlgorithmConstants {
   const char* const RSA_SHA1 = "1.2.840.113549.1.1.5";
 } // namespace RsaAlgorithmConstants
 
+class Token;
 class RsaKey {
   public:
     /**

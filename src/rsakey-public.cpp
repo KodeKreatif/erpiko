@@ -1,5 +1,6 @@
 #include "erpiko/rsakey-public.h"
 #include "erpiko/utils.h"
+#include "erpiko/token.h"
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
 #include <openssl/err.h>

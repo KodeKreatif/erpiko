@@ -3,12 +3,12 @@
 
 #include "erpiko/bigint.h"
 #include "erpiko/oid.h"
-#include "erpiko/token.h"
 #include <memory>
 #include <vector>
 
 namespace Erpiko {
 
+class Token;
 class RsaPublicKey {
   public:
     /**
