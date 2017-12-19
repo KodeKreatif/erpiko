@@ -68,11 +68,12 @@ class EngineP11 {
     std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
     bool removeData(const std::string& applicationName, const std::string& label);
     bool parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value = nullptr);
-    std::vector<Certificate*> getCertificates();
+    std::vector<Certificate*> getCertificates(bool);
     TokenOpResult::Value putCertificate(const Certificate& cert);
     bool removeCertificate(const Certificate& cert);
     TokenOpResult::Value putPrivateKey(const RsaKey& data, const std::string& labelStr);
     bool removePrivateKey(const std::string& labelStr);
+    RsaKey* getPrivateKey(const RsaPublicKey& publicKey);
 
     ENGINE *erpikoEngine = nullptr;
   };

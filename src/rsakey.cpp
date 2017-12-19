@@ -24,7 +24,7 @@ class RsaKey::Impl {
     EVP_PKEY* evp;
     bool evpPopulated = false;
     std::unique_ptr<RsaPublicKey> publicKey;
-    bool onDevice = false;
+    bool isOnDevice = false;
 
     Impl(Token* t = nullptr) {
       rsa = RSA_new();
@@ -68,7 +68,7 @@ class RsaKey::Impl {
       evpPopulated = true;
       resetPublicKey();
       if (erpikoEngine != nullptr) {
-        onDevice = true;
+        isOnDevice = true;
       }
     }
 
@@ -99,6 +99,7 @@ class RsaKey::Impl {
 
           evpPopulated = true;
           bits = BN_num_bits(evp->pkey.rsa->n);
+          resetPublicKey();
         }
       } else {
         EVP_PKEY *ret;
@@ -156,6 +157,16 @@ class RsaKey::Impl {
 
       return ret;
 
+    }
+
+    bool onDevice() {
+      if (evpPopulated &&
+          evp->pkey.rsa != nullptr &&
+          evp->pkey.rsa->d != nullptr &&
+          BN_is_one(evp->pkey.rsa->d)) {
+        return true;
+      };
+      return isOnDevice;
     }
 
 };
@@ -259,7 +270,7 @@ const std::vector<unsigned char> RsaKey::sign(const std::vector<unsigned char> d
 
 bool
 RsaKey::onDevice() const {
-  return impl->onDevice;
+  return impl->onDevice();
 }
 
 } // namespace Erpiko

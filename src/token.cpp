@@ -81,8 +81,8 @@ P11Token::removeData(const std::string& applicationName, const std::string& labe
 }
 
 std::vector<Certificate*>
-P11Token::getCertificates() {
-  return impl->engine.getCertificates();
+P11Token::getCertificates(bool withPrivateKey) {
+  return impl->engine.getCertificates(withPrivateKey);
 }
 
 TokenOpResult::Value
@@ -103,6 +103,11 @@ P11Token::putPrivateKey(const RsaKey& data, const std::string& labelStr) {
 bool
 P11Token::removePrivateKey(const std::string& labelStr) {
   return impl->engine.removePrivateKey(labelStr);
+}
+
+RsaKey*
+P11Token::getPrivateKey(const RsaPublicKey& publicKey) {
+  return impl->engine.getPrivateKey(publicKey);
 }
 
 void *
