@@ -185,7 +185,7 @@ SCENARIO("Token init", "[.][p11]") {
 
       REQUIRE(r == true);
 
-      std::vector<Erpiko::Certificate*> certs = t.getCertificates();
+      std::vector<Erpiko::Certificate*> certs = t.getCertificates(false);
       int certsTotal = certs.size();
 
       auto src = DataSource::fromFile("assets/verify/pkitbverify1.pem");
@@ -216,7 +216,7 @@ SCENARIO("Token init", "[.][p11]") {
       auto res = t.removeCertificate(*pkitbverify1Cert); // now check result
       REQUIRE(res == true);
 
-      certs = t.getCertificates();
+      certs = t.getCertificates(false);
       for (auto const& cert : certs) {
         std::string cN = cert->subjectIdentity().get("commonName");
         std::cout << "- commonName : " << cN << std::endl;
@@ -227,6 +227,7 @@ SCENARIO("Token init", "[.][p11]") {
       auto p12Data = src->readAll();
       auto p12 = Erpiko::Pkcs12::fromDer(p12Data, "123456");
       const RsaKey& pk = p12->privateKey();
+      const Certificate& certp12 = p12->certificate();
 
       t.removePrivateKey("omama"); // ignore result
 
@@ -242,6 +243,14 @@ SCENARIO("Token init", "[.][p11]") {
       } else if (putCertResult == TokenOpResult::READ_ONLY) {
          std::cout << "read only" << std::endl;
       }
+
+      auto privKeyFromToken = t.getPrivateKey(certp12.publicKey());
+      REQUIRE(privKeyFromToken != nullptr);
+      REQUIRE(privKeyFromToken->onDevice() == true);
+
+      auto der1_1 = privKeyFromToken->publicKey().toDer();
+      auto der1_2 = certp12.publicKey().toDer();
+      REQUIRE(der1_1 == der1_2);
 
       putPrivKeyResult = t.putPrivateKey(pk, "omama");
       REQUIRE(putPrivKeyResult == TokenOpResult::GENERIC_ERROR);

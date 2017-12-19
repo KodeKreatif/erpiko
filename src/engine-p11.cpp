@@ -6,6 +6,8 @@
 #include "engine-p11.h"
 #include "pkcs11/cryptoki.h"
 #include <openssl/rsa.h>
+#include "openssl/bn.h"
+#include <openssl/evp.h>
 #ifdef WIN32
 #include <Windows.h>
 #else
@@ -96,6 +98,39 @@ int rsaKeygen(RSA *rsa, int bits, BIGNUM *exp, BN_GENCB *cb) {
   }
   return 0;
 }
+
+CK_OBJECT_HANDLE findPrivateKey(const RsaPublicKey& publicKey) {
+  CK_OBJECT_CLASS keyClass = CKO_PRIVATE_KEY;
+  CK_KEY_TYPE pKeyType = CKK_RSA;
+  auto modulus = publicKey.modulus().dump();
+  auto exponent = publicKey.exponent().dump();
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_MODULUS, modulus.data(), modulus.size() },
+    { CKA_PUBLIC_EXPONENT, exponent.data(), exponent.size() },
+  };
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) return 0;
+  return key;
+}
+
+
 
 CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
   CK_BYTE id[] = { (unsigned char) keyId };
@@ -608,14 +643,24 @@ bool EngineP11::parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<
   return true;
 }
 
-std::vector<Certificate*> EngineP11::getCertificates() {
+std::vector<Certificate*> EngineP11::getCertificates(bool withPrivateKey) {
   std::vector<Certificate*> certs;
-  std::vector<std::string> labels;
+  std::vector<Certificate*> results;
   CK_OBJECT_HANDLE object;
   CK_ULONG count;
   CK_RV rv;
 
-  rv = F->C_FindObjectsInit(session, NULL, 0);
+  CK_OBJECT_CLASS keyClass = CKO_CERTIFICATE;
+  CK_CERTIFICATE_TYPE certType =  CKC_X_509;
+  CK_BBOOL trueValue = CK_TRUE;
+
+  CK_ATTRIBUTE t[] = {
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_CERTIFICATE_TYPE, &certType, sizeof(certType) },
+  };
+
+  rv = F->C_FindObjectsInit(session, t, 3);
   if (rv != CKR_OK) {
     return certs;
   }
@@ -627,44 +672,29 @@ std::vector<Certificate*> EngineP11::getCertificates() {
     if (count == 0) {
       break;
     }
-    CK_ATTRIBUTE labelAttr = { CKA_LABEL, NULL, 0 };
-    auto r = this->parseAttr(object, labelAttr, NULL);
-    if (!r) {
-      break;
-    }
-    std::string label ((char *)labelAttr.pValue);
-    if (label.length() >= 16) {
-      labels.push_back(label);
-    }
-  }
-  F->C_FindObjectsFinal(session);
-  for (auto const& label : labels) {
-    CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
-    CK_ATTRIBUTE certificateSearchTemplate[] = {
-      {CKA_LABEL, labelByte, label.size()},
-    };
 
-    CK_RV rv = F->C_FindObjectsInit(session, certificateSearchTemplate, 1);
-    if (rv != CKR_OK) {
-      break;
-    }
-
-    CK_OBJECT_HANDLE certObject;
-    CK_ULONG certObjectCount;
-    rv = F->C_FindObjects(session, &certObject, 1, &certObjectCount);
-    if (rv != CKR_OK) {
-      continue;
-    }
-    rv = F->C_FindObjectsFinal(session);
     CK_ATTRIBUTE certAttr = {CKA_VALUE, NULL_PTR, 1};
     std::vector<unsigned char> value;
-    auto r = this->parseAttr(certObject, certAttr, &value);
+    auto r = parseAttr(object, certAttr, &value);
     if (r && sizeof(value) > 0) {
       auto cert = Certificate::fromDer(value);
       certs.push_back(cert);
     }
   }
-  return certs;
+  F->C_FindObjectsFinal(session);
+
+  if (withPrivateKey) {
+    for (auto const& cert : certs) {
+      auto rsaKey = findPrivateKey(cert->publicKey());
+      if (rsaKey != 0) {
+        results.push_back(cert);
+      }
+    }
+    return results;
+  } else {
+    return certs;
+  }
+
 }
 
 bool EngineP11::removeCertificate(const Certificate& cert) {
@@ -681,23 +711,22 @@ bool EngineP11::removeCertificate(const Certificate& cert) {
     { CKA_LABEL, labelByte, serialNumberStr.size()}
   };
   CK_OBJECT_HANDLE obj;
-  EngineP11& p11 = EngineP11::getInstance();
 
   std::vector<unsigned char> v;
   CK_RV rv = CKR_OK;
-  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  rv = F->C_FindObjectsInit(session, t, 4);
   if (rv != CKR_OK) {
     return false;
   }
 
   CK_ULONG objectCount;
-  rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+  rv = F->C_FindObjects(session, &obj, 1, &objectCount);
   if (rv != CKR_OK) {
     return false;
   }
 
   F->C_FindObjectsFinal(session);
-  return F->C_DestroyObject(p11.getSession(), obj) == CKR_OK ?  true : false;
+  return F->C_DestroyObject(session, obj) == CKR_OK ?  true : false;
 }
 
 TokenOpResult::Value
@@ -725,11 +754,10 @@ EngineP11::putCertificate(const Certificate& cert) {
     { CKA_LABEL, labelByte, serialNumberStr.size()}
   };
 
-  EngineP11& p11 = EngineP11::getInstance();
   CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 
-  rv = F->C_CreateObject(p11.getSession(), t, 8, &obj);
+  rv = F->C_CreateObject(session, t, 8, &obj);
 
   if (rv != CKR_OK) {
     switch (rv) {
@@ -854,6 +882,45 @@ bool EngineP11::removePrivateKey(const std::string& labelStr) {
 
   F->C_FindObjectsFinal(session);
   return F->C_DestroyObject(p11.getSession(), obj) == CKR_OK ?  true : false;
+}
+
+RsaKey* EngineP11::getPrivateKey(const RsaPublicKey& publicKey) {
+  auto key = findPrivateKey(publicKey);
+  auto modulus = publicKey.modulus().dump();
+  auto exponent = publicKey.exponent().dump();
+
+  if (!key) return nullptr;
+
+  RsaKey* ret = nullptr;
+  RSA* rsa = RSA_new();
+  BIGNUM* empty = BN_new();
+  BN_one(empty);
+  EVP_PKEY* evp = EVP_PKEY_new();
+  if ((rsa->n = BN_bin2bn(modulus.data(), modulus.size(), nullptr)) != nullptr)
+  if ((rsa->e = BN_bin2bn(exponent.data(), exponent.size(), nullptr)) != nullptr)
+  {
+    rsa->d = empty;
+    rsa->p = empty;
+    rsa->q = empty;
+    rsa->dmp1 = empty;
+    rsa->dmq1 = empty;
+    rsa->iqmp = empty;
+
+    EVP_PKEY_set1_RSA(evp, rsa);
+    auto der = Converters::rsaKeyToDer(evp, "");
+    ret = RsaKey::fromDer(der);
+  }
+  if (!ret && rsa) {
+    RSA_free(rsa);
+  }
+
+  if (evp) {
+    EVP_PKEY_free(evp);
+  }
+  if (empty) {
+    BN_free(empty);
+  }
+  return ret;
 }
 
 } // namespace Erpiko

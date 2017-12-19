@@ -101,9 +101,10 @@ class Token {
 
     /**
      * Gets list of certificate(s) from smartcard
+     * @param withPrivateKey whether the certificates should be accompanied by a private key
      * @return a vector of Erpiko::Certificate*
      */
-    virtual std::vector<Certificate*> getCertificates() = 0;
+    virtual std::vector<Certificate*> getCertificates(bool withPrivateKey = false) = 0;
 
     /**
      * Puts a certificate into token
@@ -126,6 +127,13 @@ class Token {
      * @return Token operation result
      */
     virtual TokenOpResult::Value putPrivateKey(const RsaKey& data, const std::string& labelStr) = 0;
+
+    /**
+     * Gets a private key from the token
+     * @param publicKey of the private key
+     * @return a RsaKey with onDevice property true
+     */
+    virtual RsaKey* getPrivateKey(const RsaPublicKey& publicKey) = 0;
 
     /**
      * Removes a private key from the token
