@@ -465,20 +465,35 @@ EngineP11::logout() {
   return false;
 }
 
-bool EngineP11::waitForCardStatus(int &slot) {
+CardStatus::Value EngineP11::waitForCardStatus(int &slot) {
   std::cout << "Waiting for the slot event...\n";
   CK_SLOT_ID slotId;
   CK_RV rvslot = F->C_WaitForSlotEvent(0, &slotId, nullptr);
-  if (rvslot != CKR_OK) {
-    return false;
+
+  // Some driver like acospkcs11.dll could not handle C_WaitForSlotEvent
+  if (rvslot != CKR_TOKEN_NOT_PRESENT
+  && rvslot != CKR_ARGUMENTS_BAD
+  && rvslot != CKR_CRYPTOKI_NOT_INITIALIZED
+  && rvslot != CKR_FUNCTION_FAILED
+  && rvslot != CKR_GENERAL_ERROR
+  && rvslot != CKR_HOST_MEMORY
+  && rvslot != CKR_NO_EVENT
+  && rvslot != CKR_OK
+  ) {
+    return CardStatus::NOT_SUPPORTED;
   }
+  if (rvslot != CKR_OK) {
+    return CardStatus::NOT_PRESENT;
+  }
+
   CK_TOKEN_INFO pInfo;
   slot = (int)slotId;
   CK_RV rv = F->C_GetTokenInfo(slotId, &pInfo);
   if (rv == CKR_TOKEN_NOT_PRESENT) {
-    return false;
+    return CardStatus::NOT_PRESENT;
   }
-  return true;
+
+  return CardStatus::PRESENT;
 }
 
 bool
@@ -776,6 +791,51 @@ EngineP11::putCertificate(const Certificate& cert) {
   }
 
   return TokenOpResult::SUCCESS;
+}
+
+std::vector<TokenInfo> EngineP11::getAllTokensInfo() {
+  CK_ULONG listCount;
+  CK_RV rv;
+  CK_SLOT_ID_PTR pSlotList;
+  std::vector<TokenInfo> slots; 
+  rv = F->C_GetSlotList(CK_TRUE, NULL_PTR, &listCount);
+  if (rv != CKR_OK || listCount < 1) {
+    return slots;
+  }
+  pSlotList = (CK_SLOT_ID_PTR)malloc(listCount*sizeof(CK_SLOT_ID));
+  rv = F->C_GetSlotList(CK_TRUE, pSlotList, &listCount);
+  if (rv == CKR_OK) {
+    for (int i=0; i < (int)listCount; i++) {
+      CK_SLOT_INFO slotInfo;
+      CK_TOKEN_INFO tokenInfo;
+      TokenInfo tInfo;
+      (void) F->C_GetSlotInfo(pSlotList[i], &slotInfo);
+      (void) F->C_GetTokenInfo(pSlotList[i], &tokenInfo);
+      std::string m = (string)(char*)tokenInfo.manufacturerID;
+      tInfo.manufacturer = m.substr(0,32);
+      std::string s = (string)(char*)tokenInfo.manufacturerID;
+      tInfo.manufacturer = s.substr(0,32);
+      s = (string)(char*)tokenInfo.label;
+      tInfo.label = s.substr(0,32);
+      s = (string)(char*)tokenInfo.model;
+      tInfo.model = s.substr(0,16);
+      s = (string)(char*)tokenInfo.serialNumber;
+      tInfo.serialNumber = s.substr(0,16);
+      tInfo.maxSessionCount = (int)tokenInfo.ulMaxSessionCount;
+      tInfo.sessionCount = (int)tokenInfo.ulSessionCount;
+      tInfo.maxRwSessionCount = (int)tokenInfo.ulMaxRwSessionCount;
+      tInfo.rwSessionCount = (int)tokenInfo.ulRwSessionCount;
+      tInfo.maxPinlen = (int)tokenInfo.ulMaxPinLen;
+      tInfo.minPinlen = (int)tokenInfo.ulMinPinLen;
+      tInfo.totalPublicMemory = (int)tokenInfo.ulTotalPublicMemory;
+      tInfo.freePublicMemory = (int)tokenInfo.ulFreePublicMemory;
+      tInfo.totalPrivateMemory = (int)tokenInfo.ulTotalPrivateMemory;
+      tInfo.freePrivateMemory = (int)tokenInfo.ulFreePrivateMemory;
+      slots.push_back(tInfo);
+    }
+  }
+  free(pSlotList);
+  return slots;
 }
 
 TokenOpResult::Value

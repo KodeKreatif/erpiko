@@ -15,6 +15,7 @@ class P11Token : Token {
     virtual void setKeyId(const unsigned int id, const std::string& label);
     virtual TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
     virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
+    virtual std::vector<TokenInfo> getAllTokensInfo();
     virtual bool removeData(const std::string& applicationName, const std::string& label);
     virtual std::vector<Certificate*> getCertificates(bool);
     virtual TokenOpResult::Value putCertificate(const Certificate& cert);

@@ -72,7 +72,6 @@ SCENARIO("Token init", "[.][p11]") {
 
       std::cout << "Please insert the smartcard to slot" << std::endl;
 
-
       int slotId;
 #ifdef WIN32
       auto status = t.waitForCardStatus(slotId);
@@ -81,7 +80,6 @@ SCENARIO("Token init", "[.][p11]") {
           status = t.waitForCardStatus(slotId);
       }
       REQUIRE(status == CardStatus::PRESENT);
-      //std::cout << "Slot event occured. Card is present on slot : " << slotId << std::endl;
 
       std::cout << "Logging in." << std::endl;
       r = t.login(slotId, "qwerty");
@@ -89,14 +87,27 @@ SCENARIO("Token init", "[.][p11]") {
       auto status = t.waitForCardStatus(slotId);
       REQUIRE(status == CardStatus::PRESENT);
       std::cout << "Slot event occured. Card is present." << std::endl;
+      std::cout << "Smartcard has been inserted" << std::endl;
 
       r = t.login(933433059, "qwerty");
 #endif
-      REQUIRE(r == true);
-      std::cout << "Smartcard has been inserted" << std::endl;
 
       REQUIRE(r == true);
       std::cout << "Logged in" << std::endl;
+
+      std::vector<TokenInfo> slots = t.getAllTokensInfo();
+      REQUIRE(sizeof(slots) > 0);
+      for (auto const& slot : slots) {
+        std::cout << "TokenInfo" << std::endl;
+        std::cout << "Label : " << slot.label << std::endl;
+        REQUIRE(slot.label.length() > 0);
+        std::cout << "Manufacturer : " << slot.manufacturer << std::endl;
+        REQUIRE(slot.manufacturer.length() > 0);
+        std::cout << "Model : " << slot.model << std::endl;
+        REQUIRE(slot.model.length() > 0);
+        std::cout << "serialNumber : " << slot.serialNumber << std::endl;
+        REQUIRE(slot.serialNumber.length() > 0);
+      }
 
       t.setKeyId(02, "key2");
       k = RsaKey::create(1024, &t);

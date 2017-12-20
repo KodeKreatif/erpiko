@@ -42,11 +42,7 @@ P11Token::isValid() {
 }
 
 CardStatus::Value P11Token::waitForCardStatus(int &slot) const {
-  bool result = impl->engine.waitForCardStatus(slot);
-  if (result != true) {
-    return CardStatus::NOT_PRESENT;
-  }
-  return CardStatus::PRESENT;
+  return impl->engine.waitForCardStatus(slot);
 }
 
 bool
@@ -88,6 +84,10 @@ P11Token::getCertificates(bool withPrivateKey) {
 TokenOpResult::Value
 P11Token::putCertificate(const Certificate& cert) {
   return impl->engine.putCertificate(cert);
+}
+
+std::vector<TokenInfo> P11Token::getAllTokensInfo() {
+  return impl->engine.getAllTokensInfo();
 }
 
 bool

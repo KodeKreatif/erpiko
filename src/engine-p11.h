@@ -11,6 +11,7 @@
 #ifdef WIN32
 #include <Windows.h>
 #endif
+
 using namespace std;
 
 namespace Erpiko {
@@ -41,7 +42,7 @@ class EngineP11 {
     void init();
     bool load(const std::string path);
     void finalize();
-    bool waitForCardStatus(int &slot);
+    CardStatus::Value waitForCardStatus(int &slot);
     bool login(const unsigned long slot, const string& pin);
     bool logout();
     unsigned long getSession() {
@@ -68,6 +69,7 @@ class EngineP11 {
     std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
     bool removeData(const std::string& applicationName, const std::string& label);
     bool parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value = nullptr);
+    std::vector<TokenInfo> getAllTokensInfo();
     std::vector<Certificate*> getCertificates(bool);
     TokenOpResult::Value putCertificate(const Certificate& cert);
     bool removeCertificate(const Certificate& cert);
