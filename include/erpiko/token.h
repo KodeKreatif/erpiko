@@ -14,6 +14,7 @@ namespace CardStatus {
 enum Value {
     PRESENT,
     NOT_PRESENT,
+    NOT_SUPPORTED,
 };
 }
 
@@ -25,6 +26,26 @@ namespace TokenOpResult {
     READ_ONLY,
     ALREADY_EXIST,
   };
+};
+
+struct TokenInfo {
+  std::string label;
+  std::string manufacturer;
+  std::string model;
+  std::string serialNumber;
+  std::string flags;
+  int maxSessionCount;
+  int sessionCount;
+  int maxRwSessionCount;
+  int rwSessionCount;
+  int maxPinlen;
+  int minPinlen;
+  int totalPublicMemory;
+  int freePublicMemory;
+  int totalPrivateMemory;
+  int freePrivateMemory;
+  std::string hardwareVersion;
+  std::string firmwareVersion;
 };
 
 /**
@@ -143,6 +164,12 @@ class Token {
     virtual bool removePrivateKey(const std::string& labelStr) = 0;
 
 
+
+    /**
+     * Get the list of token information if it presents on slot(s)
+     * @return slots return the slots that has token present, each described with TokenInfo object
+     */
+    virtual std::vector<TokenInfo> getAllTokensInfo() = 0;
 
     /**
      * Returns internal engine handle
