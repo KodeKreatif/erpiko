@@ -133,6 +133,7 @@ CK_OBJECT_HANDLE findPrivateKey(const RsaPublicKey& publicKey) {
 
 
 CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
+  int attrLen = 3;
   CK_BYTE id[] = { (unsigned char) keyId };
   CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
   CK_OBJECT_CLASS keyClass = type;
@@ -140,15 +141,19 @@ CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_LABEL, subject, label.size()},
     { CKA_ID, id, sizeof(id) },
-    { CKA_LABEL, subject, label.size()}
   };
+  if (keyId > -1) {
+    t[3] = { CKA_ID, id, sizeof(id) };
+    attrLen = 4;
+  }
   CK_ULONG objectCount;
   CK_OBJECT_HANDLE key;
   EngineP11& p11 = EngineP11::getInstance();
 
   CK_RV rv = CKR_OK;
-  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  rv = F->C_FindObjectsInit(p11.getSession(), t, attrLen);
   if (rv != CKR_OK) {
     return 0;
   }
@@ -161,6 +166,10 @@ CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
   rv = F->C_FindObjectsFinal(p11.getSession());
   if (objectCount == 0) return 0;
   return key;
+}
+
+CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, const string& label) {
+  return findKey(type, -1, label);
 }
 
 

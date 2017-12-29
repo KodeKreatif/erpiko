@@ -57,6 +57,11 @@ class EngineP11 {
       keyId = id;
     }
 
+    void unsetKey() {
+      keyId = -1;
+      keyLabel = "";
+    }
+
     const string& getKeyLabel() const {
       return keyLabel;
     }

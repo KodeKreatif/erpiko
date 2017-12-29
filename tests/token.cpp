@@ -7,6 +7,7 @@
 #include "erpiko/digest.h"
 #include "erpiko/certificate.h"
 #include "erpiko/pkcs12.h"
+#include "erpiko/enveloped-data.h"
 #include <iostream>
 
 using namespace std;
@@ -265,8 +266,6 @@ SCENARIO("Token init", "[.][p11]") {
 
       putPrivKeyResult = t.putPrivateKey(pk, "omama");
       REQUIRE(putPrivKeyResult == TokenOpResult::GENERIC_ERROR);
-      res = t.removePrivateKey("omama"); // check result
-      REQUIRE(res == true);
 
       ObjectId o(DigestConstants::SHA256);
       std::string appName = "appName";
@@ -294,6 +293,34 @@ SCENARIO("Token init", "[.][p11]") {
 
       res = t.removeData(appName, label); // check result
       REQUIRE(res == true);
+
+      // Decrypt
+      t.unsetKey();
+      t.setKeyLabel("omama");
+      std::cout << "decrypt with privkey from token" << std::endl;
+      src = DataSource::fromFile("assets/data.txt");
+      auto v = src->readAll();
+
+      EnvelopedData* p7 = new EnvelopedData(certp12, ObjectId("2.16.840.1.101.3.4.1.42"));
+      DataSource* toBeEncrypted = DataSource::fromFile("assets/data.txt");
+      auto dataVector = toBeEncrypted->readAll();
+      p7->addRecipient(certp12);
+      p7->encrypt(dataVector);
+      auto der = p7->toDer();
+
+      EnvelopedData* p7v = EnvelopedData::fromDer(der);
+
+      // Simulate that we didn't have the private key in memory help the decryption
+      auto privKey = t.getPrivateKey(certp12.publicKey());
+      // This could be an incomplete private key with empty private exponent and other secret components,
+      // but it has onDevice() as true. 
+      auto decrypted = p7v->decrypt(certp12, *privKey);
+      REQUIRE(v == decrypted);
+      decrypted.clear();
+
+      res = t.removePrivateKey("omama"); // check result
+      REQUIRE(res == true);
+
     }
   }
 }

@@ -61,6 +61,21 @@ P11Token::setKeyId(const unsigned int id, const std::string& label) {
   impl->engine.setKeyId(id);
 }
 
+void
+P11Token::setKeyId(const unsigned int id) {
+  impl->engine.setKeyId(id);
+}
+
+void
+P11Token::setKeyLabel(const std::string& label) {
+  impl->engine.setKeyLabel(label);
+}
+
+void
+P11Token::unsetKey() {
+  impl->engine.unsetKey();
+}
+
 TokenOpResult::Value
 P11Token::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
   return impl->engine.putData(applicationName, label, data);

@@ -215,8 +215,15 @@ class EnvelopedData::Impl {
     }
 
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) {
+      EVP_PKEY *pubPkey = nullptr;
       EVP_PKEY *pkey = nullptr;
-      pkey = Converters::rsaKeyToPkey(privateKey);
+      if (privateKey.onDevice()) {
+        // If it's an on-device private key, use public key EVP to mock private key's
+        // The LibreSSL will compare type, ameth and rsa->n
+        pkey = Converters::rsaPublicKeyToPkey(certificate.publicKey());
+      } else {
+        pkey = Converters::rsaKeyToPkey(privateKey);
+      }
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
@@ -247,7 +254,13 @@ class EnvelopedData::Impl {
 
     void decrypt(std::function<void(std::string)> onData, std::function<void(void)> onEnd, const Certificate& certificate, const RsaKey& privateKey, int chunkSize = 0) {
       EVP_PKEY *pkey = nullptr;
-      pkey = Converters::rsaKeyToPkey(privateKey);
+      if (privateKey.onDevice()) {
+        // If it's an on-device private key, use public key EVP to mock private key's
+        // The LibreSSL will compare type, ameth and rsa->n
+        pkey = Converters::rsaPublicKeyToPkey(certificate.publicKey());
+      } else {
+        pkey = Converters::rsaKeyToPkey(privateKey);
+      }
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
