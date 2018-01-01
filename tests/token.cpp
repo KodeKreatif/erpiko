@@ -242,6 +242,7 @@ SCENARIO("Token init", "[.][p11]") {
       const Certificate& certp12 = p12->certificate();
 
       t.removePrivateKey("omama"); // ignore result
+      t.removePrivateKey("opapa"); // ignore result
 
       auto putPrivKeyResult = t.putPrivateKey(pk, "omama");
       REQUIRE(putPrivKeyResult == TokenOpResult::SUCCESS);
@@ -294,12 +295,64 @@ SCENARIO("Token init", "[.][p11]") {
       res = t.removeData(appName, label); // check result
       REQUIRE(res == true);
 
-      // Decrypt
-      t.unsetKey();
-      t.setKeyLabel("omama");
+      res = t.removePrivateKey("omama"); // check result
+      REQUIRE(res == true);
+      t.logout();
+    }
+  }
+}
+SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
+  GIVEN("An initialized token") {
+    THEN("Encryption and decryption with key label") {
+      P11Token p11Token;
+      Token& t = (Token&)p11Token;
+
+#ifdef WIN32
+	  auto r = t.load("c:\\windows\\system32\\eTPKCS11.dll");
+#else
+	  auto r = t.load("/home/mdamt/src/tmp/hsm/lib/softhsm/libsofthsm2.so");
+#endif
+      REQUIRE(r == true);
+      std::cout << "Please insert the smartcard to slot" << std::endl;
+      int slotId;
+#ifdef WIN32
+      auto status = t.waitForCardStatus(slotId);
+      if (status == CardStatus::NOT_PRESENT) {
+          std::cout << "Token not present, please put it back...";
+          status = t.waitForCardStatus(slotId);
+      }
+      REQUIRE(status == CardStatus::PRESENT);
+
+      std::cout << "Logging in." << std::endl;
+      r = t.login(slotId, "qwerty");
+#else
+      auto status = t.waitForCardStatus(slotId);
+      REQUIRE(status == CardStatus::PRESENT);
+      std::cout << "Slot event occured. Card is present." << std::endl;
+      std::cout << "Smartcard has been inserted" << std::endl;
+
+      r = t.login(933433059, "qwerty");
+#endif
+
+      REQUIRE(r == true);
+      std::cout << "Logged in" << std::endl;
+
+      auto src = DataSource::fromFile("assets/verify/pkitbverify1.p12");
+      auto p12Data = src->readAll();
+      auto p12 = Erpiko::Pkcs12::fromDer(p12Data, "123456");
+      const RsaKey& pk = p12->privateKey();
+      const Certificate& certp12 = p12->certificate();
+
+      t.removePrivateKey("omama"); // ignore result
+      auto putPrivKeyResult = t.putPrivateKey(pk, "omama");
+      REQUIRE(putPrivKeyResult == TokenOpResult::SUCCESS);
+
       std::cout << "decrypt with privkey from token" << std::endl;
       src = DataSource::fromFile("assets/data.txt");
       auto v = src->readAll();
+
+      t.unsetKey();
+      t.setKeyLabel("omama"); // Do encrypt decrypt with the help of key label
 
       EnvelopedData* p7 = new EnvelopedData(certp12, ObjectId("2.16.840.1.101.3.4.1.42"));
       DataSource* toBeEncrypted = DataSource::fromFile("assets/data.txt");
@@ -318,8 +371,86 @@ SCENARIO("Token init", "[.][p11]") {
       REQUIRE(v == decrypted);
       decrypted.clear();
 
-      res = t.removePrivateKey("omama"); // check result
+      auto res = t.removePrivateKey("omama"); // check result
       REQUIRE(res == true);
+
+      // Clean
+      t.removePrivateKey("omama"); // ignore result
+      t.logout();
+
+    }
+
+    THEN("Encryption and decryption without key label") {
+      // The private key will be queried by public key's modulus and exponent
+      P11Token p11Token;
+      Token& t = (Token&)p11Token;
+
+#ifdef WIN32
+	  auto r = t.load("c:\\windows\\system32\\eTPKCS11.dll");
+#else
+	  auto r = t.load("/home/mdamt/src/tmp/hsm/lib/softhsm/libsofthsm2.so");
+#endif
+      REQUIRE(r == true);
+      std::cout << "Please insert the smartcard to slot" << std::endl;
+      int slotId;
+#ifdef WIN32
+      auto status = t.waitForCardStatus(slotId);
+      if (status == CardStatus::NOT_PRESENT) {
+          std::cout << "Token not present, please put it back...";
+          status = t.waitForCardStatus(slotId);
+      }
+      REQUIRE(status == CardStatus::PRESENT);
+
+      std::cout << "Logging in." << std::endl;
+      r = t.login(slotId, "qwerty");
+#else
+      auto status = t.waitForCardStatus(slotId);
+      REQUIRE(status == CardStatus::PRESENT);
+      std::cout << "Slot event occured. Card is present." << std::endl;
+      std::cout << "Smartcard has been inserted" << std::endl;
+
+      r = t.login(933433059, "qwerty");
+#endif
+
+      REQUIRE(r == true);
+      std::cout << "Logged in" << std::endl;
+
+      auto src = DataSource::fromFile("assets/verify/pkitbverify1.p12");
+      auto p12Data = src->readAll();
+      auto p12 = Erpiko::Pkcs12::fromDer(p12Data, "123456");
+      const RsaKey& pk = p12->privateKey();
+      const Certificate& certp12 = p12->certificate();
+
+      t.removePrivateKey("omama"); // ignore result
+      auto putPrivKeyResult = t.putPrivateKey(pk, "opapa");
+      REQUIRE(putPrivKeyResult == TokenOpResult::SUCCESS);
+
+      std::cout << "decrypt with privkey from token" << std::endl;
+      src = DataSource::fromFile("assets/data.txt");
+      auto v = src->readAll();
+
+      t.unsetKey(); // Do encrypt decrypt without the help of key label
+
+      EnvelopedData* p7 = new EnvelopedData(certp12, ObjectId("2.16.840.1.101.3.4.1.42"));
+      DataSource* toBeEncrypted = DataSource::fromFile("assets/data.txt");
+      auto dataVector = toBeEncrypted->readAll();
+      p7->addRecipient(certp12);
+      p7->encrypt(dataVector);
+      auto der = p7->toDer();
+
+      EnvelopedData* p7v = EnvelopedData::fromDer(der);
+
+      // Simulate that we didn't have the private key in memory help the decryption
+      auto privKey = t.getPrivateKey(certp12.publicKey());
+      // This could be an incomplete private key with empty private exponent and other secret components,
+      // but it has onDevice() as true. 
+      auto decrypted = p7v->decrypt(certp12, *privKey);
+      REQUIRE(v == decrypted);
+      decrypted.clear();
+
+      // Clean
+      t.removePrivateKey("opapa"); // ignore result
+      t.logout();
 
     }
   }
