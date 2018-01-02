@@ -199,8 +199,10 @@ namespace Converters {
     RSA* rsa;
     std::vector<unsigned char> der = key.toDer();
     BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
+    (void) mem;
     rsa = RSA_new();
     auto ret = d2i_RSA_PUBKEY_bio(mem, &rsa);
+    (void) ret; 
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_RSA(pkey, rsa);
     return pkey;
