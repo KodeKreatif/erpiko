@@ -248,7 +248,7 @@ int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *r
   };
 
   CK_OBJECT_HANDLE key;
-  if (p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
+  if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
     key = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
   } else {
     key = findPublicKey(rsa);
@@ -283,7 +283,7 @@ int rsaPrivDecrypt(int flen, const unsigned char *from, unsigned char *to, RSA *
   };
  
   CK_OBJECT_HANDLE key;
-  if (p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
+  if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
     key = findKey(CKO_PRIVATE_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
   } else {
     key = findPrivateKey(rsa);

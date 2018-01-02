@@ -215,7 +215,6 @@ class EnvelopedData::Impl {
     }
 
     const std::vector<unsigned char> decrypt(const Certificate& certificate, const RsaKey& privateKey) {
-      EVP_PKEY *pubPkey = nullptr;
       EVP_PKEY *pkey = nullptr;
       if (privateKey.onDevice()) {
         // If it's an on-device private key, use public key EVP to mock private key's
