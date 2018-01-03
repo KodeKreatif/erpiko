@@ -126,22 +126,53 @@ CK_OBJECT_HANDLE findPrivateKey(const RsaPublicKey& publicKey) {
   }
 
   rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) {
+    return 0;
+  }
+  return key;
+}
+
+CK_OBJECT_HANDLE findPrivateKey(const RSA* rsa) {
+  CK_OBJECT_CLASS keyClass = CKO_PRIVATE_KEY;
+  CK_KEY_TYPE pKeyType = CKK_RSA;
+  PUT(modulus, rsa->n);
+  PUT(exponent, rsa->e);
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_MODULUS, modulus.data(), modulus.size() },
+    { CKA_PUBLIC_EXPONENT, exponent.data(), exponent.size() },
+  };
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 4);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
   if (objectCount == 0) return 0;
   return key;
 }
 
-
-
-CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
-  CK_BYTE id[] = { (unsigned char) keyId };
-  CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
-  CK_OBJECT_CLASS keyClass = type;
+CK_OBJECT_HANDLE findPublicKey(const RSA* rsa) {
+  CK_OBJECT_CLASS keyClass = CKO_PUBLIC_KEY;
   CK_KEY_TYPE pKeyType = CKK_RSA;
+  PUT(modulus, rsa->n);
+  PUT(exponent, rsa->e);
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
-    { CKA_ID, id, sizeof(id) },
-    { CKA_LABEL, subject, label.size()}
+    { CKA_MODULUS, modulus.data(), modulus.size() },
+    { CKA_PUBLIC_EXPONENT, exponent.data(), exponent.size() },
   };
   CK_ULONG objectCount;
   CK_OBJECT_HANDLE key;
@@ -164,6 +195,48 @@ CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
 }
 
 
+
+CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
+  int attrLen = 3;
+  CK_BYTE id[] = { (unsigned char) keyId };
+  CK_BYTE* subject = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_OBJECT_CLASS keyClass = type;
+  CK_KEY_TYPE pKeyType = CKK_RSA;
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_LABEL, subject, label.size()},
+    { CKA_ID, id, sizeof(id) },
+  };
+  if (keyId > -1) {
+    t[3] = { CKA_ID, id, sizeof(id) };
+    attrLen = 4;
+  }
+  CK_ULONG objectCount;
+  CK_OBJECT_HANDLE key;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, attrLen);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjects(p11.getSession(), &key, 1, &objectCount);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+
+  rv = F->C_FindObjectsFinal(p11.getSession());
+  if (objectCount == 0) return 0;
+  return key;
+}
+
+CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, const string& label) {
+  return findKey(type, -1, label);
+}
+
+
 int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *rsa, int padding) {
   (void) rsa;
   (void) padding;
@@ -174,7 +247,12 @@ int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *r
     CKM_RSA_PKCS_OAEP, &oaepParams, sizeof(oaepParams)
   };
 
-  CK_OBJECT_HANDLE key = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+  CK_OBJECT_HANDLE key;
+  if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
+    key = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+  } else {
+    key = findPublicKey(rsa);
+  }
   if (key == 0) {
     return 0;
   }
@@ -203,8 +281,13 @@ int rsaPrivDecrypt(int flen, const unsigned char *from, unsigned char *to, RSA *
   CK_MECHANISM mechanism = {
     CKM_RSA_PKCS_OAEP, &oaepParams, sizeof(oaepParams)
   };
-
-  CK_OBJECT_HANDLE key = findKey(CKO_PRIVATE_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+ 
+  CK_OBJECT_HANDLE key;
+  if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
+    key = findKey(CKO_PRIVATE_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+  } else {
+    key = findPrivateKey(rsa);
+  } 
   if (key == 0) {
     return 0;
   }

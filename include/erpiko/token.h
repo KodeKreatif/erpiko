@@ -89,11 +89,29 @@ class Token {
     virtual bool logout() const = 0;
 
     /**
-     * Sets key id and label to be recorded in the device
+     * Sets key id and label to be recorded or used in the device
      * @param id the id of the key
      * @param label the label of the key
      */
     virtual void setKeyId(const unsigned int id, const std::string& label) = 0;
+
+    /**
+     * Sets key id to be recorded or used in the device
+     * @param id the id of the key
+     */
+    virtual void setKeyId(const unsigned int id) = 0;
+
+    /**
+     * Sets key label to be recorded or used in the device
+     * @param id the id of the key
+     * @param label the label of the key
+     */
+    virtual void setKeyLabel(const std::string& label) = 0;
+
+    /**
+     * Unsets both keyId and label
+     */
+    virtual void unsetKey() = 0;
 
     /**
      * Puts an arbitrary data into token

@@ -13,6 +13,9 @@ class P11Token : Token {
     virtual bool login(const unsigned long slot, const std::string& pin) const;
     virtual bool logout() const;
     virtual void setKeyId(const unsigned int id, const std::string& label);
+    virtual void setKeyId(const unsigned int id);
+    virtual void setKeyLabel(const std::string& label);
+    virtual void unsetKey();
     virtual TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
     virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
     virtual std::vector<TokenInfo> getAllTokensInfo();
