@@ -376,6 +376,7 @@ int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned cha
   return 1;
 }
 
+// Currently unused since it can be done outside the token and it only requires a public key
 int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsigned char *sig, unsigned int siglen, const RSA *rsa) {
   (void) rsa;
   (void) type;
@@ -415,7 +416,6 @@ const RSA_METHOD* rsaMethod() {
     m->rsa_pub_enc = rsaPubEncrypt;
     m->rsa_priv_dec = rsaPrivDecrypt;
     m->rsa_sign = rsaSign;
-    m->rsa_verify = rsaVerify;
   }
   return m;
 }
