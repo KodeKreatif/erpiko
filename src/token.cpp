@@ -16,12 +16,22 @@ class P11Token::Impl {
   }
 
   ~Impl() {
-    engine.finalize();
+    if (valid) {
+      engine.finalize();
+      valid = false;
+    }
   }
 
   bool load(string path) {
     valid = engine.load(path);
     return valid;
+  }
+
+  void unload() {
+    if (valid) {
+      engine.finalize();
+      valid = false;
+    }
   }
 
 };
@@ -34,6 +44,11 @@ P11Token::~P11Token() = default;
 bool
 P11Token::load(const std::string path) {
   return impl->load(path);
+}
+
+void
+P11Token::unload() {
+  return impl->unload();
 }
 
 bool
