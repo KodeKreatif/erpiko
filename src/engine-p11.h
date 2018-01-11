@@ -19,7 +19,7 @@ namespace Erpiko {
 class EngineP11 {
   bool initialized = false;
 #ifdef WIN32
-  HMODULE lib;
+  HMODULE lib = nullptr;
 #else
   void* lib = nullptr;
 #endif

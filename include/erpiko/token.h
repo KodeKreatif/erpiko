@@ -60,6 +60,11 @@ class Token {
     virtual bool load(const std::string path) = 0;
 
     /**
+     * Unloads the loaded dynamic library
+     */
+    virtual void unload() = 0;
+
+    /**
      * Checks whether the token is valid or not
      * @return the value
      */

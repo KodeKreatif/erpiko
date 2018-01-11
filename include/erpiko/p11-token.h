@@ -8,6 +8,7 @@ class P11Token : Token {
     P11Token();
     virtual ~P11Token();
     virtual bool load(const std::string path);
+    virtual void unload();
     virtual bool isValid();
     virtual CardStatus::Value waitForCardStatus(int &slot) const;
     virtual bool login(const unsigned long slot, const std::string& pin) const;

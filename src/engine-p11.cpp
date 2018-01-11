@@ -14,7 +14,7 @@
 #include <dlfcn.h>
 #endif
 
-CK_FUNCTION_LIST_PTR F;
+CK_FUNCTION_LIST_PTR F = nullptr;
 
 using namespace std;
 using namespace Erpiko;
@@ -281,13 +281,13 @@ int rsaPrivDecrypt(int flen, const unsigned char *from, unsigned char *to, RSA *
   CK_MECHANISM mechanism = {
     CKM_RSA_PKCS_OAEP, &oaepParams, sizeof(oaepParams)
   };
- 
+
   CK_OBJECT_HANDLE key;
   if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
     key = findKey(CKO_PRIVATE_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
   } else {
     key = findPrivateKey(rsa);
-  } 
+  }
   if (key == 0) {
     return 0;
   }
@@ -511,16 +511,22 @@ EngineP11::load(const string path) {
   if (getF != nullptr) {
     CK_RV rv = getF(&F);
     if (rv != CKR_OK) {
+      lib = nullptr;
+      F = nullptr;
 		return false;
     }
 	rv = F->C_Initialize(nullptr);
 	if (rv != CKR_OK) {
+      lib = nullptr;
+      F = nullptr;
 		return false;
 	}
 	return true;
   }
   cout << "This is not a PKCS#11 library\n";
 
+  lib = nullptr;
+  F = nullptr;
   return false;
 }
 
@@ -880,7 +886,7 @@ std::vector<TokenInfo> EngineP11::getAllTokensInfo() {
   CK_ULONG listCount;
   CK_RV rv;
   CK_SLOT_ID_PTR pSlotList;
-  std::vector<TokenInfo> slots; 
+  std::vector<TokenInfo> slots;
   rv = F->C_GetSlotList(CK_TRUE, NULL_PTR, &listCount);
   if (rv != CKR_OK || listCount < 1) {
     return slots;
