@@ -98,7 +98,6 @@ const std::string Identity::toString(const std::string delimiter) const {
   auto oneLine = X509_NAME_oneline(impl->name, nullptr, 0);
 
   std::string ret = oneLine;
-  free(oneLine);
 
   if (delimiter != "/") {
     std::replace(ret.begin(), ret.end(), '/', ',');
