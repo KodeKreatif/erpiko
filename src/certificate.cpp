@@ -68,7 +68,7 @@ class Certificate::Impl {
         success = true;
         resetValues();
       }
-      delete(mem);
+      BIO_free(mem);
     }
 
     virtual ~Impl() {
