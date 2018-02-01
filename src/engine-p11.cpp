@@ -200,12 +200,13 @@ CK_OBJECT_HANDLE keyFromRSA(const RSA* rsa) {
   std::string label = "A RSA public key object";
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
   CK_BBOOL trueValue = CK_TRUE;
+  CK_BBOOL falseValue = CK_FALSE;
   PUT(modulus, rsa->n);
   PUT(exponent, rsa->e);
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
-    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_TOKEN, &falseValue, sizeof(falseValue) },
     { CKA_LABEL, labelByte, label.size() },
     { CKA_WRAP, &trueValue, sizeof(trueValue) },
     { CKA_ENCRYPT, &trueValue, sizeof(trueValue) },
