@@ -194,7 +194,35 @@ CK_OBJECT_HANDLE findPublicKey(const RSA* rsa) {
   return key;
 }
 
+CK_OBJECT_HANDLE keyFromRSA(const RSA* rsa) {
+  CK_OBJECT_CLASS keyClass = CKO_PUBLIC_KEY;
+  CK_KEY_TYPE pKeyType = CKK_RSA;
+  std::string label = "A RSA public key object";
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BBOOL trueValue = CK_TRUE;
+  PUT(modulus, rsa->n);
+  PUT(exponent, rsa->e);
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_LABEL, labelByte, label.size() },
+    { CKA_WRAP, &trueValue, sizeof(trueValue) },
+    { CKA_ENCRYPT, &trueValue, sizeof(trueValue) },
+    { CKA_MODULUS, modulus.data(), modulus.size() },
+    { CKA_PUBLIC_EXPONENT, exponent.data(), exponent.size() },
+  };
 
+  CK_OBJECT_HANDLE key;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  CK_RV rv = CKR_OK;
+  rv = F->C_CreateObject(p11.getSession(), t, 8, &key);
+  if (rv != CKR_OK) {
+    return 0;
+  }
+  return key;
+}
 
 CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
   int attrLen = 3;
@@ -253,8 +281,12 @@ int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *r
   } else {
     key = findPublicKey(rsa);
   }
+
   if (key == 0) {
-    return 0;
+    key = keyFromRSA(rsa); // Try to make up one then
+    if (key == 0) {
+      return 0;
+    }
   }
 
   CK_RV rv = F->C_EncryptInit(p11.getSession(), &mechanism, key);
@@ -390,6 +422,13 @@ int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsi
   }
 
   CK_OBJECT_HANDLE key = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+
+  if (key == 0) {
+    key = keyFromRSA(rsa); // Try to make up one then
+    if (key == 0) {
+      return 0;
+    }
+  }
 
   CK_RV rv = F->C_VerifyInit(p11.getSession(), &mechanism, key);
   if (rv != CKR_OK) {
