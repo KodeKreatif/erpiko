@@ -148,4 +148,5 @@ test_script:
     xcopy ..\include include /e/i
 
 artifacts:
-- path: erpiko
+- path: erpiko\%CONFIGURATION%\erpiko-%CONFIGURATION%.zip
+  name: erpiko
