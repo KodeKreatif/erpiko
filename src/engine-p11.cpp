@@ -416,6 +416,7 @@ const RSA_METHOD* rsaMethod() {
     m->rsa_pub_enc = rsaPubEncrypt;
     m->rsa_priv_dec = rsaPrivDecrypt;
     m->rsa_sign = rsaSign;
+    m->rsa_verify = rsaVerify;
   }
   return m;
 }
