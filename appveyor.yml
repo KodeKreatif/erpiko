@@ -131,9 +131,9 @@ test_script:
 
     cd C:\erpiko
     
-    mkdir erpiko
+    mkdir erpiko-%platform%-%CONFIGURATION%
 
-    cd erpiko
+    cd erpiko-%platform%-%CONFIGURATION%
 
     mkdir lib
 
@@ -148,4 +148,4 @@ test_script:
     xcopy ..\include include /e/i
 
 artifacts:
-- path: erpiko
+- path: erpiko-%platform%-%CONFIGURATION%
