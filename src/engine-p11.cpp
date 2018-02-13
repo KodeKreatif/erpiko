@@ -888,21 +888,30 @@ EngineP11::putCertificate(const Certificate& cert) {
   // Use serial number hex string as certificate label
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(serialNumberStr.c_str()));
 
-  CK_ATTRIBUTE t[] = {
+  
+
+  std::vector<CK_ATTRIBUTE> tv {
     { CKA_TOKEN, &trueValue, sizeof(trueValue) },
     { CKA_VALUE, data.data(), (CK_ULONG) data.size() },
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_CERTIFICATE_TYPE, &certType, sizeof(certType) },
     { CKA_PRIVATE, &falseValue, sizeof(falseValue) },
-    { CKA_SUBJECT, subjectDer.data(), subjectDer.size() },
-    { CKA_SERIAL_NUMBER, serialNumberDer.data() , serialNumberDer.size() },
-    { CKA_LABEL, labelByte, serialNumberStr.size()}
+    { CKA_SUBJECT, subjectDer.data(), (CK_ULONG) subjectDer.size() },
+    { CKA_SERIAL_NUMBER, serialNumberDer.data() , (CK_ULONG) serialNumberDer.size() },
+    { CKA_LABEL, labelByte, (CK_ULONG) serialNumberStr.size()}
   };
 
+  // If keyId is unset, do not add CKA_ID attribute to the vector
+  if (keyId.size() != 0)
+  {
+    CK_ATTRIBUTE caId = { CKA_ID, keyId.data(), (CK_ULONG) keyId.size() };
+    tv.push_back(caId);
+  }
+  
   CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 
-  rv = F->C_CreateObject(session, t, 8, &obj);
+  rv = F->C_CreateObject(session, tv.data(), tv.size(), &obj);
 
   if (rv != CKR_OK) {
     switch (rv) {
@@ -961,6 +970,8 @@ std::vector<TokenInfo> EngineP11::getAllTokensInfo() {
       tInfo.freePublicMemory = (int)tokenInfo.ulFreePublicMemory;
       tInfo.totalPrivateMemory = (int)tokenInfo.ulTotalPrivateMemory;
       tInfo.freePrivateMemory = (int)tokenInfo.ulFreePrivateMemory;
+	  tInfo.slotsFlags = slotInfo.flags;
+	  tInfo.tokenFlags = tokenInfo.flags;
       slots.push_back(tInfo);
     }
   }
@@ -998,30 +1009,38 @@ EngineP11::putPrivateKey(const RsaKey& data, const std::string& labelStr) {
   CK_BBOOL trueValue = TRUE;
   CK_KEY_TYPE ckaKeyType = CKK_RSA;
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(labelStr.c_str()));
-  CK_ATTRIBUTE t[] = {
+
+  std::vector<CK_ATTRIBUTE> tv {
     // Mandatory attribute
     {CKA_CLASS, &keyClass, sizeof(keyClass) },
     {CKA_TOKEN, &trueValue, sizeof(trueValue)},
     {CKA_PRIVATE, &trueValue, sizeof(trueValue)},
     {CKA_SENSITIVE, &trueValue, sizeof(trueValue)},
     // The label for identification
-    { CKA_LABEL, labelByte, labelStr.size()},
+    { CKA_LABEL, labelByte, (CK_ULONG) labelStr.size()},
     // Attributes for EVP_PKEY_RSA
     { CKA_KEY_TYPE, &ckaKeyType, sizeof(ckaKeyType) },
-    { CKA_MODULUS, modulus.data(), modulus.size() },
-    { CKA_PUBLIC_EXPONENT, publicExponent.data(), publicExponent.size() },
-    { CKA_PRIVATE_EXPONENT, privateExponent.data(), privateExponent.size() },
-    { CKA_PRIME_1, firstPrime.data(), firstPrime.size() },
-    { CKA_PRIME_2, secondPrime.data(), secondPrime.size() },
-    { CKA_EXPONENT_1, firstExponent.data(), firstExponent.size() },
-    { CKA_EXPONENT_2, secondExponent.data(), secondExponent.size() },
-    { CKA_COEFFICIENT, coefficient.data(), coefficient.size() }
+    { CKA_MODULUS, modulus.data(), (CK_ULONG) modulus.size() },
+    { CKA_PUBLIC_EXPONENT, publicExponent.data(), (CK_ULONG) publicExponent.size() },
+    { CKA_PRIVATE_EXPONENT, privateExponent.data(), (CK_ULONG) privateExponent.size() },
+    { CKA_PRIME_1, firstPrime.data(), (CK_ULONG) firstPrime.size() },
+    { CKA_PRIME_2, secondPrime.data(), (CK_ULONG) secondPrime.size() },
+    { CKA_EXPONENT_1, firstExponent.data(), (CK_ULONG) firstExponent.size() },
+    { CKA_EXPONENT_2, secondExponent.data(), (CK_ULONG) secondExponent.size() },
+    { CKA_COEFFICIENT, coefficient.data(), (CK_ULONG) coefficient.size() }
   };
 
+  // If keyId is unset, do not add CKA_ID attribute to the vector
+  if (keyId.size() != 0)
+  {
+    CK_ATTRIBUTE caId = { CKA_ID, keyId.data(), (CK_ULONG) keyId.size() };
+    tv.push_back(caId);
+  }
+  
   CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 
-  rv = F->C_CreateObject(session, t, 14, &obj);
+  rv = F->C_CreateObject(session, tv.data(), tv.size(), &obj);
 
   free(evp_key);
   if (rv != CKR_OK) {

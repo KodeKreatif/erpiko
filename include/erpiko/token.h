@@ -34,6 +34,8 @@ struct TokenInfo {
   std::string model;
   std::string serialNumber;
   std::string flags;
+  unsigned long tokenFlags;
+  unsigned long slotsFlags;
   int maxSessionCount;
   int sessionCount;
   int maxRwSessionCount;

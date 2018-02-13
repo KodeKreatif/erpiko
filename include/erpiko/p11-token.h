@@ -15,6 +15,7 @@ class P11Token : Token {
     virtual bool logout() const;
     virtual void setKeyId(const unsigned int id, const std::string& label);
     virtual void setKeyId(const unsigned int id);
+    virtual void setKeyId(const std::vector<unsigned char> id);
     virtual void setKeyLabel(const std::string& label);
     virtual void unsetKey();
     virtual TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
@@ -22,8 +23,16 @@ class P11Token : Token {
     virtual std::vector<TokenInfo> getAllTokensInfo();
     virtual bool removeData(const std::string& applicationName, const std::string& label);
     virtual std::vector<Certificate*> getCertificates(bool);
+    /*
+    If you want to store certificate without a private key call unsetKey() or otherwise
+    the certificate will be placed in "Your Certificate" on Firefox. To store certificate with
+    its private key, call setKeyId() before storing private key and certificate.
+    */
     virtual TokenOpResult::Value putCertificate(const Certificate& cert);
     virtual bool removeCertificate(const Certificate& cert);
+    /*
+    all setKeyId() before using this function, make sure that you unsetKey() before doing other task after calling putPrivateKey()
+    */
     virtual TokenOpResult::Value putPrivateKey(const RsaKey& data, const std::string& labelStr);
     virtual RsaKey* getPrivateKey(const RsaPublicKey& publicKey);
     virtual bool removePrivateKey(const std::string& labelStr);

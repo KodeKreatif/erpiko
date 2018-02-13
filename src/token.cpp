@@ -82,6 +82,11 @@ P11Token::setKeyId(const unsigned int id) {
 }
 
 void
+P11Token::setKeyId(const std::vector<unsigned char> id) {
+  impl->engine.setKeyId(id);
+}
+
+void
 P11Token::setKeyLabel(const std::string& label) {
   impl->engine.setKeyLabel(label);
 }
