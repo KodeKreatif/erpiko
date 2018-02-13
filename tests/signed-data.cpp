@@ -93,6 +93,21 @@ SCENARIO("Construct SignedData") {
         REQUIRE(p7v->verify() == true);
       }
     }
+    THEN("Create an Attached Signed Data") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      SignedData* p7 = new SignedData(*cert, *key);
+      DataSource* data = DataSource::fromFile("assets/data.txt");
+      auto dataVector = data->readAll();
+      p7->update(dataVector);
+      p7->sign();
+      auto der = p7->toDer();
+      THEN("And can be verified") {
+        SignedData* p7v = SignedData::fromDer(der, *cert);
+        REQUIRE(p7v->isDetached() == false);
+        REQUIRE(p7v->verify() == true);
+      }
+    }
   }
 
 

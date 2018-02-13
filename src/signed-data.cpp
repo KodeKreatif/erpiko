@@ -267,16 +267,21 @@ void SignedData::update(const unsigned char* data, const size_t length) {
 }
 
 bool SignedData::verify() const {
-   STACK_OF(X509) *certs = sk_X509_new_null();
-   auto store = X509_STORE_new();
-   sk_X509_push(certs, impl->cert);
-   auto ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, PKCS7_NOVERIFY) == 1;
-   if (ret == 0) {
-     ERR_print_errors_fp(stderr);
-   }
-   sk_X509_free(certs);
-   X509_STORE_free(store);
-   return ret == 1;
+  STACK_OF(X509) *certs = sk_X509_new_null();
+  auto store = X509_STORE_new();
+  sk_X509_push(certs, impl->cert);
+  bool ret = 0;
+  if (PKCS7_is_detached(impl->pkcs7)) {
+    ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, PKCS7_NOVERIFY) == 1;
+  } else {
+    ret = PKCS7_verify(impl->pkcs7, certs, store, NULL, NULL, PKCS7_NOVERIFY) == 1;
+  }
+  if (ret == 0) {
+    ERR_print_errors_fp(stderr);
+  }
+  sk_X509_free(certs);
+  X509_STORE_free(store);
+  return ret == 1;
 }
 
 void SignedData::signDetached() {
