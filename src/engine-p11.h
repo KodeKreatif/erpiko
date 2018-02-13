@@ -25,7 +25,8 @@ class EngineP11 {
 #endif
   unsigned long session = 0;
   string keyLabel;
-  unsigned int keyId;
+  // initially keyId is unsigned int
+  std::vector<unsigned char> keyId;
 
   private:
     EngineP11() { }
@@ -54,11 +55,20 @@ class EngineP11 {
     }
 
     void setKeyId(const unsigned int id) {
+      // make sure that keyId storage is cleared prior to assignment
+      keyId.clear(); 
+      keyId.push_back((id >> 24) & 0xFF);
+      keyId.push_back((id >> 16) & 0xFF);
+      keyId.push_back((id >> 8) & 0xFF);
+      keyId.push_back((id >> 0) & 0xFF);
+
+    }
+    void setKeyId(const std::vector<unsigned char> id) {
       keyId = id;
     }
 
     void unsetKey() {
-      keyId = -1;
+      keyId.clear();
       keyLabel = "";
     }
 
@@ -67,6 +77,14 @@ class EngineP11 {
     }
 
     unsigned int getKeyId() const {
+      // for backward compatibility, check if the vector byte size is less than size of uint32
+      // it means as a drop in compatibility when keyId is unset = keyId = -1
+      if (keyId.size() < sizeof(unsigned int))
+        return -1;
+      // Reconstruct back the unsigned integer from vector byte
+      return keyId.at(3) | (keyId.at(2) << 8) | (keyId.at(1) << 16) | (keyId.at(0) << 24);
+    }
+    std::vector<unsigned char> getKeyIdVector() const {
       return keyId;
     }
 
