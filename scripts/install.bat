@@ -1,4 +1,4 @@
-call var.bat
+call scripts\var.bat
 
 choco install -y wget
 choco install -y unzip

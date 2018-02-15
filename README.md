@@ -1,3 +1,5 @@
+
+
 ![](https://user-images.githubusercontent.com/2534060/31044979-4694eee8-a604-11e7-8f0c-4b1e11f31e2f.png)
 
 # Erpiko -- PKI made easy
@@ -42,12 +44,20 @@ needed to disable CUDA.
 
 ### Steps
 
-This apply to Linux & macOS build. Please consult to `appveyor.yml` for Windows build.
+This apply to Linux & macOS build. Please consult to `appveyor.yml` for CI/CD Appveyor build
 
 ```
 ./scripts/build-deps-unix.sh  # Download and compile the dependencies (LibreSSL, catch and patches) for GNU/Linux
 ./scripts/build-deps-mac.sh   # Download and compile the dependencies (LibreSSL, catch and patches) for Mac
 ./scripts/build.sh            # Compile the erpiko
+```
+
+For local Windows build you need to install Microsoft Visual Studio 2015 update 3, chocolatey, Ubuntu for Windows (or Cygwin) and install package in requirements above and  git, unzip, wget, ca-certificates, build-essential. Check scripts\var.bat to set Platform and Configuration (Debug or Release)
+
+```
+scripts\install.bat # Download and compile the dependencies (LibreSSL, catch and patches) for GNU/Linux
+scripts\build.bat   # Build erpiko
+scripts\test.bat    # Test erpiko
 ```
 
 ## Compatibility with OpenSSL
