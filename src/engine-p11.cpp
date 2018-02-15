@@ -529,7 +529,7 @@ EngineP11::load(const string path) {
   if (!lib) {
 	  DWORD dw = GetLastError();
 	  std::cout << "Could not load the dynamic library: " << path << ": 0x" << hex << dw << std::endl;
-	 
+
 	  return false;
   }
 
@@ -641,11 +641,79 @@ EngineP11::login(const unsigned long slot, const string& pin) {
 
 
 TokenOpResult::Value
-EngineP11::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
+EngineP11::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data, bool isUnique) {
   CK_OBJECT_CLASS keyClass = CKO_DATA;
   CK_BBOOL trueValue = CK_TRUE;
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
   CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
+  CK_RV rv = CKR_OK;
+
+  EngineP11& p11 = EngineP11::getInstance();
+
+  if (isUnique) {
+    CK_ATTRIBUTE t[] = {
+      { CKA_CLASS, &keyClass, sizeof(keyClass) },
+      { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+      { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
+      { CKA_APPLICATION, appNameByte, applicationName.size()},
+      { CKA_LABEL, labelByte, label.size()}
+    };
+    CK_OBJECT_HANDLE obj;
+
+    rv = F->C_FindObjectsInit(p11.getSession(), t, 5);
+    if (rv != CKR_OK) {
+      return TokenOpResult::GENERIC_ERROR;
+    }
+
+    CK_ULONG objectCount;
+    bool first = true;
+    bool found = false;
+    while (true) {
+      rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+      if (rv != CKR_OK) {
+        return TokenOpResult::GENERIC_ERROR;
+      }
+
+      if (objectCount == 1) {
+        // Override value
+        found = true;
+        if (first) {
+          CK_ATTRIBUTE setTemplate[] = {
+            CKA_VALUE, data.data(), (CK_ULONG) data.size()
+          };
+          rv = F->C_SetAttributeValue(p11.getSession(), obj, setTemplate, 1);
+          if (rv != CKR_OK) {
+            switch (rv) {
+              case CKR_DATA_LEN_RANGE:
+              case CKR_DEVICE_MEMORY:
+                return TokenOpResult::TOO_LARGE;
+                break;
+              case CKR_SESSION_READ_ONLY:
+              case CKR_TOKEN_WRITE_PROTECTED:
+                return TokenOpResult::READ_ONLY;
+                break;
+              default:
+                return TokenOpResult::GENERIC_ERROR;
+                break;
+            }
+          }
+
+          first = false;
+        } else {
+          // Destroy all other occurences
+          F->C_DestroyObject(p11.getSession(), obj);
+        }
+      } else {
+        break;
+      }
+    }
+    F->C_FindObjectsFinal(p11.getSession());
+    if (found) {
+      return TokenOpResult::SUCCESS;
+    }
+    // fall through if label was not found
+  }
+
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
     { CKA_TOKEN, &trueValue, sizeof(trueValue) },
@@ -655,8 +723,6 @@ EngineP11::putData(const std::string& applicationName, std::string& label, std::
     { CKA_VALUE, data.data(), (CK_ULONG) data.size() }
   };
 
-  EngineP11& p11 = EngineP11::getInstance();
-  CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 
   rv = F->C_CreateObject(p11.getSession(), t, 6, &obj);
@@ -727,6 +793,66 @@ std::vector<unsigned char> EngineP11::getData(const std::string& applicationName
     return v;
   }
 
+  return v;
+}
+
+std::vector<std::vector<unsigned char>> EngineP11::getAllData(const std::string& applicationName, std::string& label) {
+  CK_OBJECT_CLASS keyClass = CKO_DATA;
+  CK_BBOOL trueValue = CK_TRUE;
+  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
+  CK_BYTE* appNameByte = reinterpret_cast<unsigned char*>(const_cast<char*>(applicationName.c_str()));
+  CK_ATTRIBUTE t[] = {
+    { CKA_CLASS, &keyClass, sizeof(keyClass) },
+    { CKA_TOKEN, &trueValue, sizeof(trueValue) },
+    { CKA_PRIVATE, &trueValue, sizeof(trueValue) },
+    { CKA_APPLICATION, appNameByte, applicationName.size()},
+    { CKA_LABEL, labelByte, label.size()}
+  };
+  CK_OBJECT_HANDLE obj;
+  EngineP11& p11 = EngineP11::getInstance();
+
+  std::vector<std::vector<unsigned char>> v;
+  CK_RV rv = CKR_OK;
+  rv = F->C_FindObjectsInit(p11.getSession(), t, 5);
+  if (rv != CKR_OK) {
+    return v;
+  }
+
+  CK_ULONG objectCount;
+  while (true) {
+    rv = F->C_FindObjects(p11.getSession(), &obj, 1, &objectCount);
+    if (rv != CKR_OK) {
+      return v;
+    }
+
+    if (objectCount != 1) {
+      break;
+    }
+
+    CK_ATTRIBUTE attribute;
+    attribute.type = CKA_VALUE;
+    attribute.pValue = NULL_PTR;
+    rv = F->C_GetAttributeValue(p11.getSession(), obj, &attribute, 1);
+    if (rv != CKR_OK) {
+      return v;
+    }
+
+    if (attribute.ulValueLen == 0) {
+      return v;
+    }
+
+    std::vector<unsigned char> value;
+    value.resize(attribute.ulValueLen);
+    attribute.pValue = &value.front();
+    rv = F->C_GetAttributeValue(p11.getSession(), obj, &attribute, 1);
+    if (rv != CKR_OK) {
+      return v;
+    }
+
+    v.push_back(value);
+  }
+
+  F->C_FindObjectsFinal(session);
   return v;
 }
 
@@ -888,7 +1014,7 @@ EngineP11::putCertificate(const Certificate& cert) {
   // Use serial number hex string as certificate label
   CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(serialNumberStr.c_str()));
 
-  
+
 
   std::vector<CK_ATTRIBUTE> tv {
     { CKA_TOKEN, &trueValue, sizeof(trueValue) },
@@ -907,7 +1033,7 @@ EngineP11::putCertificate(const Certificate& cert) {
     CK_ATTRIBUTE caId = { CKA_ID, keyId.data(), (CK_ULONG) keyId.size() };
     tv.push_back(caId);
   }
-  
+
   CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 
@@ -1036,7 +1162,7 @@ EngineP11::putPrivateKey(const RsaKey& data, const std::string& labelStr) {
     CK_ATTRIBUTE caId = { CKA_ID, keyId.data(), (CK_ULONG) keyId.size() };
     tv.push_back(caId);
   }
-  
+
   CK_RV rv = CKR_OK;
   CK_OBJECT_HANDLE obj;
 

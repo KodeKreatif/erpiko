@@ -130,12 +130,32 @@ class Token {
     virtual TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) = 0;
 
     /**
-     * Gets an arbitrary data out of the token
+     * Puts an arbitrary data into token with the label as identifier. This will check first
+     * the existence of the data with the mentioned label. If there is a value with the label,
+     * it will be overriden with the new value.
+     * @param applicationName application name
+     * @param the label of the data
+     * @param data
+     * @return Token operation result
+     */
+    virtual TokenOpResult::Value putUniqueData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) = 0;
+
+    /**
+     * Gets an arbitrary data out of the token. This will get the first occurence of the data
+     * identified with the specified label.
      * @param applicationName application name
      * @param the label of the data
      * @return the data if found, otherwise it will return an empty vector
      */
     virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label) = 0;
+
+    /**
+     * Gets all data out of the token as identified with a label
+     * @param applicationName application name
+     * @param the label of the data
+     * @return the data if found, otherwise it will return an empty vector
+     */
+    virtual std::vector<std::vector<unsigned char>> getAllData(const std::string& applicationName, std::string& label) = 0;
 
     /**
      * Removes arbitrary data out of the token

@@ -56,7 +56,7 @@ class EngineP11 {
 
     void setKeyId(const unsigned int id) {
       // make sure that keyId storage is cleared prior to assignment
-      keyId.clear(); 
+      keyId.clear();
       keyId.push_back((id >> 24) & 0xFF);
       keyId.push_back((id >> 16) & 0xFF);
       keyId.push_back((id >> 8) & 0xFF);
@@ -88,8 +88,9 @@ class EngineP11 {
       return keyId;
     }
 
-    TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data);
+    TokenOpResult::Value putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data, bool isUnique);
     std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
+    std::vector<std::vector<unsigned char>> getAllData(const std::string& applicationName, std::string& label);
     bool removeData(const std::string& applicationName, const std::string& label);
     bool parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value = nullptr);
     std::vector<TokenInfo> getAllTokensInfo();
