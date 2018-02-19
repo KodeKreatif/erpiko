@@ -297,6 +297,19 @@ SCENARIO("Token init", "[.][p11]") {
 
       res = t.removePrivateKey("omama"); // check result
       REQUIRE(res == true);
+
+      label = "unique";
+      r = t.putData(appName, label, hash);
+      r = t.putData(appName, label, hash);
+      r = t.putData(appName, label, hash);
+
+      auto v = t.getAllData(appName, label);
+      REQUIRE(v.size() == 3);
+
+      r = t.putUniqueData(appName, label, hash);
+      v = t.getAllData(appName, label);
+      REQUIRE(v.size() == 1);
+
       t.logout();
     }
   }
@@ -366,7 +379,7 @@ SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
       // Simulate that we didn't have the private key in memory help the decryption
       auto privKey = t.getPrivateKey(certp12.publicKey());
       // This could be an incomplete private key with empty private exponent and other secret components,
-      // but it has onDevice() as true. 
+      // but it has onDevice() as true.
       auto decrypted = p7v->decrypt(certp12, *privKey);
       REQUIRE(v == decrypted);
       decrypted.clear();
@@ -443,7 +456,7 @@ SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
       // Simulate that we didn't have the private key in memory help the decryption
       auto privKey = t.getPrivateKey(certp12.publicKey());
       // This could be an incomplete private key with empty private exponent and other secret components,
-      // but it has onDevice() as true. 
+      // but it has onDevice() as true.
       auto decrypted = p7v->decrypt(certp12, *privKey);
       REQUIRE(v == decrypted);
       decrypted.clear();

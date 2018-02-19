@@ -98,12 +98,22 @@ P11Token::unsetKey() {
 
 TokenOpResult::Value
 P11Token::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
-  return impl->engine.putData(applicationName, label, data);
+  return impl->engine.putData(applicationName, label, data, false);
+}
+
+TokenOpResult::Value
+P11Token::putUniqueData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data) {
+  return impl->engine.putData(applicationName, label, data, true);
 }
 
 std::vector<unsigned char>
 P11Token::getData(const std::string& applicationName, std::string& label) {
   return impl->engine.getData(applicationName, label);
+}
+
+std::vector<std::vector<unsigned char>>
+P11Token::getAllData(const std::string& applicationName, std::string& label) {
+  return impl->engine.getAllData(applicationName, label);
 }
 
 bool
