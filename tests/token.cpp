@@ -8,6 +8,7 @@
 #include "erpiko/certificate.h"
 #include "erpiko/pkcs12.h"
 #include "erpiko/enveloped-data.h"
+#include "erpiko/signed-data.h"
 #include <iostream>
 
 using namespace std;
@@ -393,7 +394,7 @@ SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
 
     }
 
-    THEN("Encryption and decryption without key label") {
+    THEN("Sign and verify without key label") {
       // The private key will be queried by public key's modulus and exponent
       P11Token p11Token;
       Token& t = (Token&)p11Token;
@@ -435,34 +436,32 @@ SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
       const Certificate& certp12 = p12->certificate();
 
       t.removePrivateKey("omama"); // ignore result
-      auto putPrivKeyResult = t.putPrivateKey(pk, "opapa");
+      auto putPrivKeyResult = t.putPrivateKey(pk, "omama");
       REQUIRE(putPrivKeyResult == TokenOpResult::SUCCESS);
 
-      std::cout << "decrypt with privkey from token" << std::endl;
+      std::cout << "sign with privkey from token" << std::endl;
       src = DataSource::fromFile("assets/data.txt");
       auto v = src->readAll();
 
       t.unsetKey(); // Do encrypt decrypt without the help of key label
 
-      EnvelopedData* p7 = new EnvelopedData(certp12, ObjectId("2.16.840.1.101.3.4.1.42"));
-      DataSource* toBeEncrypted = DataSource::fromFile("assets/data.txt");
-      auto dataVector = toBeEncrypted->readAll();
-      p7->addRecipient(certp12);
-      p7->encrypt(dataVector);
-      auto der = p7->toDer();
+      const RsaKey* privKey = t.getPrivateKey(certp12.publicKey());
+      SignedData* s7 = new SignedData(certp12, *privKey);
+      DataSource* toBeSigned = DataSource::fromFile("assets/data.txt");
+      auto dataVector = toBeSigned->readAll();
+      s7->update(dataVector);
+      s7->signDetached();
+      auto der = s7->toDer();
 
-      EnvelopedData* p7v = EnvelopedData::fromDer(der);
 
-      // Simulate that we didn't have the private key in memory help the decryption
-      auto privKey = t.getPrivateKey(certp12.publicKey());
-      // This could be an incomplete private key with empty private exponent and other secret components,
-      // but it has onDevice() as true.
-      auto decrypted = p7v->decrypt(certp12, *privKey);
-      REQUIRE(v == decrypted);
-      decrypted.clear();
+      std::cout << "verify it" << std::endl;
+      auto s7_2 = SignedData::fromDer(der, certp12);
+      s7_2->update(dataVector);
+      bool isVerified = s7_2->verify();
+      REQUIRE(isVerified == true);
 
       // Clean
-      t.removePrivateKey("opapa"); // ignore result
+      t.removePrivateKey("omama"); // ignore result
       t.logout();
 
     }
