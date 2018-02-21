@@ -4,6 +4,7 @@
 #include <openssl/pkcs7.h>
 #include <openssl/err.h>
 #include <openssl/asn1.h>
+#include <openssl/engine.h>
 #include <iostream>
 
 namespace Erpiko {
@@ -21,6 +22,7 @@ class SignedData::Impl {
     PKCS7 *pkcs7 = nullptr;
     BIO* bio = BIO_new(BIO_s_mem());
     std::string smimePartial = "";
+    EVP_MD* digestMd = const_cast<EVP_MD*>(EVP_get_digestbynid(NID_sha256));
 
     std::unique_ptr<RsaKey> privateKey;
     std::vector<std::unique_ptr<Certificate>> ca;
@@ -59,7 +61,13 @@ class SignedData::Impl {
     }
 
     void setup(const Certificate& certificate, const RsaKey& privateKey) {
-      pkey = Converters::rsaKeyToPkey(privateKey);
+      if (privateKey.onDevice()) {
+        // If it's an on-device private key, use public key EVP to mock private key's
+        // The LibreSSL will compare type, ameth and rsa->n
+        pkey = Converters::rsaPublicKeyToPkey(certificate.publicKey());
+      } else {
+        pkey = Converters::rsaKeyToPkey(privateKey);
+      }
       cert = Converters::certificateToX509(certificate);
     }
 
@@ -267,14 +275,20 @@ void SignedData::update(const unsigned char* data, const size_t length) {
 }
 
 bool SignedData::verify() const {
+  int flags = PKCS7_NOVERIFY | PKCS7_NOINTERN; // PKCS7_NOINTERN is required when using token engine
+  (void) ENGINE_by_id("Erpiko-P11");
+  if (std::string(ERR_reason_error_string(ERR_get_error())) == "no such engine") {
+    flags = PKCS7_NOVERIFY;
+  }
+
   STACK_OF(X509) *certs = sk_X509_new_null();
   auto store = X509_STORE_new();
   sk_X509_push(certs, impl->cert);
   bool ret = 0;
   if (PKCS7_is_detached(impl->pkcs7)) {
-    ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, PKCS7_NOVERIFY) == 1;
+    ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, flags) == 1;
   } else {
-    ret = PKCS7_verify(impl->pkcs7, certs, store, NULL, NULL, PKCS7_NOVERIFY) == 1;
+    ret = PKCS7_verify(impl->pkcs7, certs, store, NULL, NULL, flags) == 1;
   }
   if (ret == 0) {
     ERR_print_errors_fp(stderr);
@@ -288,7 +302,9 @@ void SignedData::signDetached() {
   if (impl->pkcs7) return;
 
   impl->signingMode = DETACHED;
-  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
+  impl->pkcs7 = PKCS7_sign(nullptr, nullptr, NULL, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY | PKCS7_PARTIAL);
+  PKCS7_sign_add_signer(impl->pkcs7, impl->cert, impl->pkey, impl->digestMd, PKCS7_REUSE_DIGEST);
+  PKCS7_final(impl->pkcs7, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
 }
 
 void SignedData::sign() {

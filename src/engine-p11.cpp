@@ -339,7 +339,6 @@ int rsaPrivDecrypt(int flen, const unsigned char *from, unsigned char *to, RSA *
 bool populateMechanism(CK_MECHANISM* m, int type) {
   (void) m;
   (void) type;
-
   bool retval = false;
   switch (type) {
   case NID_sha224:
@@ -358,8 +357,10 @@ bool populateMechanism(CK_MECHANISM* m, int type) {
       m->mechanism = CKM_SHA512_RSA_PKCS;
       retval = true;
       break;
-
-
+  case NID_sha1:
+      m->mechanism = CKM_SHA1_RSA_PKCS;
+      retval = true;
+      break;
   }
   return retval;
 }
@@ -375,14 +376,23 @@ int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned cha
   if (!populateMechanism(&mechanism, type)) {
     return 0;
   }
-  CK_OBJECT_HANDLE key = findKey(CKO_PRIVATE_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+
+  CK_OBJECT_HANDLE key;
+  if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
+    key = findKey(CKO_PRIVATE_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
+  } else {
+    key = findPrivateKey(rsa);
+  }
   if (key == 0) {
     return 0;
   }
 
   CK_OBJECT_HANDLE pubKey = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
   if (pubKey == 0) {
-    return 0;
+    pubKey = findPublicKey(rsa);
+    if (pubKey == 0) {
+      return 0;
+    }
   }
 
   CK_ULONG bits;
@@ -406,6 +416,7 @@ int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned cha
   }
 
   *siglen = (unsigned int) outLength;
+
   return 1;
 }
 
