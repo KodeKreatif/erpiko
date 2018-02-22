@@ -222,6 +222,13 @@ class Token {
      */
     virtual void* engine() const = 0;
 
+    /*
+     * Retrieve card information in the token
+     * @param token
+     * @return card is present or not 
+    */
+    virtual CardStatus::Value getCardStatus(TokenInfo token) = 0;
+
 };
 } // namespace Erpiko
 #endif // _TOKEN_H_
