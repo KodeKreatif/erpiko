@@ -33,9 +33,13 @@ class P11Token : Token {
     virtual TokenOpResult::Value putCertificate(const Certificate& cert);
     virtual bool removeCertificate(const Certificate& cert);
     /*
-    all setKeyId() before using this function, make sure that you unsetKey() before doing other task after calling putPrivateKey()
+    Call setKeyId() before using this function, make sure that you unsetKey() before doing other task after calling putPrivateKey()
     */
     virtual TokenOpResult::Value putPrivateKey(const RsaKey& data, const std::string& labelStr);
+    /*
+    Retrieve card information in the token
+    */
+    virtual CardStatus::Value getCardStatus(TokenInfo token);
     virtual RsaKey* getPrivateKey(const RsaPublicKey& publicKey);
     virtual bool removePrivateKey(const std::string& labelStr);
     virtual void* engine() const;

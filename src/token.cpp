@@ -1,5 +1,6 @@
 #include "erpiko/p11-token.h"
 #include "engine-p11.h"
+#include "pkcs11/cryptoki.h"
 #include <openssl/engine.h>
 
 using namespace std;
@@ -133,6 +134,14 @@ P11Token::putCertificate(const Certificate& cert) {
 
 std::vector<TokenInfo> P11Token::getAllTokensInfo() {
   return impl->engine.getAllTokensInfo();
+}
+
+CardStatus::Value
+P11Token::getCardStatus(TokenInfo token) {
+  if (token.slotsFlags & CKF_TOKEN_PRESENT) {
+    return CardStatus::PRESENT;
+  }
+  return CardStatus::NOT_PRESENT;
 }
 
 bool
