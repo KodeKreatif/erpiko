@@ -222,8 +222,8 @@ class Token {
      */
     virtual void* engine() const = 0;
 
-    /*
-     * Retrieve card information in the token
+    /**
+     * Retrieves card information in the token
      * @param token
      * @return card is present or not 
     */
