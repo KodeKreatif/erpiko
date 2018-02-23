@@ -1,8 +1,16 @@
+@echo off
 call scripts\var.bat
 
-choco install -y wget
-choco install -y unzip
-choco install -y cmake
+REM Check whether package is already installed
+choco list -lo -e wget | find /i "1 packages"
+if %errorlevel% == 1 (choco install -y wget)
+
+choco list -lo -e unzip | find /i "1 packages"
+if %errorlevel% == 1 (choco install -y unzip)
+
+choco list -lo -e cmake | find /i "1 packages"
+if %errorlevel% == 1 (choco install -y cmake)
+
 
 mkdir deps
 
@@ -14,11 +22,11 @@ unzip tip.zip
 
 cd libressl-portable-tip
 
-bash -lc "cd /mnt/c/erpiko/deps/libressl-portable-tip/ && ./autogen.sh"
+bash -lc "cd %workingdirnix%/deps/libressl-portable-tip/ && ./autogen.sh"
 
-bash -lc "cd /mnt/c/erpiko/deps/libressl-portable-tip/ && patch -p0 < ../../patch/cmp.patch"
+bash -lc "cd %workingdirnix%/deps/libressl-portable-tip/ && patch -p0 < ../../patch/cmp.patch"
 
-bash -lc "cd /mnt/c/erpiko/deps/libressl-portable-tip/ && patch -p1 < ../../patch/CMakefiles.patch"
+bash -lc "cd %workingdirnix%/deps/libressl-portable-tip/ && patch -p1 < ../../patch/CMakefiles.patch"
 
 cd ..
 
@@ -43,11 +51,14 @@ cmake -G "%CMAKE_GENERATOR_NAME%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% ..
 
 msbuild LibreSSL.sln /p:Configuration=%CONFIGURATION%
 
-copy ssl\%CONFIGURATION%\ssl.lib ..\ssl\
+copy /y ssl\%CONFIGURATION%\ssl.lib ..\ssl\ 
+if %configuration%==Debug copy /y ssl\%configuration%\*.pdb ..\ssl\
 
-copy tls\%CONFIGURATION%\tls.lib ..\tls\
+copy /y tls\%CONFIGURATION%\tls.lib ..\tls\
+if %configuration%==Debug copy /y tls\%configuration%\*.pdb ..\tls\
 
-copy crypto\%CONFIGURATION%\crypto.lib ..\crypto\
+copy /y crypto\%CONFIGURATION%\crypto.lib ..\crypto\
+if %configuration%==Debug copy /y crypto\%CONFIGURATION%\*.pdb ..\crypto\
 
 mkdir ..\ssl\Debug
 
@@ -55,11 +66,14 @@ mkdir ..\tls\Debug
 
 mkdir ..\crypto\Debug
 
-copy ssl\%CONFIGURATION%\ssl.lib ..\ssl\Debug\
+copy /y ssl\%CONFIGURATION%\ssl.lib ..\ssl\Debug\
+if %configuration%==Debug copy /y ssl\%CONFIGURATION%\*.pdb ..\ssl\Debug\
 
-copy tls\%CONFIGURATION%\tls.lib ..\tls\Debug\
+copy /y tls\%CONFIGURATION%\tls.lib ..\tls\Debug\
+if %configuration%==Debug copy /y tls\%CONFIGURATION%\*.pdb ..\tls\Debug\
 
-copy crypto\%CONFIGURATION%\crypto.lib ..\crypto\Debug\
+copy /y crypto\%CONFIGURATION%\crypto.lib ..\crypto\Debug\
+if %configuration%==Debug copy /y crypto\%CONFIGURATION%\*.pdb ..\crypto\Debug\
 		
 cd ..\..
 
@@ -69,4 +83,4 @@ cd catch
 
 wget -O catch.hpp https://raw.githubusercontent.com/philsquared/Catch/master/single_include/catch.hpp
 
-cd C:\erpiko
+cd %workingdir%

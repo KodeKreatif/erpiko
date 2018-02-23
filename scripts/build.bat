@@ -1,4 +1,7 @@
+@echo off
 call scripts\var.bat
+
+cd %workingdir%
 
 mkdir build
 
@@ -12,8 +15,10 @@ if "%platform%"=="Win32" set CMAKE_GENERATOR_NAME=Visual Studio 14 2015
 
 if "%platform%"=="x64"   set CMAKE_GENERATOR_NAME=Visual Studio 14 2015 Win64
 
+echo Build configuration %platform% %configuration%
+
 cmake -G "%CMAKE_GENERATOR_NAME%" -DCMAKE_BUILD_TYPE=%CONFIGURATION% ..
 
 msbuild erpiko.sln /p:Configuration=%CONFIGURATION%
 
-cd C:\erpiko
+cd %workingdir%
