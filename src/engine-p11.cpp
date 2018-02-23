@@ -623,6 +623,11 @@ CardStatus::Value EngineP11::waitForCardStatus(int &slot) {
   ) {
     return CardStatus::NOT_SUPPORTED;
   }
+  // When process finished, make sure that when cryptoki is not available
+  // return a NOT SUPPORTTED
+  if (rvslot == CKR_CRYPTOKI_NOT_INITIALIZED) {
+    return CardStatus::NOT_SUPPORTED;
+  }
   if (rvslot != CKR_OK) {
     return CardStatus::NOT_PRESENT;
   }
