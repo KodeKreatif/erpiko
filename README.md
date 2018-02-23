@@ -52,12 +52,13 @@ This apply to Linux & macOS build. Please consult to `appveyor.yml` for CI/CD Ap
 ./scripts/build.sh            # Compile the erpiko
 ```
 
-For local Windows build you need to install Microsoft Visual Studio 2015 update 3, chocolatey, Ubuntu for Windows (or Cygwin) and install package in requirements above and  git, unzip, wget, ca-certificates, build-essential. Check scripts\var.bat to set Platform and Configuration (Debug or Release)
+For local Windows build you need to install Microsoft Visual Studio 2015 update 3, chocolatey, Ubuntu for Windows (or Cygwin) and install package in requirements above and  git, unzip, wget, ca-certificates, build-essential. Check **scripts\var.bat** to set Platform and Configuration (Debug or Release)
 
 ```
 scripts\install.bat # Download and compile the dependencies (LibreSSL, catch and patches) for GNU/Linux
 scripts\build.bat   # Build erpiko
 scripts\test.bat    # Test erpiko
+scripts\create-pkg.bat # Create compilation of lib and headers
 ```
 
 ## Compatibility with OpenSSL
