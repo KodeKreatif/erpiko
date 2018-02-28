@@ -300,12 +300,14 @@ SCENARIO("Token init", "[.][p11]") {
       REQUIRE(res == true);
 
       label = "unique";
+      auto v = t.getAllData(appName, label);
+      int before = v.size();
       r = t.putData(appName, label, hash);
       r = t.putData(appName, label, hash);
       r = t.putData(appName, label, hash);
 
-      auto v = t.getAllData(appName, label);
-      REQUIRE(v.size() == 3);
+      v = t.getAllData(appName, label);
+      REQUIRE(v.size() == (before + 3));
 
       r = t.putUniqueData(appName, label, hash);
       v = t.getAllData(appName, label);
@@ -315,8 +317,10 @@ SCENARIO("Token init", "[.][p11]") {
     }
   }
 }
+
 SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
   GIVEN("An initialized token") {
+    std::cout << "---------------------------signed data ----\n";
     THEN("Encryption and decryption with key label") {
       P11Token p11Token;
       Token& t = (Token&)p11Token;
@@ -464,7 +468,114 @@ SCENARIO("PKCS7 / Enveloped Data", "[.][p11]") {
       t.removePrivateKey("omama"); // ignore result
       t.logout();
 
+    std::cout << "---------------------------signed data end ----\n";
     }
   }
+  GIVEN("A new certificate") {
+
+
+    P11Token p11Token;
+    Token& t = (Token&)p11Token;
+
+#ifdef WIN32
+          auto r = t.load("c:\\windows\\system32\\eTPKCS11.dll");
+#else
+          auto r = t.load("/home/mdamt/src/tmp/hsm/lib/softhsm/libsofthsm2.so");
+#endif
+    REQUIRE(r == true);
+    std::cout << "Please insert the smartcard to slot" << std::endl;
+    int slotId;
+#ifdef WIN32
+    auto status = t.waitForCardStatus(slotId);
+    if (status == CardStatus::NOT_PRESENT) {
+        std::cout << "Token not present, please put it back...";
+        status = t.waitForCardStatus(slotId);
+    }
+    REQUIRE(status == CardStatus::PRESENT);
+
+    std::cout << "Logging in." << std::endl;
+    r = t.login(slotId, "qwerty");
+#else
+    auto status = t.waitForCardStatus(slotId);
+    REQUIRE(status == CardStatus::PRESENT);
+    std::cout << "Slot event occured. Card is present." << std::endl;
+    std::cout << "Smartcard has been inserted" << std::endl;
+
+    r = t.login(933433059, "qwerty");
+#endif
+
+    REQUIRE(r == true);
+    std::cout << "Logged in" << std::endl;
+
+    DataSource* src = DataSource::fromFile("assets/verify/originCa.crl.der");
+    auto originCaCrlDer = src->readAll();
+
+    src = DataSource::fromFile("assets/verify-2048-sized/crl.der");
+    auto originCa2048CrlDer = src->readAll();
+
+    src = DataSource::fromFile("assets/verify/otherCa.crl.der");
+    auto otherCaCrlDer = src->readAll();
+
+    src = DataSource::fromFile("assets/verify-2048-sized/erpikotestsuite1.pem");
+    auto v = src->readAll();
+    std::string erpikotestsuite1Pem(v.begin(),v.end());
+    Certificate* erpikotestsuite1Cert = Certificate::fromPem(erpikotestsuite1Pem);
+    REQUIRE_FALSE(erpikotestsuite1Cert == nullptr);
+
+    src = DataSource::fromFile("assets/verify-2048-sized/erpikotestsuite2.pem");
+    v = src->readAll();
+    std::string erpikotestsuite2Pem(v.begin(),v.end());
+    Certificate* erpikotestsuite2Cert = Certificate::fromPem(erpikotestsuite2Pem);
+    REQUIRE_FALSE(erpikotestsuite2Cert == nullptr);
+
+    src = DataSource::fromFile("assets/verify-2048-sized/erpikotestsuite3.pem");
+    v = src->readAll();
+    std::string erpikotestsuite3Pem(v.begin(),v.end());
+    Certificate* erpikotestsuite3Cert = Certificate::fromPem(erpikotestsuite3Pem);
+    REQUIRE_FALSE(erpikotestsuite3Cert == nullptr);
+
+    src = DataSource::fromFile("assets/verify-2048-sized/erpikotestsuite4.pem");
+    v = src->readAll();
+    std::string erpikotestsuite4Pem(v.begin(),v.end());
+    Certificate* erpikotestsuite4Cert = Certificate::fromPem(erpikotestsuite4Pem);
+    REQUIRE_FALSE(erpikotestsuite4Cert == nullptr);
+
+    std::cout << "Certificate::fromPem originca 2048" << std::endl;
+    src = DataSource::fromFile("assets/verify-2048-sized/TNISiberLabCA3.pem");
+    v = src->readAll();
+    std::string originCa2048(v.begin(),v.end());
+    Certificate* originCa2048Cert = Certificate::fromPem(originCa2048);
+    REQUIRE_FALSE(originCa2048Cert == nullptr);
+
+    std::cout << "Certificate::fromPem originrootca" << std::endl;
+    src = DataSource::fromFile("assets/verify-2048-sized/TNISiberLabRootCA.pem");
+    v = src->readAll();
+    std::string originRootCa(v.begin(),v.end());
+    Certificate* originRootCaCert = Certificate::fromPem(originRootCa);
+    REQUIRE_FALSE(originRootCaCert == nullptr);
+
+
+    THEN("verify the certs") {
+
+      t.unsetKey();
+
+      // 2048-sized chains
+      // SHOULD BE TRUSTED
+      auto isTrusted = erpikotestsuite1Cert->isTrusted(originRootCaCert->toDer(), originCa2048CrlDer, "assets/verify-2048-sized/TNISiberLabCA3-chain.pem");
+      REQUIRE(isTrusted == CertificateTrustState::TRUSTED);
+
+      isTrusted = erpikotestsuite2Cert->isTrusted(originRootCaCert->toDer(), originCa2048CrlDer, "assets/verify-2048-sized/TNISiberLabCA3-chain.pem");
+      REQUIRE(isTrusted == CertificateTrustState::TRUSTED);
+
+      // erpikotestsuite3, should be REVOKED
+      auto isRevoked = erpikotestsuite3Cert->isRevoked(originCa2048Cert->toDer(), originCa2048CrlDer);
+      REQUIRE(isRevoked == CertificateRevocationState::REVOKED);
+
+      // should be NOT_TRUSTED because of expired
+      isTrusted = erpikotestsuite4Cert->isTrusted(originRootCaCert->toDer(), originCa2048CrlDer, "assets/verify-2048-sized/TNISiberLabCA3-chain.pem");
+      REQUIRE(isTrusted == CertificateTrustState::NOT_TRUSTED);
+    }
+  }
+
 }
 } // namespace Erpiko

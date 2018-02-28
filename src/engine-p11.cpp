@@ -194,35 +194,36 @@ CK_OBJECT_HANDLE findPublicKey(const RSA* rsa) {
   return key;
 }
 
-CK_OBJECT_HANDLE keyFromRSA(const RSA* rsa) {
+void keyFromRSA(const RSA* rsa, CK_OBJECT_HANDLE_PTR key) {
   CK_OBJECT_CLASS keyClass = CKO_PUBLIC_KEY;
   CK_KEY_TYPE pKeyType = CKK_RSA;
-  std::string label = "A RSA public key object";
-  CK_BYTE* labelByte = reinterpret_cast<unsigned char*>(const_cast<char*>(label.c_str()));
   CK_BBOOL trueValue = CK_TRUE;
   CK_BBOOL falseValue = CK_FALSE;
+
   PUT(modulus, rsa->n);
   PUT(exponent, rsa->e);
+
+  std::cout << "Modulus:" << Utils::hexString(modulus)<< "\n";
+  std::cout << "Exponent:" << Utils::hexString(exponent)<< "\n";
+
   CK_ATTRIBUTE t[] = {
     { CKA_CLASS, &keyClass, sizeof(keyClass) },
-    { CKA_KEY_TYPE,  &pKeyType, sizeof(pKeyType) },
+    { CKA_KEY_TYPE, &pKeyType, sizeof(pKeyType) },
     { CKA_TOKEN, &falseValue, sizeof(falseValue) },
-    { CKA_LABEL, labelByte, label.size() },
-    { CKA_WRAP, &trueValue, sizeof(trueValue) },
     { CKA_ENCRYPT, &trueValue, sizeof(trueValue) },
+    { CKA_WRAP, &trueValue, sizeof(trueValue) },
+    { CKA_VERIFY, &trueValue, sizeof(trueValue) },
     { CKA_MODULUS, modulus.data(), modulus.size() },
     { CKA_PUBLIC_EXPONENT, exponent.data(), exponent.size() },
   };
 
-  CK_OBJECT_HANDLE key;
   EngineP11& p11 = EngineP11::getInstance();
 
   CK_RV rv = CKR_OK;
-  rv = F->C_CreateObject(p11.getSession(), t, 8, &key);
+  rv = F->C_CreateObject(p11.getSession(), t, 8, key);
   if (rv != CKR_OK) {
-    return 0;
+    *key = 0;
   }
-  return key;
 }
 
 CK_OBJECT_HANDLE findKey(CK_OBJECT_CLASS type, int keyId, const string& label) {
@@ -284,7 +285,7 @@ int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *r
   }
 
   if (key == 0) {
-    key = keyFromRSA(rsa); // Try to make up one then
+    keyFromRSA(rsa, &key); // Try to make up one then
     if (key == 0) {
       return 0;
     }
@@ -420,7 +421,53 @@ int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned cha
   return 1;
 }
 
-// Currently unused since it can be done outside the token and it only requires a public key
+int rsaVerifySoftware(int type, const unsigned char *from, unsigned int flen, const unsigned char *sig, unsigned int siglen, const RSA *rsa) {
+  int retval = 1;
+  EngineP11& p11 = EngineP11::getInstance();
+  unsigned char*s = new unsigned char[siglen];
+  int res = p11.defaultRsa->rsa_pub_dec(siglen, sig, s, const_cast<RSA*>(rsa), RSA_PKCS1_PADDING);
+  if (res <= 0) {
+    delete[] s;
+    return 0;
+  }
+
+  const unsigned char*p = s;
+  X509_SIG* dsig = d2i_X509_SIG(NULL, &p, (long)res);
+
+  if (dsig &&
+      dsig->digest &&
+      dsig->digest->data &&
+      dsig->algor &&
+      dsig->algor->parameter) {
+    // Sanity checks
+    if (p != s + res) {
+      retval = 0;
+    }
+
+    if (retval && dsig->algor->parameter &&
+        ASN1_TYPE_get(dsig->algor->parameter) != V_ASN1_NULL) {
+      retval = 0;
+    }
+
+    int sigtype = OBJ_obj2nid(dsig->algor->algorithm);
+    if (retval && sigtype != type) {
+      retval = 0;
+    }
+
+    res = memcmp(from, dsig->digest->data, flen);
+    if (retval && res == 0) {
+      retval = 1;
+    }
+  } else {
+    retval = 0;
+  }
+  if (dsig != nullptr) {
+    X509_SIG_free(dsig);
+  }
+  delete[] s;
+  return retval;
+}
+
 int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsigned char *sig, unsigned int siglen, const RSA *rsa) {
   (void) rsa;
   (void) type;
@@ -429,6 +476,7 @@ int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsi
   CK_MECHANISM mechanism = {
      CKM_SHA256_RSA_PKCS, nullptr, 0
   };
+
   if (!populateMechanism(&mechanism, type)) {
     return 0;
   }
@@ -436,7 +484,8 @@ int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsi
   CK_OBJECT_HANDLE key = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
 
   if (key == 0) {
-    key = keyFromRSA(rsa); // Try to make up one then
+    keyFromRSA(rsa, &key); // Try to make up one then
+    std::cout << "key from rsa:" << key << "\n";
     if (key == 0) {
       return 0;
     }
@@ -448,7 +497,8 @@ int rsaVerify(int type, const unsigned char *from, unsigned int flen, const unsi
   }
   rv = F->C_Verify(p11.getSession(), const_cast<unsigned char*>(from), flen, const_cast<unsigned char*>(sig), siglen);
   if (rv != CKR_OK) {
-    return 0;
+    // Try default software verifier
+    return rsaVerifySoftware(type, from, flen, sig, siglen, rsa);
   }
 
   return 1;
