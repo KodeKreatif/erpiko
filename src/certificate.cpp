@@ -185,7 +185,7 @@ class Certificate::Impl {
       BN_free(bn);
       serialNumber = dec;
     }
-    
+
     void resetPublicKey() {
       auto evp = X509_get_pubkey(x509);
       if (evp) {
@@ -323,7 +323,7 @@ CertificateRevocationState::State Certificate::isRevoked(const std::vector<unsig
   if (issuer) {
     EVP_PKEY *issuerKey = X509_get_pubkey(issuer);
     ASN1_INTEGER *serial = X509_get_serialNumber(impl->x509);
-    
+
     if (crl && issuerKey && X509_CRL_verify(crl, issuerKey)) {
       status = CertificateRevocationState::NOT_REVOKED;
       auto *revokedList = crl->crl->revoked;

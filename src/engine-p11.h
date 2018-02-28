@@ -7,6 +7,7 @@
 #include "erpiko/token.h"
 #include "erpiko/certificate.h"
 #include <openssl/engine.h>
+#include <openssl/rsa.h>
 #include "pkcs11/cryptoki.h"
 #ifdef WIN32
 #include <Windows.h>
@@ -29,7 +30,8 @@ class EngineP11 {
   std::vector<unsigned char> keyId;
 
   private:
-    EngineP11() { }
+    EngineP11() : defaultRsa(RSA_get_default_method()) {
+    }
 
   public:
     static EngineP11& getInstance() {
@@ -102,6 +104,8 @@ class EngineP11 {
     RsaKey* getPrivateKey(const RsaPublicKey& publicKey);
 
     ENGINE *erpikoEngine = nullptr;
+    ENGINE *erpikoDefault = nullptr;
+    const RSA_METHOD* defaultRsa;
   };
 } // namespace Erpiko
 #endif // _ENGINE_P11_H
