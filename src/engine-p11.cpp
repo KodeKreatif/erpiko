@@ -1142,6 +1142,7 @@ std::vector<TokenInfo> EngineP11::getAllTokensInfo() {
       TokenInfo tInfo;
       (void) F->C_GetSlotInfo(pSlotList[i], &slotInfo);
       (void) F->C_GetTokenInfo(pSlotList[i], &tokenInfo);
+      tInfo.slotId = pSlotList[i];
       std::string m = (string)(char*)tokenInfo.manufacturerID;
       tInfo.manufacturer = m.substr(0,32);
       std::string s = (string)(char*)tokenInfo.manufacturerID;

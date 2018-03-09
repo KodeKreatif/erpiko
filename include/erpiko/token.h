@@ -48,6 +48,7 @@ struct TokenInfo {
   int freePrivateMemory;
   std::string hardwareVersion;
   std::string firmwareVersion;
+  unsigned long int slotId;
 };
 
 /**
