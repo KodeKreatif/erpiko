@@ -178,4 +178,73 @@ SCENARIO("Export SignedData to PEM") {
   }
 }
 
+SCENARIO("Get the signer's serial number") {
+  GIVEN("Certificate and private key and data") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/data.txt");
+
+    THEN("Create the Signed Data") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      SignedData* p7 = new SignedData(*cert, *key);
+      DataSource* data = DataSource::fromFile("assets/data.txt");
+      auto dataVector = data->readAll();
+      p7->update(dataVector);
+      p7->sign();
+      THEN("And the signer serial number can be fetched") {
+        auto der = p7->toDer();
+        auto signers = p7->getSignerSerialNumbers();
+        REQUIRE(signers.size() == 1);
+        REQUIRE(cert->serialNumber().toHexString() == signers.at(0));
+      }
+    }
+  }
+}
+
+SCENARIO("Read DER without certificate") {
+  GIVEN("Certificate and private key and data") {
+    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto v = srcCert->readAll();
+    std::string pemCert(v.begin(),v.end());
+    auto cert = Certificate::fromPem(pemCert);
+
+    auto srcKey = DataSource::fromFile("assets/private.key");
+    v = srcKey->readAll();
+    std::string pemKey(v.begin(),v.end());
+    auto key = RsaKey::fromPem(pemKey);
+
+    DataSource* src = DataSource::fromFile("assets/data.txt");
+
+    THEN("Create the Signed Data") {
+      REQUIRE_FALSE(src == nullptr);
+      auto v = src->readAll();
+      SignedData* p7 = new SignedData(*cert, *key);
+      DataSource* data = DataSource::fromFile("assets/data.txt");
+      auto dataVector = data->readAll();
+      p7->update(dataVector);
+      p7->sign();
+      THEN("And reread the der") {
+        auto der = p7->toDer();
+        auto p7a = SignedData::fromDer(der);
+        // Reread again
+        auto der2 = p7a->toDer();
+        auto p7b = SignedData::fromDer(der2);
+        auto signers = p7b->getSignerSerialNumbers();
+        REQUIRE(signers.size() == 1);
+        REQUIRE(cert->serialNumber().toHexString() == signers.at(0));
+        REQUIRE(p7b->verify() == true);
+      }
+    }
+  }
+}
+
 } //namespace Erpiko

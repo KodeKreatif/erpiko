@@ -39,6 +39,13 @@ class SignedData {
     static SignedData* fromDer(const std::vector<unsigned char> der, const Certificate& certificate);
 
     /**
+     * Parses DER data and returns an instance of SignedData
+     * @param der DER data
+     * @return pointer to SignedData
+     */
+    static SignedData* fromDer(const std::vector<unsigned char> der);
+
+    /**
      * Parses PEM data and returns an instance of SignedData
      * @param pem PEM data
      * @param certificate the certificate of the signer
@@ -159,7 +166,14 @@ class SignedData {
      * @param index the index of the signer, default is 0
      * @return The digest
      */
+
     std::vector<unsigned char> digest(unsigned int index = 0) const;
+
+    /**
+     * Get the signers' certificate's serial numbers
+     *
+     */ 
+    std::vector<std::string> getSignerSerialNumbers();
 
     virtual ~SignedData();
 

@@ -82,6 +82,13 @@ SCENARIO("Construct EnvelopedData") {
         EnvelopedData* p7v3 = EnvelopedData::fromDer(der);
         data = p7v3->decrypt(*cert3, *key3);
         REQUIRE(v == data);
+        
+        std::vector<std::string> serialNumbers = p7v3->getRecipientSerialNumbers();
+        REQUIRE(cert1->serialNumber().toHexString() == serialNumbers.at(0));
+        REQUIRE(cert2->serialNumber().toHexString() == serialNumbers.at(1));
+        REQUIRE(cert3->serialNumber().toHexString() == serialNumbers.at(2));
+        REQUIRE(cert->serialNumber().toHexString() == serialNumbers.at(3));
+        REQUIRE(serialNumbers.size() == 4);
       }
     }
   }

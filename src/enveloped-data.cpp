@@ -4,6 +4,7 @@
 #include <openssl/pkcs7.h>
 #include <openssl/err.h>
 #include <iostream>
+#include <sstream>
 
 namespace Erpiko {
 class EnvelopedData::Impl {
@@ -289,6 +290,25 @@ class EnvelopedData::Impl {
       EVP_PKEY_free(pkey);
       onEnd();
     }
+
+    std::vector<std::string> getRecipientSerialNumbers(){
+      std::vector<std::string> serialNumbers;
+      STACK_OF(PKCS7_RECIP_INFO) *recips = NULL;
+      recips = pkcs7->d.enveloped->recipientinfo;
+      for (int i = 0; recips && sk_PKCS7_RECIP_INFO_num(recips) > 0 && i < sk_PKCS7_RECIP_INFO_num(recips); i++) {
+        PKCS7_RECIP_INFO *recip = sk_PKCS7_RECIP_INFO_value(recips, i);
+        PKCS7_ISSUER_AND_SERIAL *issuerSerial = recip->issuer_and_serial;
+        auto bn = ASN1_INTEGER_to_BN(issuerSerial->serial, NULL);
+        auto dec = Converters::bnToString(bn);
+        std::stringstream ss;
+        ss << dec;
+        auto sn = BigInt::fromString(ss.str());
+        serialNumbers.push_back(sn->toHexString());
+        PKCS7_RECIP_INFO_free(recip);
+        BN_free(bn);
+      }
+      return serialNumbers;
+    }
 };
 
 EnvelopedData::EnvelopedData() : impl{std::make_unique<Impl>()} {
@@ -497,6 +517,10 @@ EnvelopedData* EnvelopedData::fromSMimeFile(const std::string path) {
     return nullptr;
   }
   return p;
+}
+
+std::vector<std::string> EnvelopedData::getRecipientSerialNumbers(){
+  return impl->getRecipientSerialNumbers();
 }
 
 

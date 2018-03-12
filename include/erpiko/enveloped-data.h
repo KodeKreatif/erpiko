@@ -171,6 +171,12 @@ class EnvelopedData {
      */
     void addRecipient(const Certificate& certificate);
 
+    /**
+     * Get the recipient's certificate list of the encrypted data
+     *
+     */
+    std::vector<std::string> getRecipientSerialNumbers();
+
     virtual ~EnvelopedData();
 
   private:
