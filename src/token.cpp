@@ -169,4 +169,9 @@ P11Token::engine() const {
   return (void*) impl->engine.erpikoEngine;
 }
 
+unsigned long int 
+P11Token::getCardSession() {
+  return impl->engine.getSession();
+}
+
 } // namespace Erpiko
