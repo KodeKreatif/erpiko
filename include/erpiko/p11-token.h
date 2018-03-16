@@ -37,9 +37,13 @@ class P11Token : Token {
     */
     virtual TokenOpResult::Value putPrivateKey(const RsaKey& data, const std::string& labelStr);
     /*
-    Retrieve card information in the token
+    Retrieves card information in the token
     */
     virtual CardStatus::Value getCardStatus(TokenInfo token);
+    /*
+    Retrieves card's current session
+    */
+    virtual unsigned long int getCardSession();
     virtual RsaKey* getPrivateKey(const RsaPublicKey& publicKey);
     virtual bool removePrivateKey(const std::string& labelStr);
     virtual void* engine() const;

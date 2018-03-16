@@ -230,6 +230,12 @@ class Token {
     */
     virtual CardStatus::Value getCardStatus(TokenInfo token) = 0;
 
+    /**
+     * Retrieves card's current session, the session will be available after OpenSession
+     * @return session
+    */
+    virtual unsigned long int getCardSession() = 0;
+
 };
 } // namespace Erpiko
 #endif // _TOKEN_H_
