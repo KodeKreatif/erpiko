@@ -37,6 +37,7 @@ SCENARIO("Import signed data from DER test") {
 
 
   GIVEN("A DER SignedData") {
+    // expired one
     auto srcCert = DataSource::fromFile("assets/cert.pem");
     auto v = srcCert->readAll();
     std::string pemCert(v.begin(),v.end());
@@ -212,12 +213,12 @@ SCENARIO("Get the signer's serial number") {
 
 SCENARIO("Read DER without certificate") {
   GIVEN("Certificate and private key and data") {
-    auto srcCert = DataSource::fromFile("assets/cert.pem");
+    auto srcCert = DataSource::fromFile("assets/cert-long.pem");
     auto v = srcCert->readAll();
     std::string pemCert(v.begin(),v.end());
     auto cert = Certificate::fromPem(pemCert);
 
-    auto srcKey = DataSource::fromFile("assets/private.key");
+    auto srcKey = DataSource::fromFile("assets/key-long.pem");
     v = srcKey->readAll();
     std::string pemKey(v.begin(),v.end());
     auto key = RsaKey::fromPem(pemKey);
@@ -232,9 +233,11 @@ SCENARIO("Read DER without certificate") {
       auto dataVector = data->readAll();
       p7->update(dataVector);
       p7->sign();
+      REQUIRE(p7->verify() == true);
       THEN("And reread the der") {
         auto der = p7->toDer();
         auto p7a = SignedData::fromDer(der);
+        REQUIRE(p7a->verify() == true);
         // Reread again
         auto der2 = p7a->toDer();
         auto p7b = SignedData::fromDer(der2);
