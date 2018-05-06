@@ -85,6 +85,7 @@ class SignedData::Impl {
     }
 
     void fromDer(const std::vector<unsigned char> der) {
+      success = false;
       imported = true;
       BIO* mem = BIO_new_mem_buf((void*) der.data(), der.size());
       pkcs7 = d2i_PKCS7_bio(mem, NULL);
@@ -240,7 +241,6 @@ class SignedData::Impl {
         ss << dec;
         auto sn = BigInt::fromString(ss.str());
         serialNumbers.push_back(sn->toHexString());
-        PKCS7_SIGNER_INFO_free(signer);
         BN_free(bn);
       }
       return serialNumbers;
@@ -336,40 +336,65 @@ bool SignedData::verify() const {
   }
 
   auto store = X509_STORE_new();
-  bool ret = 1;
-  for (auto i = 0; i < sk_X509_num(impl->pkcs7->d.sign->cert); i++) {
+  bool ret = 0;
+  STACK_OF(X509) *certs = sk_X509_new_null();
+  sk_X509_push(certs, impl->cert);
+
+  int availCerts = sk_X509_num(impl->pkcs7->d.sign->cert);
+  for (auto i = 0; i < availCerts; i++) {
     STACK_OF(X509) *certs = sk_X509_new_null();
     X509* cert = sk_X509_value(impl->pkcs7->d.sign->cert, i);
-    sk_X509_push(certs, cert);
-    if (PKCS7_is_detached(impl->pkcs7)) {
-      ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, flags) == 1;
-    } else {
-      ret = PKCS7_verify(impl->pkcs7, certs, store, NULL, NULL, flags) == 1;
+    if (X509_cmp(cert, impl->cert) != 0) {
+      sk_X509_push(certs, cert);
     }
-    if (ret == 0) {
-      ERR_print_errors_fp(stderr);
-      break;
-    }
-    sk_X509_free(certs);
   }
+
+  if (PKCS7_is_detached(impl->pkcs7)) {
+    ret = PKCS7_verify(impl->pkcs7, certs, store, impl->bio, NULL, flags) == 1;
+  } else {
+    ret = PKCS7_verify(impl->pkcs7, certs, store, NULL, NULL, flags) == 1;
+  }
+
+  if (ret == 0) {
+    ERR_print_errors_fp(stderr);
+  }
+  sk_X509_free(certs);
   X509_STORE_free(store);
   return ret == 1;
 }
 
 void SignedData::signDetached() {
+  signDetached(SigningOption::DEFAULT);
+}
+
+void SignedData::signDetached(SigningOption::Value options) {
   if (impl->pkcs7) return;
 
+  int flags = PKCS7_DETACHED | PKCS7_NOSMIMECAP | PKCS7_BINARY | PKCS7_PARTIAL;
+  if (options & (1<<(SigningOption::EXCLUDE_CERTIFICATE))) {
+    flags |= PKCS7_NOCERTS;
+  }
+
   impl->signingMode = DETACHED;
-  impl->pkcs7 = PKCS7_sign(nullptr, nullptr, NULL, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY | PKCS7_PARTIAL);
+  impl->pkcs7 = PKCS7_sign(impl->cert, nullptr, NULL, impl->bio, flags | PKCS7_PARTIAL);
   PKCS7_sign_add_signer(impl->pkcs7, impl->cert, impl->pkey, impl->digestMd, PKCS7_REUSE_DIGEST);
-  PKCS7_final(impl->pkcs7, impl->bio, PKCS7_DETACHED | PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
+  PKCS7_final(impl->pkcs7, impl->bio, flags);
 }
 
 void SignedData::sign() {
+  sign(SigningOption::DEFAULT);
+}
+
+void SignedData::sign(SigningOption::Value options) {
   if (impl->pkcs7) return;
 
   impl->signingMode = SIGN;
-  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio,  PKCS7_NOCERTS | PKCS7_NOSMIMECAP | PKCS7_BINARY);
+  int flags = PKCS7_NOSMIMECAP | PKCS7_BINARY;
+
+  if (options & (1<<(SigningOption::EXCLUDE_CERTIFICATE))) {
+    flags |= PKCS7_NOCERTS;
+  }
+  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, flags);
 }
 
 void SignedData::signSMime() const {

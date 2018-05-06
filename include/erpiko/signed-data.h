@@ -16,6 +16,13 @@ enum Value {
 };
 }
 
+namespace SigningOption {
+  enum Value {
+    DEFAULT = 0,
+    EXCLUDE_CERTIFICATE = 2
+  };
+}
+
 namespace Erpiko {
 
 /**
@@ -108,12 +115,14 @@ class SignedData {
      * After the data is signed, no more update() and signDetached() or sign() functions can be called
      */
     void signDetached();
+    void signDetached(SigningOption::Value options);
 
     /**
      * Signs the SignedData and prepare a detached SignedData structure.
      * After the data is signed, no more update() and signDetached() or sign() functions can be called
      */
     void sign();
+    void sign(SigningOption::Value options);
 
     /**
      * Signs the SignedData in S/MIME mode. Data can be always updated with update API, and
@@ -148,7 +157,6 @@ class SignedData {
      */
     bool verify() const;
 
-
     /**
      * Whether the SignedData is detached or not
      * @return whether the SignedData is detached
@@ -172,7 +180,7 @@ class SignedData {
     /**
      * Get the signers' certificate's serial numbers
      *
-     */ 
+     */
     std::vector<std::string> getSignerSerialNumbers();
 
     virtual ~SignedData();
