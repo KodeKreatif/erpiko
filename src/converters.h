@@ -40,8 +40,9 @@ namespace Converters {
   }
 
   inline std::string bnToString(BIGNUM *bn) {
-    std::string dec;
-    dec = BN_bn2dec(bn);
+    auto str= BN_bn2dec(bn);
+    std::string dec(str);
+    free(str);
     return dec;
   }
 
@@ -202,7 +203,7 @@ namespace Converters {
     (void) mem;
     rsa = RSA_new();
     auto ret = d2i_RSA_PUBKEY_bio(mem, &rsa);
-    (void) ret; 
+    (void) ret;
     pkey = EVP_PKEY_new();
     EVP_PKEY_set1_RSA(pkey, rsa);
     return pkey;
