@@ -656,6 +656,15 @@ EngineP11::logout() {
   return false;
 }
 
+bool 
+EngineP11::closeSession() {
+  if (F->C_CloseSession(session) == CKR_OK) {
+    session = 0;
+    return true;
+  }
+  return false;
+}
+
 CardStatus::Value EngineP11::waitForCardStatus(int &slot) {
   std::cout << "Waiting for the slot event...\n";
   CK_SLOT_ID slotId;
@@ -705,6 +714,16 @@ EngineP11::login(const unsigned long slot, const string& pin) {
   return true;
 }
 
+bool
+EngineP11::openSession(const unsigned long slot) {
+  if (!F && !F->C_OpenSession) return false;
+  if (!F && !F->C_Login) return false;
+
+  CK_RV rv = F->C_OpenSession(slot, CKF_SERIAL_SESSION | CKF_RW_SESSION,
+                          nullptr, nullptr, &session);
+  if (rv != CKR_OK) return false;
+  return true;
+}
 
 TokenOpResult::Value
 EngineP11::putData(const std::string& applicationName, std::string& label, std::vector<unsigned char> data, bool isUnique) {

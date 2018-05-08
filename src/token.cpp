@@ -71,6 +71,16 @@ P11Token::logout() const {
   return impl->engine.logout();
 }
 
+bool 
+P11Token::openSession(const unsigned long slot) const {
+  return impl->engine.openSession(slot);
+}
+
+bool 
+P11Token::closeSession() const {
+  return impl->engine.closeSession();
+}
+
 void
 P11Token::setKeyId(const unsigned int id, const std::string& label) {
   impl->engine.setKeyLabel(label);

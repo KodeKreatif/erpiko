@@ -13,6 +13,8 @@ class P11Token : Token {
     virtual CardStatus::Value waitForCardStatus(int &slot) const;
     virtual bool login(const unsigned long slot, const std::string& pin) const;
     virtual bool logout() const;
+    virtual bool openSession(const unsigned long slot) const;
+    virtual bool closeSession() const;
     virtual void setKeyId(const unsigned int id, const std::string& label);
     virtual void setKeyId(const unsigned int id);
     virtual void setKeyId(const std::vector<unsigned char> id);

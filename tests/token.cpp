@@ -223,6 +223,19 @@ SCENARIO("Token init", "[.][p11]") {
          std::cout << "read only" << std::endl;
       }
 
+      t.logout();
+
+      // Try to fetch cert with session (no login);
+      t.closeSession();
+      t.openSession(0);
+      std::cout << "Session opened." << std::endl;
+      certs = t.getCertificates(false);
+      REQUIRE(sizeof(certs) > 0);
+      t.closeSession();
+      std::cout << "Session closed." << std::endl;
+      
+      t.login(0, "qwerty");
+
       putCertResult = t.putCertificate(*pkitbverify1Cert);
       REQUIRE(putCertResult == TokenOpResult::GENERIC_ERROR);
 
