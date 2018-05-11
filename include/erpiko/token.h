@@ -97,6 +97,19 @@ class Token {
     virtual bool logout() const = 0;
 
     /**
+     * Open session for the device
+     * @param slot the slot
+     * @return whether the session was successfully opened
+     */
+    virtual bool openSession(const unsigned long slot) const = 0;
+
+    /**
+     * Close the session on the device
+     * @return whether the session was successfully closed
+     */
+    virtual bool closeSession() const = 0;
+
+    /**
      * Sets key id and label to be recorded or used in the device
      * @param id the id of the key
      * @param label the label of the key

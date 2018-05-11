@@ -47,7 +47,9 @@ class EngineP11 {
     void finalize();
     CardStatus::Value waitForCardStatus(int &slot);
     bool login(const unsigned long slot, const string& pin);
+    bool openSession(const unsigned long slot);
     bool logout();
+    bool closeSession();
     unsigned long getSession() {
       return session;
     }
