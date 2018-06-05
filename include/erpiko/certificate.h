@@ -183,6 +183,14 @@ class Certificate {
      */
     CertificateTrustState::State isTrusted(const std::vector<unsigned char> rootCaDer, const std::vector<unsigned char> crlDer, const std::string& caChainPemPath) const;
 
+    /**
+     * Verify trust against root CA certificate
+     * @param rootCaDer Root CA certificate in DER
+     * @param caChainPemPath Path of the certificate chain (in PEM)
+     * @return integer value 1 if the cert is trusted by the issuer and certificate chain. Otherwise, it isn't trusted.
+     */
+    CertificateTrustState::State isTrusted(const std::vector<unsigned char> rootCaDer, const std::string& caChainPemPath) const;
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

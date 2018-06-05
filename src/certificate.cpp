@@ -365,13 +365,50 @@ CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned c
   X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK);
 
   int verifyResult = X509_verify_cert(ctx);
-  X509_STORE_CTX_cleanup(ctx);
-  X509_STORE_CTX_free(ctx);
-  sk_X509_free(chain);
   status = CertificateTrustState::TRUSTED;
   if (verifyResult != 1) {
     status = CertificateTrustState::NOT_TRUSTED;
   }
+
+  // Clean up
+  X509_STORE_CTX_cleanup(ctx);
+  X509_STORE_CTX_free(ctx);
+  X509_STORE_free(store);
+  sk_X509_free(chain);
+  delete rootCaCert;
+  delete crlCert;
+
+  return status;
+}
+
+CertificateTrustState::State Certificate::isTrusted(const std::vector<unsigned char> rootCaDer, const std::string& caChainPemPath) const {
+  CertificateTrustState::State status = CertificateTrustState::UNKNOWN;
+  STACK_OF(X509)* chain = sk_X509_new_null();
+
+  Certificate* rootCaCert = new Certificate();
+  rootCaCert->impl->fromDer(rootCaDer);
+  X509 * issuer = rootCaCert->impl->x509;
+  sk_X509_push(chain, issuer);
+
+  X509_STORE *store = X509_STORE_new();
+  X509_LOOKUP *lookup = X509_STORE_add_lookup(store, X509_LOOKUP_file());
+  X509_LOOKUP_load_file(lookup, caChainPemPath.c_str(), X509_FILETYPE_PEM);
+
+  X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+  X509_STORE_CTX_init(ctx, store, impl->x509, chain);
+
+  int verifyResult = X509_verify_cert(ctx);
+  status = CertificateTrustState::TRUSTED;
+  if (verifyResult != 1) {
+    status = CertificateTrustState::NOT_TRUSTED;
+  }
+  // Clean up
+  X509_STORE_CTX_cleanup(ctx);
+  X509_STORE_CTX_free(ctx);
+  X509_STORE_free(store);
+  sk_X509_free(chain);
+  delete rootCaCert;
+
   return status;
 }
 
