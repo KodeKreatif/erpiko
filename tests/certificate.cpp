@@ -428,6 +428,12 @@ SCENARIO("Verify cert") {
       REQUIRE(isTrusted == CertificateTrustState::NOT_TRUSTED);
       isRevoked = pkitbverify8Cert->isRevoked(originCaCert->toDer(), otherCaCrlDer);
       REQUIRE(isRevoked == CertificateRevocationState::UNKNOWN);
+
+      // Check trust without CRL
+      isTrusted = pkitbverify1Cert->isTrusted(originRootCaCert->toDer(), "assets/verify/originCa-chain.pem");
+      REQUIRE(isTrusted == CertificateTrustState::TRUSTED);
+      isTrusted = pkitbverify8Cert->isTrusted(originRootCaCert->toDer(), "assets/verify/originCa-chain.pem");
+      REQUIRE(isTrusted == CertificateTrustState::NOT_TRUSTED);
     }
   }
 }
