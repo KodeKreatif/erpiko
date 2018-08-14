@@ -296,10 +296,17 @@ int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *r
     return 0;
   }
 
-  CK_ULONG outLength;
-  rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
-  if (rv != CKR_OK) {
-    return 0;
+  CK_ULONG outLength = 0;
+  rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, nullptr, &outLength);
+  if (to != nullptr) {
+    free(to);
+  }
+  if (outLength > 0) {
+    to = (unsigned char*)malloc(outLength);
+    rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
+    if (rv != CKR_OK && rv != CKR_BUFFER_TOO_SMALL) {
+      return 0;
+    }
   }
 
   return outLength;
@@ -656,7 +663,7 @@ EngineP11::logout() {
   return false;
 }
 
-bool 
+bool
 EngineP11::closeSession() {
   if (F->C_CloseSession(session) == CKR_OK) {
     session = 0;
