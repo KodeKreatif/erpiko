@@ -226,32 +226,45 @@ class Certificate::Impl {
 
       notBefore = tBefore;
       notAfter = tAfter;
-
     }
 
     void resetExtensions() {
       extensions.clear();
-      resetSKID();
+      resetExtension(NID_basic_constraints);
+      resetExtension(NID_subject_key_identifier);
     }
 
-    void resetSKID() {
-      auto pos = X509_get_ext_by_NID(x509, NID_subject_key_identifier, 0);
-      if (pos < 0) return;
+    void resetExtension(int nid) {
+      int i = X509_get_ext_by_NID(x509, nid, -1);
+      if (i == -1) return;
 
-      auto ext = X509_get_ext(x509, pos);
-      auto length = ASN1_STRING_length((ASN1_STRING*) ext->value);
-      std::vector<unsigned char> skid(length);
-      std::transform(ext->value->data, ext->value->data + length, skid.begin(),
-          [](char c)
-          {
-          return static_cast<unsigned char>(c);
-          });
+      X509_EXTENSION *ext = X509_get_ext(x509, i);
+      if (ext != nullptr) {
+        auto length = ASN1_STRING_length((ASN1_STRING*) ext->value);
+        std::vector<unsigned char> der(length);
+        std::transform(ext->value->data, ext->value->data + length, der.begin(),
+            [](char c)
+            {
+            return static_cast<unsigned char>(c);
+            });
 
-      std::unique_ptr<CertificateExtension> c;
-      c.reset(new CertificateSubjectKeyIdentifierExtension((ext->critical != -1), skid));
-      extensions.push_back(std::move(c));
+        std::unique_ptr<CertificateExtension> c;
+        bool validExt = false;
+        switch(nid) {
+          case NID_basic_constraints:
+            c.reset(new CertificateBasicConstraintsExtension((ext->critical != -1), der));
+            validExt = true;
+            break;
+          case NID_subject_key_identifier:
+            c.reset(new CertificateSubjectKeyIdentifierExtension((ext->critical != -1), der));
+            validExt = true;
+            break;
+        }
+        if (validExt) {
+          extensions.push_back(std::move(c));
+        }
+      }
     }
-
 };
 
 Certificate::Certificate() : impl{std::make_unique<Impl>()} {
@@ -503,7 +516,7 @@ class CertificateBasicConstraintsExtension::Impl {
     bool isCa;
     unsigned int pathLengthConstraints;
 
-    Impl(const bool critical, const std::vector<unsigned char> der) : critical(critical), oid{std::make_unique<ObjectId>("2.5.29.14")} {
+    Impl(const bool critical, const std::vector<unsigned char> der) : critical(critical), oid{std::make_unique<ObjectId>("2.5.29.19")} {
       const unsigned char* raw = der.data();
       auto b = d2i_BASIC_CONSTRAINTS(0, &raw, der.size());
       isCa = b->ca;
