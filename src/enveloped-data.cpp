@@ -159,7 +159,6 @@ class EnvelopedData::Impl {
       }
 
       bio = BIO_new(BIO_s_mem());
-      BIO_set_close(bio, BIO_NOCLOSE);
       BIO_write(bio, data.data(), data.size());
 
       auto cipher = getCipher();
