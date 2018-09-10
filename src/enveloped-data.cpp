@@ -13,7 +13,7 @@ class EnvelopedData::Impl {
 
     std::unique_ptr<ObjectId> oid;
     PKCS7 *pkcs7 = nullptr;
-    BIO* bio = BIO_new(BIO_s_mem());
+    BIO* bio = nullptr;
     std::string smimePartial;
 
     bool success = false;
@@ -29,12 +29,15 @@ class EnvelopedData::Impl {
     }
 
     virtual ~Impl() {
-      sk_X509_free(certs);
 
-      BIO_free(bio);
+      if (bio != nullptr) {
+        BIO_free(bio);
+      }
       if (pkcs7) {
+        pkcs7->d.enveloped->recipientinfo = nullptr;
         PKCS7_free(pkcs7);
       }
+      sk_X509_free(certs);
     }
 
     void appendCertificate(const X509* cert) {
@@ -149,11 +152,13 @@ class EnvelopedData::Impl {
       return EVP_get_cipherbyobj(obj);
     }
 
-    void encrypt(const std::vector<unsigned char> data, EncryptingType::Value type) {
+    void encrypt(const std::vector<unsigned char> data, EncryptingType::Value type, bool finalized = false) {
       if (pkcs7) {
         PKCS7_free(pkcs7);
         pkcs7 = nullptr;
       }
+
+      bio = BIO_new(BIO_s_mem());
       BIO_write(bio, data.data(), data.size());
 
       auto cipher = getCipher();
@@ -165,7 +170,11 @@ class EnvelopedData::Impl {
         } else {
           pkcs7 = PKCS7_encrypt(certs, bio, cipher, PKCS7_STREAM | PKCS7_DETACHED);
         }
-        finalized = true;
+        this->finalized = finalized;
+      }
+      if (finalized == true) {
+        BIO_free(bio);
+        bio = nullptr;
       }
     }
 
@@ -194,6 +203,8 @@ class EnvelopedData::Impl {
         }
         finalized = true;
       }
+      BIO_free(bio);
+      bio = nullptr;
     }
 
     void finalize(EncryptingType::Value type) {
@@ -224,6 +235,8 @@ class EnvelopedData::Impl {
       } else {
         pkey = Converters::rsaKeyToPkey(privateKey);
       }
+      bio = BIO_new(BIO_s_mem());
+      BIO_set_close(bio, BIO_NOCLOSE);
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
@@ -249,6 +262,8 @@ class EnvelopedData::Impl {
       }
 
       EVP_PKEY_free(pkey);
+      BIO_free(bio);
+      bio = nullptr;
       return retval;
     }
 
@@ -264,6 +279,8 @@ class EnvelopedData::Impl {
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
+      bio = BIO_new(BIO_s_mem());
+      BIO_set_close(bio, BIO_NOCLOSE);
       if (ret == 0) {
         ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
       }
@@ -288,6 +305,8 @@ class EnvelopedData::Impl {
       delete[] buff;
 
       EVP_PKEY_free(pkey);
+      BIO_free(bio);
+      bio = nullptr;
       onEnd();
     }
 
@@ -353,16 +372,15 @@ const std::vector<unsigned char> EnvelopedData::toDer() const {
   std::vector<unsigned char> retval;
   int ret;
   BIO* mem = BIO_new(BIO_s_mem());
+  BIO_set_close(mem, BIO_NOCLOSE);
 
-  ret = i2d_PKCS7_bio_stream(mem, impl->pkcs7, NULL, 0);
+  ret = i2d_PKCS7_bio_stream(mem, impl->pkcs7, nullptr, 0);
 
   while (ret) {
     unsigned char buff[1024];
     int ret = BIO_read(mem, buff, 1024);
     if (ret > 0) {
-      for (int i = 0; i < ret; i ++) {
-        retval.push_back(buff[i]);
-      }
+      retval.insert(retval.end(), buff, buff + ret);
     } else {
       break;
     }
@@ -376,13 +394,14 @@ const std::vector<unsigned char> EnvelopedData::toDer() const {
 EnvelopedData::~EnvelopedData() = default;
 
 void EnvelopedData::encrypt(const std::vector<unsigned char> data) {
-  impl->encrypt(data, EncryptingType::BINARY);
+  impl->encrypt(data, EncryptingType::BINARY, true);
 }
 
 const std::string EnvelopedData::toPem() const {
   std::string retval;
   int ret;
   BIO* mem = BIO_new(BIO_s_mem());
+  BIO_set_close(mem, BIO_NOCLOSE);
 
   ret = PEM_write_bio_PKCS7_stream(mem, impl->pkcs7, NULL, 0);
 

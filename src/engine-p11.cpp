@@ -298,15 +298,10 @@ int rsaPubEncrypt(int flen, const unsigned char *from, unsigned char *to, RSA *r
 
   CK_ULONG outLength = 0;
   rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, nullptr, &outLength);
-  if (to != nullptr) {
-    free(to);
-  }
-  if (outLength > 0) {
-    to = (unsigned char*)malloc(outLength);
-    rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
-    if (rv != CKR_OK && rv != CKR_BUFFER_TOO_SMALL) {
-      return 0;
-    }
+  rv = F->C_Encrypt(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
+  std::cout << "RV 1:" << rv << "-" <<  outLength << ":" << Utils::hexString(to, outLength) << "\n";
+  if (rv != CKR_OK && rv != CKR_BUFFER_TOO_SMALL) {
+    return 0;
   }
 
   return outLength;

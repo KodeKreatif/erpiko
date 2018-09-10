@@ -50,6 +50,7 @@ class SignedData::Impl {
       X509_free(cert);
       BIO_free(bio);
       if (pkcs7) {
+        pkcs7->d.sign->cert = nullptr;
         PKCS7_free(pkcs7);
       }
       while (!certList.empty())
