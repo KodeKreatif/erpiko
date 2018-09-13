@@ -25,6 +25,7 @@ class P11Token : Token {
     virtual std::vector<unsigned char> getData(const std::string& applicationName, std::string& label);
     virtual std::vector<std::vector<unsigned char>> getAllData(const std::string& applicationName, std::string& label);
     virtual std::vector<TokenInfo> getAllTokensInfo();
+    virtual std::vector<SlotInfo> getAllSlotsInfo(bool isTokenPresentOnly = false);
     virtual bool removeData(const std::string& applicationName, const std::string& label);
     virtual std::vector<Certificate*> getCertificates(bool);
     /*

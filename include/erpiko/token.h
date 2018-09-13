@@ -28,6 +28,13 @@ namespace TokenOpResult {
   };
 };
 
+struct SlotInfo {
+  std::string description;
+  std::string manufacturerID;
+  unsigned long flags;
+  unsigned long slotId;
+};
+
 struct TokenInfo {
   std::string label;
   std::string manufacturer;
@@ -222,13 +229,17 @@ class Token {
      */
     virtual bool removePrivateKey(const std::string& labelStr) = 0;
 
-
-
     /**
      * Get the list of token information if it presents on slot(s)
      * @return slots return the slots that has token present, each described with TokenInfo object
      */
     virtual std::vector<TokenInfo> getAllTokensInfo() = 0;
+
+    /**
+    * Get the list of slot information
+    * @return slots return the slots that has token present, each described with SlotInfo object
+    */
+    virtual std::vector<SlotInfo> getAllSlotsInfo(bool isTokenPresentOnly = false) = 0;
 
     /**
      * Returns internal engine handle

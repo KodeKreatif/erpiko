@@ -98,6 +98,7 @@ class EngineP11 {
     bool removeData(const std::string& applicationName, const std::string& label);
     bool parseAttr(CK_OBJECT_HANDLE obj, CK_ATTRIBUTE &attr, std::vector<unsigned char> *value = nullptr);
     std::vector<TokenInfo> getAllTokensInfo();
+    std::vector<SlotInfo> getAllSlotsInfo(bool isTokenPresentOnly = false);
     std::vector<Certificate*> getCertificates(bool);
     TokenOpResult::Value putCertificate(const Certificate& cert);
     bool removeCertificate(const Certificate& cert);

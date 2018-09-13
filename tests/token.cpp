@@ -72,6 +72,12 @@ SCENARIO("Token init", "[.][p11]") {
 #endif
       REQUIRE(r == true);
 
+      std::vector<SlotInfo> sl = t.getAllSlotsInfo();
+      for (SlotInfo& s : sl) {
+        cout << "Slot#" << s.slotId << " " << s.description;
+        cout << "[" << s.manufacturerID << "] flag = " << s.flags << endl;
+      }
+
       std::cout << "Please insert the smartcard to slot" << std::endl;
 
       int slotId;
@@ -98,6 +104,7 @@ SCENARIO("Token init", "[.][p11]") {
       std::cout << "Logged in" << std::endl;
 
       std::vector<TokenInfo> slots = t.getAllTokensInfo();
+      
       REQUIRE(sizeof(slots) > 0);
       for (auto const& slot : slots) {
         std::cout << "TokenInfo" << std::endl;

@@ -146,6 +146,11 @@ std::vector<TokenInfo> P11Token::getAllTokensInfo() {
   return impl->engine.getAllTokensInfo();
 }
 
+std::vector<SlotInfo> P11Token::getAllSlotsInfo(bool isTokenPresentOnly) {
+  return impl->engine.getAllSlotsInfo(isTokenPresentOnly);
+}
+
+
 CardStatus::Value
 P11Token::getCardStatus(TokenInfo token) {
   if (token.slotsFlags & CKF_TOKEN_PRESENT) {
