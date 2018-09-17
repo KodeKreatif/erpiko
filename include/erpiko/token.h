@@ -28,6 +28,13 @@ namespace TokenOpResult {
   };
 };
 
+struct SlotInfo {
+  std::string description;
+  std::string manufacturerID;
+  unsigned long flags;
+  unsigned long slotId;
+};
+
 struct TokenInfo {
   std::string label;
   std::string manufacturer;
@@ -222,13 +229,18 @@ class Token {
      */
     virtual bool removePrivateKey(const std::string& labelStr) = 0;
 
-
-
     /**
      * Get the list of token information if it presents on slot(s)
      * @return slots return the slots that has token present, each described with TokenInfo object
      */
     virtual std::vector<TokenInfo> getAllTokensInfo() = 0;
+
+    /**
+    * Get the list of slot information
+    * @param isTokenPresentOnly sets true to retrieve all slots if token is available, sets false to retrieve all slots even if tokens are unavailable
+    * @return slots return the slots that has token present, each described with SlotInfo object
+    */
+    virtual std::vector<SlotInfo> getAllSlotsInfo(bool isTokenPresentOnly = false) = 0;
 
     /**
      * Returns internal engine handle
@@ -248,6 +260,27 @@ class Token {
      * @return session
     */
     virtual unsigned long int getCardSession() = 0;
+    
+    /**
+     * Checks whether token/smart card is present on given slotInfo
+     * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+     * @return true if token present, false if otherwise
+    */
+    virtual bool isTokenPresent(const SlotInfo& slotInfo) = 0;
+
+    /**
+    * Checks whether given slotInfo is a hardware slot
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if it is a hardware slot, false if otherwise
+    */
+    virtual bool isHardwareSlot(const SlotInfo& slotInfo) = 0;
+
+    /**
+    * Checks whether given slotInfo
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if slot removable, false if otherwise
+    */
+    virtual bool isRemovableDevice(const SlotInfo& slotInfo) = 0;
 
 };
 } // namespace Erpiko

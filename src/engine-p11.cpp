@@ -1145,6 +1145,35 @@ EngineP11::putCertificate(const Certificate& cert) {
   return TokenOpResult::SUCCESS;
 }
 
+std::vector<SlotInfo> EngineP11::getAllSlotsInfo(bool isTokenPresentOnly) {
+  CK_ULONG listCount;
+  CK_RV rv;
+  CK_SLOT_ID_PTR pSlotList;
+  std::vector<SlotInfo> slots;
+  rv = F->C_GetSlotList(isTokenPresentOnly ? CK_TRUE : CK_FALSE, NULL_PTR, &listCount);
+  if (rv != CKR_OK || listCount < 1) {
+    return slots;
+  }
+  pSlotList = (CK_SLOT_ID_PTR)malloc(listCount * sizeof(CK_SLOT_ID));
+  rv = F->C_GetSlotList(isTokenPresentOnly ? CK_TRUE : CK_FALSE, pSlotList, &listCount);
+  if (rv == CKR_OK) {
+    for (int i = 0; i < (int)listCount; i++) {
+      CK_SLOT_INFO slotInfo;
+      SlotInfo tInfo;
+      (void)F->C_GetSlotInfo(pSlotList[i], &slotInfo);
+      tInfo.slotId = pSlotList[i];
+      std::string m = (string)(char*)slotInfo.manufacturerID;
+      tInfo.manufacturerID = m.substr(0, 32);
+      std::string d = (string)(char*)slotInfo.slotDescription;
+      tInfo.description = d.substr(0, 64);
+      tInfo.flags = slotInfo.flags;
+      slots.push_back(tInfo);
+    }
+  }
+  free(pSlotList);
+  return slots;
+}
+
 std::vector<TokenInfo> EngineP11::getAllTokensInfo() {
   CK_ULONG listCount;
   CK_RV rv;
@@ -1184,8 +1213,9 @@ std::vector<TokenInfo> EngineP11::getAllTokensInfo() {
       tInfo.freePublicMemory = (int)tokenInfo.ulFreePublicMemory;
       tInfo.totalPrivateMemory = (int)tokenInfo.ulTotalPrivateMemory;
       tInfo.freePrivateMemory = (int)tokenInfo.ulFreePrivateMemory;
-	  tInfo.slotsFlags = slotInfo.flags;
-	  tInfo.tokenFlags = tokenInfo.flags;
+      tInfo.slotsFlags = slotInfo.flags;
+      tInfo.tokenFlags = tokenInfo.flags;
+
       slots.push_back(tInfo);
     }
   }
