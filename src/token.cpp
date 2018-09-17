@@ -184,6 +184,21 @@ P11Token::engine() const {
   return (void*) impl->engine.erpikoEngine;
 }
 
+bool
+P11Token::isTokenPresent(const SlotInfo& slotInfo) {
+  return slotInfo.flags & CKF_TOKEN_PRESENT ? true : false;
+}
+
+bool
+P11Token::isHardwareSlot(const SlotInfo& slotInfo) {
+  return slotInfo.flags & CKF_HW_SLOT ? true : false;
+}
+
+bool
+P11Token::isRemovableDevice(const SlotInfo& slotInfo) {
+  return slotInfo.flags & CKF_REMOVABLE_DEVICE ? true : false;
+}
+ 
 unsigned long int 
 P11Token::getCardSession() {
   return impl->engine.getSession();

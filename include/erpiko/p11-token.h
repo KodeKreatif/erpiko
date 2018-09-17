@@ -51,6 +51,27 @@ class P11Token : Token {
     virtual bool removePrivateKey(const std::string& labelStr);
     virtual void* engine() const;
 
+    /**
+    * Checks whether token/smart card is present on given slotInfo
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if token present, false if otherwise
+    */
+    virtual bool isTokenPresent(const SlotInfo& slotInfo);
+
+    /**
+    * Checks whether given slotInfo is a hardware slot
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if it is a hardware slot, false if otherwise
+    */
+    virtual bool isHardwareSlot(const SlotInfo& slotInfo);
+    
+    /**
+    * Checks whether given slotInfo
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if slot removable, false if otherwise
+    */
+    virtual bool isRemovableDevice(const SlotInfo& slotInfo);
+
   private:
     class Impl;
     std::unique_ptr<Impl> impl;

@@ -237,6 +237,7 @@ class Token {
 
     /**
     * Get the list of slot information
+    * @param isTokenPresentOnly sets true to retrieve all slots if token is available, sets false to retrieve all slots even if tokens are unavailable
     * @return slots return the slots that has token present, each described with SlotInfo object
     */
     virtual std::vector<SlotInfo> getAllSlotsInfo(bool isTokenPresentOnly = false) = 0;
@@ -259,6 +260,27 @@ class Token {
      * @return session
     */
     virtual unsigned long int getCardSession() = 0;
+    
+    /**
+     * Checks whether token/smart card is present on given slotInfo
+     * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+     * @return true if token present, false if otherwise
+    */
+    virtual bool isTokenPresent(const SlotInfo& slotInfo) = 0;
+
+    /**
+    * Checks whether given slotInfo is a hardware slot
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if it is a hardware slot, false if otherwise
+    */
+    virtual bool isHardwareSlot(const SlotInfo& slotInfo) = 0;
+
+    /**
+    * Checks whether given slotInfo
+    * @param slotInfo, slot structure retrieved from getAllSlotsInfo()
+    * @return true if slot removable, false if otherwise
+    */
+    virtual bool isRemovableDevice(const SlotInfo& slotInfo) = 0;
 
 };
 } // namespace Erpiko
