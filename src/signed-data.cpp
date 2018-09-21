@@ -395,7 +395,9 @@ void SignedData::sign(SigningOption::Value options) {
   if (options & (1<<(SigningOption::EXCLUDE_CERTIFICATE))) {
     flags |= PKCS7_NOCERTS;
   }
-  impl->pkcs7 = PKCS7_sign(impl->cert, impl->pkey, NULL, impl->bio, flags);
+  impl->pkcs7 = PKCS7_sign(impl->cert, nullptr, nullptr, impl->bio, flags | PKCS7_PARTIAL);
+  PKCS7_sign_add_signer(impl->pkcs7, impl->cert, impl->pkey, impl->digestMd, flags);
+  PKCS7_final(impl->pkcs7, impl->bio, flags);
 }
 
 void SignedData::signSMime() const {
