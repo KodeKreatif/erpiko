@@ -373,12 +373,8 @@ int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned cha
 
   EngineP11& p11 = EngineP11::getInstance();
   CK_MECHANISM mechanism = {
-    CKM_SHA256_RSA_PKCS, nullptr, 0
+    CKM_RSA_PKCS, nullptr, 0
   };
-
-  if (!populateMechanism(&mechanism, type)) {
-    return 0;
-  }
 
   CK_OBJECT_HANDLE key;
   if ((int)p11.getKeyId() > -1 || strlen(p11.getKeyLabel().c_str()) > 0) {
@@ -390,31 +386,47 @@ int rsaSign(int type, const unsigned char *from, unsigned int flen, unsigned cha
     return 0;
   }
 
-  CK_OBJECT_HANDLE pubKey = findKey(CKO_PUBLIC_KEY, p11.getKeyId(), p11.getKeyLabel().c_str());
-  if (pubKey == 0) {
-    pubKey = findPublicKey(rsa);
-    if (pubKey == 0) {
-      return 0;
-    }
-  }
-
-  CK_ULONG bits;
-  CK_ATTRIBUTE pubValueT[] = {
-    {CKA_MODULUS_BITS, &bits, sizeof(bits)}
-  };
-
-  CK_RV rv = F->C_GetAttributeValue(p11.getSession(), pubKey, pubValueT, 1);
+  CK_RV rv = F->C_SignInit(p11.getSession(), &mechanism, key);
   if (rv != CKR_OK) {
+    std::cout << "SignInit got:" << rv <<"\n";
     return 0;
   }
 
-  rv = F->C_SignInit(p11.getSession(), &mechanism, key);
-  if (rv != CKR_OK) {
+  X509_SIG sig;
+  X509_ALGOR algo;
+  ASN1_TYPE parameter;
+  ASN1_OCTET_STRING digest;
+
+  sig.algor = &algo;
+  sig.algor->algorithm = OBJ_nid2obj(type);
+  if (sig.algor->algorithm == nullptr || sig.algor->algorithm->length == 0) {
+    // Error getting algo ID
+    std::cout << "error getting algo id\n";
     return 0;
   }
-  CK_ULONG outLength = bits/8;
-  rv = F->C_Sign(p11.getSession(), const_cast<unsigned char*>(from), flen, to, &outLength);
-  if (rv != CKR_OK) {
+
+  parameter.type = V_ASN1_NULL;
+  parameter.value.ptr = NULL;
+  sig.algor->parameter = &parameter;
+
+  sig.digest = &digest;
+  sig.digest->data = const_cast<unsigned char*>(from);
+  sig.digest->length = flen;
+
+  unsigned char *sigDer;
+  sigDer = nullptr;
+
+  auto sigLength = i2d_X509_SIG(&sig, &sigDer);
+
+  if (sigDer == nullptr) {
+    std::cout << "error sigder 0\n";
+    return 0;
+  }
+
+  CK_ULONG outLength = 256;
+  rv = F->C_Sign(p11.getSession(), sigDer, sigLength, to, &outLength);
+  if (rv != CKR_OK && rv != CKR_BUFFER_TOO_SMALL) {
+    std::cout << "Sign got:" << rv <<"\n";
     return 0;
   }
 
