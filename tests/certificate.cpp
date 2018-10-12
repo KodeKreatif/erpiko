@@ -91,7 +91,7 @@ SCENARIO("Import certificate from DER test") {
           }
 
         }
-        REQUIRE(allExtsInspected == 1);
+        REQUIRE(allExtsInspected == 2);
 
       }
     }
