@@ -236,7 +236,7 @@ class EnvelopedData::Impl {
         pkey = Converters::rsaKeyToPkey(privateKey);
       }
       bio = BIO_new(BIO_s_mem());
-      BIO_set_close(bio, BIO_NOCLOSE);
+      (void)BIO_set_close(bio, BIO_NOCLOSE);
       auto cert = Converters::certificateToX509(certificate);
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
@@ -280,7 +280,7 @@ class EnvelopedData::Impl {
       auto ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, isSMime ? PKCS7_TEXT : 0);
 
       bio = BIO_new(BIO_s_mem());
-      BIO_set_close(bio, BIO_NOCLOSE);
+      (void)BIO_set_close(bio, BIO_NOCLOSE);
       if (ret == 0) {
         ret = PKCS7_decrypt(pkcs7, pkey, cert, bio, PKCS7_DETACHED);
       }
@@ -372,7 +372,7 @@ const std::vector<unsigned char> EnvelopedData::toDer() const {
   std::vector<unsigned char> retval;
   int ret;
   BIO* mem = BIO_new(BIO_s_mem());
-  BIO_set_close(mem, BIO_NOCLOSE);
+  (void)BIO_set_close(mem, BIO_NOCLOSE);
 
   ret = i2d_PKCS7_bio_stream(mem, impl->pkcs7, nullptr, 0);
 
@@ -401,7 +401,7 @@ const std::string EnvelopedData::toPem() const {
   std::string retval;
   int ret;
   BIO* mem = BIO_new(BIO_s_mem());
-  BIO_set_close(mem, BIO_NOCLOSE);
+  (void)BIO_set_close(mem, BIO_NOCLOSE);
 
   ret = PEM_write_bio_PKCS7_stream(mem, impl->pkcs7, NULL, 0);
 
